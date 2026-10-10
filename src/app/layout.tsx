@@ -13,9 +13,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Belgian Drone Cleaning (BDC) | Professionele drone-reiniging",
+  title: {
+    default: "Belgian Drone Cleaning (BDC) | Professionele drone-reiniging",
+    template: "%s | BDC",
+  },
   description:
-    "BDC reinigt daken, gevels, zonnepanelen en geschikte industriële oppervlakken met professionele drone-technologie.",
+    "BDC reinigt daken, gevels, zonnepanelen en geschikte industriële oppervlakken met professionele drone-technologie in België.",
+  applicationName: "Belgian Drone Cleaning",
+  keywords: [
+    "drone reiniging",
+    "gevelreiniging",
+    "dakreiniging",
+    "zonnepanelen reinigen",
+    "industriële reiniging",
+    "Belgium",
+    "BDC",
+  ],
+  authors: [{ name: "Belgian Drone Cleaning" }],
+  openGraph: {
+    type: "website",
+    locale: "nl_BE",
+    siteName: "Belgian Drone Cleaning",
+    title: "Belgian Drone Cleaning (BDC)",
+    description:
+      "Professionele drone-reiniging voor daken, gevels, zonnepanelen en industriële oppervlakken.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   icons: {
     icon: "/brand/favicon.svg",
   },
