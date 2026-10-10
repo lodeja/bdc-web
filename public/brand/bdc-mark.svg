@@ -1,22 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 72" role="img" aria-labelledby="bdcMarkTitle">
-  <title id="bdcMarkTitle">BDC</title>
-  <defs>
-    <linearGradient id="markInk" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#143356"/>
-      <stop offset="100%" stop-color="#071525"/>
-    </linearGradient>
-  </defs>
-  <path fill="url(#markInk)" d="M12 14h28c9 0 15.5 4.6 15.5 12.2 0 4.6-2.4 8-6.4 9.9 4.8 1.7 7.9 5.6 7.9 11.4C57 57.2 49.4 63 39.2 63H12V14zm18 18.5h9c4 0 6.4-2 6.4-5.1s-2.4-5-6.4-5H30v10.1zm0 22.5h10.4c4.6 0 7.5-2.3 7.5-5.7s-2.9-5.6-7.5-5.6H30V55z"/>
-  <path fill="url(#markInk)" fill-rule="evenodd" d="M72 14h28c20.5 0 35.5 12.2 35.5 25S120.5 64 100 64H72V14z M90 24.5v29h10c10.8 0 18.2-6.4 18.2-14.5S110.8 24.5 100 24.5H90z M78 12.5h44v5H78z"/>
-  <circle cx="80" cy="15" r="8.5" fill="url(#markInk)"/>
-  <circle cx="120" cy="15" r="8.5" fill="url(#markInk)"/>
-  <circle cx="80" cy="15" r="5.2" fill="#00C2E8"/>
-  <circle cx="120" cy="15" r="5.2" fill="#00C2E8"/>
-  <circle cx="80" cy="15" r="2" fill="#071525"/>
-  <circle cx="120" cy="15" r="2" fill="#071525"/>
-  <rect x="75.5" y="30" width="10" height="18" rx="3" fill="#071525"/>
-  <rect x="77.2" y="34.5" width="6.6" height="5.5" rx="1.4" fill="#00C2E8"/>
-  <rect x="85" y="36.2" width="10" height="2.6" rx="1.2" fill="#33D6F0"/>
-  <path fill="url(#markInk)" d="M74 58.5h6.5v3.2H74zm9.5 0h6.5v3.2h-6.5zM76.5 56.2v2.5M89 56.2v2.5M73 62.2h9M86.5 62.2h9"/>
-  <path fill="url(#markInk)" d="M171 26.5c-2.1-4.2-7.2-7.8-15-7.8-13.4 0-22.5 9.5-22.5 23.3S142.6 65.3 156 65.3c7.8 0 12.9-3.6 15-7.9l-13.6-4.8c-1 1.7-3 3.1-5.6 3.1-6 0-9.8-4.6-9.8-13.5s3.8-13.5 9.8-13.5c2.6 0 4.6 1.4 5.6 3.1l13.6-5z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 160" role="img" aria-labelledby="title">
+  <title id="title">BDC — Belgian Drone Cleaning</title>
+  <!--
+    Based on user-supplied mark: bold connected BDC + cleaning drone.
+    Improvements: drone skids fuse into letter tops; cyan spray accent;
+    tighter silhouette that still reads at small sizes.
+  -->
+  <g fill="#0B1F3A">
+    <!-- B (with left stem notch) -->
+    <path d="M28 48h52c22 0 38 12 38 32 0 12-6 22-16 28 14 6 24 18 24 34 0 24-18 38-44 38H28V48zm36 52h14c8 0 14-5 14-12s-6-12-14-12H64v24zm0 58h18c10 0 16-6 16-14s-6-14-16-14H64v28z"/>
+    <!-- notch cut -->
+    <rect x="28" y="78" width="18" height="14" fill="#fff"/>
+    <!-- D connected at base to B -->
+    <path fill-rule="evenodd" d="M118 48h40c48 0 82 32 82 72s-34 72-82 72h-40V48zm36 28v88h8c28 0 48-20 48-44s-20-44-48-44h-8z"/>
+    <!-- C -->
+    <path d="M268 72c-6-14-22-26-46-26-40 0-68 30-68 74s28 74 68 74c24 0 40-12 46-26l-30-12c-4 6-10 10-18 10-18 0-30-14-30-46s12-46 30-46c8 0 14 4 18 10l30-12z"/>
+    <!-- base bridge B–D -->
+    <rect x="100" y="172" width="40" height="0" opacity="0"/>
+  </g>
+
+  <!-- Drone fused onto B/D crown -->
+  <g fill="#0B1F3A">
+    <!-- body -->
+    <ellipse cx="128" cy="34" rx="18" ry="10"/>
+    <rect x="116" y="28" width="24" height="12" rx="4"/>
+    <!-- arms -->
+    <path d="M100 30 L88 18 M156 30 L168 18 M104 40 L92 52 M152 40 L164 52" stroke="#0B1F3A" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <!-- rotors -->
+    <ellipse cx="86" cy="16" rx="14" ry="3"/>
+    <ellipse cx="170" cy="16" rx="14" ry="3"/>
+    <ellipse cx="90" cy="54" rx="11" ry="2.5"/>
+    <ellipse cx="166" cy="54" rx="11" ry="2.5"/>
+    <circle cx="86" cy="16" r="2.5"/>
+    <circle cx="170" cy="16" r="2.5"/>
+    <circle cx="90" cy="54" r="2"/>
+    <circle cx="166" cy="54" r="2"/>
+    <!-- skids fused into letter tops -->
+    <path d="M112 42 L108 52 M144 42 L148 52" stroke="#0B1F3A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M102 52 H120 M136 52 H154" stroke="#0B1F3A" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- nozzle -->
+    <rect x="124" y="40" width="8" height="10" rx="2"/>
+  </g>
+  <!-- cyan cleaning spray (brand accent) -->
+  <g stroke="#00C2E8" stroke-width="2" stroke-linecap="round" fill="none">
+    <path d="M128 52 L120 66"/>
+    <path d="M128 52 L128 68"/>
+    <path d="M128 52 L136 66"/>
+  </g>
+  <circle cx="128" cy="50" r="2.5" fill="#00C2E8"/>
 </svg>

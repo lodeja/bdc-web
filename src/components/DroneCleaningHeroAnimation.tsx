@@ -2,431 +2,478 @@
 
 import {
   motion,
-  useAnimationFrame,
   useMotionValue,
   useReducedMotion,
   useTransform,
+  animate,
 } from "motion/react";
-import { useId } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
-const LOOP_MS = 12000;
-const DUR = "12s";
+/** One-shot window cleaning — never resets to dirty. */
+const COLS = 5;
+const ROWS = 7;
+const TOTAL = COLS * ROWS;
+/** Seconds to clean all windows (single pass, no loop) */
+const CLEAN_SECONDS = 24;
 
-/**
- * Premium façade-cleaning hero.
- * motion-design (Premium) + 60fps (transform/opacity) + svg-animation.
- * Wipe: SMIL mask width (proven progressive L→R). Drone: Motion path synced to same clock.
- */
+const BUILDING = {
+  originX: 420,
+  originY: 110,
+  colW: 58,
+  rowH: 52,
+  skewX: 18,
+  winW: 42,
+  winH: 36,
+};
+
+type Win = {
+  id: number;
+  col: number;
+  row: number;
+  x: number;
+  y: number;
+  cx: number;
+  cy: number;
+};
+
+function buildWindows(): Win[] {
+  const list: Win[] = [];
+  let id = 0;
+  // Column-major, top→bottom then next bay (drone works vertically)
+  for (let col = 0; col < COLS; col++) {
+    for (let row = 0; row < ROWS; row++) {
+      const x =
+        BUILDING.originX + col * BUILDING.colW + row * (BUILDING.skewX / ROWS);
+      const y = BUILDING.originY + row * BUILDING.rowH;
+      list.push({
+        id: id++,
+        col,
+        row,
+        x,
+        y,
+        cx: x + BUILDING.winW / 2,
+        cy: y + BUILDING.winH / 2,
+      });
+    }
+  }
+  return list;
+}
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
+/** Smoothstep for drone ease between windows */
+function smooth(t: number) {
+  const x = Math.min(1, Math.max(0, t));
+  return x * x * (3 - 2 * x);
+}
+
 export function DroneCleaningHeroAnimation() {
   const reduceMotion = useReducedMotion();
   const uid = useId().replace(/:/g, "");
+  const windows = useMemo(() => buildWindows(), []);
+  const progress = useMotionValue(0);
+  const [done, setDone] = useState(false);
+  const [cleaned, setCleaned] = useState(reduceMotion ? TOTAL : 0);
 
-  if (reduceMotion) {
-    return (
-      <div className="relative h-full w-full overflow-hidden" aria-hidden="true">
-        <FullScene uid={uid} reduceMotion />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (reduceMotion) {
+      progress.set(1);
+      setDone(true);
+      setCleaned(TOTAL);
+      return;
+    }
+    const controls = animate(progress, 1, {
+      duration: CLEAN_SECONDS,
+      ease: "linear",
+      onComplete: () => setDone(true),
+    });
+    return () => controls.stop();
+  }, [progress, reduceMotion]);
+
+  useEffect(() => {
+    return progress.on("change", (p) => {
+      // Window becomes clean once the drone has finished its dwell on it
+      const idx = Math.min(TOTAL, Math.floor(p * TOTAL + 0.92));
+      setCleaned(idx);
+    });
+  }, [progress]);
+
+  const droneX = useTransform(progress, (p) => {
+    const f = Math.min(TOTAL - 1.001, p * TOTAL);
+    const i0 = Math.floor(f);
+    const i1 = Math.min(TOTAL - 1, i0 + 1);
+    const t = smooth(f - i0);
+    const a = windows[i0];
+    const b = windows[i1];
+    // Stand left of glass so the boom aims into the façade (+X)
+    return lerp(a.cx - 88, b.cx - 88, t);
+  });
+
+  const droneY = useTransform(progress, (p) => {
+    const f = Math.min(TOTAL - 1.001, p * TOTAL);
+    const i0 = Math.floor(f);
+    const i1 = Math.min(TOTAL - 1, i0 + 1);
+    const t = smooth(f - i0);
+    const a = windows[i0];
+    const b = windows[i1];
+    return lerp(a.cy - 28, b.cy - 28, t);
+  });
+
+  // Nose toward glass (+X); bank with travel direction along the façade
+  const droneRotate = useTransform(progress, (p) => {
+    const f = Math.min(TOTAL - 1.001, p * TOTAL);
+    const i0 = Math.floor(f);
+    const i1 = Math.min(TOTAL - 1, i0 + 1);
+    const a = windows[i0];
+    const b = windows[i1];
+    const dy = b.cy - a.cy;
+    const dx = b.cx - a.cx;
+    // Base attitude: slight nose-into-façade; pitch with vertical travel
+    const bank = Math.max(-18, Math.min(18, dy * 0.35 + dx * 0.08));
+    return 8 + bank;
+  });
+
+  const activeIndex = Math.min(TOTAL - 1, cleaned);
+  const target = windows[activeIndex] ?? windows[0];
+  const spraying = !done && !reduceMotion;
 
   return (
     <div
       className="relative h-full w-full overflow-hidden"
       role="img"
-      aria-label="Animatie van een reinigingsdrone die een gebouwgevel schoonmaakt"
+      aria-label="Animatie van een reinigingsdrone die raam per raam een gebouwgevel schoonmaakt"
     >
-      <FullScene uid={uid} />
-      <SyncedDroneOverlay />
-    </div>
-  );
-}
-
-function FullScene({
-  uid,
-  reduceMotion = false,
-}: {
-  uid: string;
-  reduceMotion?: boolean;
-}) {
-  return (
-    <svg
-      viewBox="0 0 960 720"
-      className="h-full w-full"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0.12" y2="1">
-          <stop offset="0%" stopColor="#050d18" />
-          <stop offset="50%" stopColor="#0c223c" />
-          <stop offset="100%" stopColor="#152536" />
-        </linearGradient>
-        <linearGradient id={`dirtyWall-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4a3c2e" />
-          <stop offset="100%" stopColor="#2a2218" />
-        </linearGradient>
-        <linearGradient id={`cleanWall-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f2f6fb" />
-          <stop offset="45%" stopColor="#c5d6ea" />
-          <stop offset="100%" stopColor="#96b0c9" />
-        </linearGradient>
-        <linearGradient id={`dirtyGlass-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3a4030" />
-          <stop offset="100%" stopColor="#1c2218" />
-        </linearGradient>
-        <linearGradient id={`cleanGlass-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#a6e6f8" />
-          <stop offset="100%" stopColor="#2a7fa3" />
-        </linearGradient>
-        <filter id={`glow-${uid}`} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <mask id={`cleanMask-${uid}`} maskUnits="userSpaceOnUse">
-          <rect
-            x="400"
-            y="70"
-            height="560"
-            fill="white"
-            width={reduceMotion ? 280 : 0}
-          >
-            {!reduceMotion && (
-              <animate
-                attributeName="width"
-                values="0;0;400;400;0"
-                keyTimes="0;0.16;0.58;0.78;1"
-                dur={DUR}
-                repeatCount="indefinite"
-                calcMode="spline"
-                keySplines="0 0 1 1; 0.4 0 0.2 1; 0 0 1 1; 0.4 0 0.55 1"
-              />
-            )}
-          </rect>
-        </mask>
-      </defs>
-
-      <rect width="960" height="720" fill={`url(#sky-${uid})`} />
-      <ellipse cx="200" cy="100" rx="220" ry="70" fill="#1a3a58" opacity="0.22" />
-      <ellipse cx="780" cy="80" rx="260" ry="55" fill="#1a3a58" opacity="0.16" />
-      <g opacity="0.36" fill="#081420">
-        <rect x="24" y="340" width="52" height="300" />
-        <rect x="88" y="280" width="48" height="360" />
-        <rect x="148" y="360" width="72" height="280" />
-        <rect x="232" y="300" width="40" height="340" />
-        <rect x="285" y="330" width="62" height="310" />
-      </g>
-      <path d="M0 635 L960 595 L960 720 L0 720 Z" fill="#080f18" />
-
-      <Building
-        uid={uid}
-        dirty
-        wall={`url(#dirtyWall-${uid})`}
-        glass={`url(#dirtyGlass-${uid})`}
-      />
-      <g mask={`url(#cleanMask-${uid})`}>
-        <Building
-          uid={`${uid}c`}
-          dirty={false}
-          wall={`url(#cleanWall-${uid})`}
-          glass={`url(#cleanGlass-${uid})`}
-        />
-      </g>
-
-      {/* Cyan wipe edge */}
-      <rect
-        y="70"
-        width="4"
-        height="560"
-        rx="2"
-        fill="#00c2e8"
-        filter={`url(#glow-${uid})`}
-        opacity={reduceMotion ? 0.85 : 0}
-        x={reduceMotion ? 680 : 400}
+      <svg
+        viewBox="0 0 960 720"
+        className="h-full w-full"
+        preserveAspectRatio="xMidYMid slice"
+        aria-hidden="true"
       >
-        {!reduceMotion && (
-          <>
-            <animate
-              attributeName="x"
-              values="400;400;800;800;400"
-              keyTimes="0;0.16;0.58;0.78;1"
-              dur={DUR}
-              repeatCount="indefinite"
-              calcMode="spline"
-              keySplines="0 0 1 1; 0.4 0 0.2 1; 0 0 1 1; 0.4 0 0.55 1"
-            />
-            <animate
-              attributeName="opacity"
-              values="0;0;1;0.25;0"
-              keyTimes="0;0.16;0.58;0.78;1"
-              dur={DUR}
-              repeatCount="indefinite"
-            />
-          </>
-        )}
-      </rect>
-
-      {reduceMotion && (
-        <g transform="translate(560 240)">
-          <ellipse cx="90" cy="36" rx="70" ry="44" fill="#00c2e8" opacity="0.2" />
-          <DroneBody spinning={false} />
-        </g>
-      )}
-
-      {/* Ambient motes */}
-      {!reduceMotion &&
-        Array.from({ length: 10 }).map((_, i) => (
-          <circle
-            key={i}
-            cx={100 + i * 80}
-            cy={60 + (i % 4) * 100}
-            r={1.2 + (i % 3) * 0.6}
-            fill="#7ec8e0"
-            opacity="0.35"
+        <defs>
+          <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0.2" y2="1">
+            <stop offset="0%" stopColor="#050d18" />
+            <stop offset="55%" stopColor="#0c223c" />
+            <stop offset="100%" stopColor="#152536" />
+          </linearGradient>
+          <linearGradient id={`wall-${uid}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#2a3344" />
+            <stop offset="100%" stopColor="#1a222e" />
+          </linearGradient>
+          <linearGradient id={`dirtyG-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3a4030" />
+            <stop offset="100%" stopColor="#1c2218" />
+          </linearGradient>
+          <linearGradient id={`cleanG-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#a6e6f8" />
+            <stop offset="100%" stopColor="#2a7fa3" />
+          </linearGradient>
+          <filter
+            id={`glow-${uid}`}
+            x="-40%"
+            y="-40%"
+            width="180%"
+            height="180%"
           >
-            <animate
-              attributeName="cy"
-              values={`${60 + (i % 4) * 100};${40 + (i % 4) * 100};${60 + (i % 4) * 100}`}
-              dur={`${3 + (i % 3)}s`}
-              repeatCount="indefinite"
-            />
-            <animate
-              attributeName="opacity"
-              values="0.15;0.5;0.15"
-              dur={`${3 + (i % 3)}s`}
-              repeatCount="indefinite"
-            />
-          </circle>
-        ))}
-    </svg>
-  );
-}
+            <feGaussianBlur stdDeviation="2.5" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
 
-function Building({
-  uid,
-  dirty,
-  wall,
-  glass,
-}: {
-  uid: string;
-  dirty: boolean;
-  wall: string;
-  glass: string;
-}) {
-  return (
-    <g>
-      <rect x="400" y="70" width="400" height="560" rx="6" fill={wall} />
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <rect
-          key={`${uid}-r-${i}`}
-          x={422 + i * 60}
-          y="84"
-          width="8"
-          height="532"
-          fill={dirty ? "#160f0a" : "#8fa3bc"}
-          opacity={dirty ? 0.55 : 0.42}
+        <rect width="960" height="720" fill={`url(#sky-${uid})`} />
+        <ellipse
+          cx="180"
+          cy="100"
+          rx="200"
+          ry="60"
+          fill="#1a3a58"
+          opacity="0.25"
         />
-      ))}
-      {Array.from({ length: 8 }).map((_, row) =>
-        Array.from({ length: 5 }).map((__, col) => {
-          const x = 435 + col * 68;
-          const y = 102 + row * 62;
+        <g opacity="0.35" fill="#081420">
+          <rect x="30" y="320" width="50" height="320" />
+          <rect x="90" y="260" width="44" height="380" />
+          <rect x="145" y="340" width="70" height="300" />
+          <rect x="230" y="280" width="40" height="360" />
+        </g>
+        <path d="M0 640 L960 600 L960 720 L0 720 Z" fill="#080f18" />
+
+        {/* Perspective building slab */}
+        <path
+          d={`M${BUILDING.originX - 24} ${BUILDING.originY - 30}
+              L${BUILDING.originX + COLS * BUILDING.colW + 40} ${BUILDING.originY - 10}
+              L${BUILDING.originX + COLS * BUILDING.colW + BUILDING.skewX + 20} ${BUILDING.originY + ROWS * BUILDING.rowH + 40}
+              L${BUILDING.originX - 10} ${BUILDING.originY + ROWS * BUILDING.rowH + 50} Z`}
+          fill={`url(#wall-${uid})`}
+        />
+        <path
+          d={`M${BUILDING.originX + COLS * BUILDING.colW + 40} ${BUILDING.originY - 10}
+              L${BUILDING.originX + COLS * BUILDING.colW + 70} ${BUILDING.originY + 20}
+              L${BUILDING.originX + COLS * BUILDING.colW + BUILDING.skewX + 50} ${BUILDING.originY + ROWS * BUILDING.rowH + 70}
+              L${BUILDING.originX + COLS * BUILDING.colW + BUILDING.skewX + 20} ${BUILDING.originY + ROWS * BUILDING.rowH + 40} Z`}
+          fill="#121820"
+          opacity="0.85"
+        />
+
+        {windows.map((w) => {
+          const isClean = w.id < cleaned;
+          const isActive = w.id === cleaned && !done && !reduceMotion;
           return (
-            <g key={`${uid}-${row}-${col}`}>
-              <rect x={x} y={y} width="46" height="38" rx="2" fill={glass} />
-              {!dirty && (
-                <path
-                  d={`M${x + 4} ${y + 4} L${x + 38} ${y + 20}`}
-                  stroke="#fff"
-                  strokeWidth="1.6"
-                  opacity="0.42"
+            <g key={w.id}>
+              <rect
+                x={w.x}
+                y={w.y}
+                width={BUILDING.winW}
+                height={BUILDING.winH}
+                rx="2"
+                fill={
+                  isClean
+                    ? `url(#cleanG-${uid})`
+                    : `url(#dirtyG-${uid})`
+                }
+                opacity={isActive ? 0.9 : 1}
+              />
+              {isClean && (
+                <>
+                  <path
+                    d={`M${w.x + 4} ${w.y + 4} L${w.x + BUILDING.winW - 6} ${w.y + BUILDING.winH - 10}`}
+                    stroke="#fff"
+                    strokeWidth="1.5"
+                    opacity="0.4"
+                  />
+                  {/* Permanent subtle shimmer — never dirties again */}
+                  <motion.rect
+                    x={w.x}
+                    y={w.y}
+                    width={BUILDING.winW}
+                    height={BUILDING.winH}
+                    rx="2"
+                    fill="#fff"
+                    initial={{ opacity: 0.06 }}
+                    animate={{ opacity: [0.04, 0.14, 0.04] }}
+                    transition={{
+                      duration: 3.4 + (w.id % 5) * 0.4,
+                      repeat: Infinity,
+                      delay: (w.id % 7) * 0.22,
+                      ease: "easeInOut",
+                    }}
+                  />
+                </>
+              )}
+              {!isClean && (
+                <rect
+                  x={w.x}
+                  y={w.y}
+                  width={BUILDING.winW}
+                  height={BUILDING.winH}
+                  rx="2"
+                  fill="#2a1c12"
+                  opacity="0.35"
+                />
+              )}
+              {isActive && (
+                <motion.rect
+                  x={w.x - 2}
+                  y={w.y - 2}
+                  width={BUILDING.winW + 4}
+                  height={BUILDING.winH + 4}
+                  rx="3"
+                  fill="none"
+                  stroke="#00c2e8"
+                  strokeWidth="2"
+                  filter={`url(#glow-${uid})`}
+                  animate={{ opacity: [0.35, 1, 0.35] }}
+                  transition={{ duration: 0.4, repeat: Infinity }}
                 />
               )}
             </g>
           );
-        }),
-      )}
-      {dirty ? (
-        <g opacity="0.7">
-          {[450, 530, 610, 690, 750].map((x, i) => (
-            <path
-              key={i}
-              d={`M${x} 85 Q${x + 14} 270 ${x - 12} 430 T${x + 10} 620`}
-              stroke="#1a100a"
-              strokeWidth="16"
-              fill="none"
-              opacity="0.42"
-            />
-          ))}
-          <rect x="400" y="70" width="400" height="560" fill="#2a1c12" opacity="0.3" />
-        </g>
-      ) : (
-        <rect x="400" y="70" width="70" height="560" fill="#fff" opacity="0.14" />
-      )}
-    </g>
-  );
-}
+        })}
+      </svg>
 
-function SyncedDroneOverlay() {
-  const t = useMotionValue(0);
-  useAnimationFrame((time) => {
-    t.set((time % LOOP_MS) / LOOP_MS);
-  });
-
-  // Keep drone on the wipe edge (building 400→800); fade out before reset teleport
-  const x = useTransform(t, [0, 0.16, 0.58, 0.78, 0.86, 1], [80, 320, 720, 700, 700, 80]);
-  const y = useTransform(t, [0, 0.16, 0.35, 0.58, 0.78, 1], [160, 200, 270, 220, 170, 160]);
-  const rotate = useTransform(t, [0, 0.16, 0.35, 0.58, 0.78, 1], [-14, -6, 16, -4, 10, -14]);
-  const spray = useTransform(t, [0, 0.14, 0.18, 0.55, 0.62, 0.7, 1], [0, 0, 1, 1, 0.5, 0, 0]);
-  const droneOpacity = useTransform(t, [0, 0.04, 0.78, 0.86, 0.92, 1], [0, 1, 1, 0, 0, 0]);
-
-  return (
-    <svg
-      viewBox="0 0 960 720"
-      className="pointer-events-none absolute inset-0 h-full w-full"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="sprayGradLive" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#e8fbff" stopOpacity="0" />
-          <stop offset="40%" stopColor="#7ae8ff" stopOpacity="0.95" />
-          <stop offset="100%" stopColor="#00c2e8" stopOpacity="0.2" />
-        </linearGradient>
-      </defs>
-      <motion.g style={{ x, y, opacity: droneOpacity }}>
-        <motion.g style={{ rotate, transformBox: "fill-box", transformOrigin: "center" }}>
-          <motion.g style={{ opacity: spray }}>
-            <ellipse cx="95" cy="38" rx="88" ry="58" fill="url(#sprayGradLive)" />
-            {Array.from({ length: 9 }).map((_, i) => (
-              <motion.line
-                key={i}
-                x1="56"
-                y1={14 + i * 5}
-                x2="132"
-                y2={4 + i * 8}
-                stroke="#e8fbff"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                animate={{ opacity: [0.2, 1, 0.2] }}
-                transition={{
-                  duration: 0.32,
-                  repeat: Infinity,
-                  delay: i * 0.04,
-                  ease: [0.4, 0, 0.2, 1],
-                }}
-              />
-            ))}
-            <motion.circle
-              cx="134"
-              cy="32"
-              r="12"
-              fill="#a8efff"
-              animate={{ opacity: [0.2, 0.65, 0.2], scale: [0.6, 1.3, 0.6] }}
-              transition={{ duration: 0.65, repeat: Infinity, ease: "easeInOut" }}
-            />
+      {!reduceMotion && (
+        <svg
+          viewBox="0 0 960 720"
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id={`liveSpray-${uid}`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#e8fbff" stopOpacity="0" />
+              <stop offset="40%" stopColor="#7ae8ff" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#00c2e8" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+          <motion.g style={{ x: droneX, y: droneY }}>
+            <motion.g
+              style={{
+                rotate: droneRotate,
+                transformBox: "fill-box",
+                transformOrigin: "40px 28px",
+              }}
+              animate={{ y: done ? [0, -4, 0] : [0, -2, 0] }}
+              transition={{
+                duration: done ? 3.2 : 1.1,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              {spraying && (
+                <motion.g
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0.55, 1, 0.55] }}
+                  transition={{ duration: 0.35, repeat: Infinity }}
+                >
+                  <ellipse
+                    cx="86"
+                    cy="30"
+                    rx="58"
+                    ry="34"
+                    fill={`url(#liveSpray-${uid})`}
+                  />
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <motion.line
+                      key={i}
+                      x1="52"
+                      y1={18 + i * 4.5}
+                      x2="108"
+                      y2={14 + i * 5.5}
+                      stroke="#e8fbff"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                      animate={{ opacity: [0.2, 1, 0.2] }}
+                      transition={{
+                        duration: 0.26,
+                        repeat: Infinity,
+                        delay: i * 0.035,
+                      }}
+                    />
+                  ))}
+                </motion.g>
+              )}
+              <PerspectiveDrone />
+            </motion.g>
           </motion.g>
-          <DroneBody spinning />
-        </motion.g>
-      </motion.g>
-    </svg>
+        </svg>
+      )}
+
+      {reduceMotion && (
+        <svg
+          viewBox="0 0 960 720"
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden="true"
+        >
+          <g transform={`translate(${target.cx - 88} ${target.cy - 28})`}>
+            <ellipse cx="86" cy="30" rx="40" ry="28" fill="#00c2e8" opacity="0.2" />
+            <PerspectiveDrone spinning={false} />
+          </g>
+        </svg>
+      )}
+    </div>
   );
 }
 
-function DroneBody({ spinning }: { spinning: boolean }) {
+/** Drone in 3/4 view, nose pointing right (into the façade / windows). */
+function PerspectiveDrone({ spinning = true }: { spinning?: boolean }) {
   return (
     <g>
-      {spinning ? (
-        <>
-          <motion.ellipse
-            cx="8"
-            cy="6"
-            rx="32"
-            ry="7"
-            fill="#00c2e8"
-            animate={{ opacity: [0.1, 0.32, 0.1], scaleX: [1, 1.18, 1] }}
-            transition={{ duration: 0.26, repeat: Infinity, ease: "easeInOut" }}
+      <g opacity="0.85">
+        <ellipse cx="8" cy="8" rx="16" ry="2.2" fill="#c8d4e0">
+          {spinning && (
+            <animate
+              attributeName="rx"
+              values="16;4;16"
+              dur="0.14s"
+              repeatCount="indefinite"
+            />
+          )}
+        </ellipse>
+        <ellipse cx="22" cy="48" rx="12" ry="2" fill="#c8d4e0">
+          {spinning && (
+            <animate
+              attributeName="rx"
+              values="12;3;12"
+              dur="0.14s"
+              begin="0.03s"
+              repeatCount="indefinite"
+            />
+          )}
+        </ellipse>
+        <circle cx="8" cy="8" r="2.5" fill="#0b1f3a" />
+        <circle cx="22" cy="48" r="2.2" fill="#0b1f3a" />
+      </g>
+
+      <path
+        d="M18 22 L8 8 M28 34 L22 48 M34 20 L58 10 M40 36 L62 48"
+        stroke="#0b1f3a"
+        strokeWidth="3.5"
+        strokeLinecap="round"
+      />
+
+      <ellipse cx="36" cy="28" rx="22" ry="12" fill="#071525" />
+      <ellipse cx="38" cy="27" rx="16" ry="8" fill="#143356" />
+      <rect x="28" y="23" width="22" height="6" rx="2" fill="#00c2e8" />
+
+      {/* Nose / spray boom into glass */}
+      <path d="M52 26 L78 30 L52 34 Z" fill="#0e2748" />
+      <circle cx="78" cy="30" r="3.5" fill="#00c2e8" />
+
+      <ellipse cx="60" cy="8" rx="20" ry="2.5" fill="#e8eef6">
+        {spinning && (
+          <animate
+            attributeName="rx"
+            values="20;5;20"
+            dur="0.12s"
+            repeatCount="indefinite"
           />
-          <motion.ellipse
-            cx="72"
-            cy="6"
-            rx="32"
-            ry="7"
-            fill="#00c2e8"
-            animate={{ opacity: [0.1, 0.32, 0.1], scaleX: [1.15, 0.92, 1.15] }}
-            transition={{ duration: 0.26, repeat: Infinity, ease: "easeInOut" }}
+        )}
+      </ellipse>
+      <ellipse cx="66" cy="48" rx="17" ry="2.3" fill="#e8eef6">
+        {spinning && (
+          <animate
+            attributeName="rx"
+            values="17;4;17"
+            dur="0.12s"
+            begin="0.02s"
+            repeatCount="indefinite"
           />
-        </>
-      ) : (
+        )}
+      </ellipse>
+      <circle cx="60" cy="8" r="3" fill="#0b1f3a" />
+      <circle cx="66" cy="48" r="2.8" fill="#0b1f3a" />
+
+      <path
+        d="M24 38 L18 52 M44 38 L50 52 M14 52 H28 M40 52 H56"
+        stroke="#6b778a"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+
+      {spinning && (
         <>
-          <ellipse cx="8" cy="6" rx="32" ry="7" fill="#00c2e8" opacity="0.16" />
-          <ellipse cx="72" cy="6" rx="32" ry="7" fill="#00c2e8" opacity="0.16" />
+          <ellipse cx="60" cy="8" rx="22" ry="5" fill="#00c2e8" opacity="0.12">
+            <animate
+              attributeName="opacity"
+              values="0.08;0.22;0.08"
+              dur="0.3s"
+              repeatCount="indefinite"
+            />
+          </ellipse>
+          <ellipse cx="66" cy="48" rx="18" ry="4" fill="#00c2e8" opacity="0.1">
+            <animate
+              attributeName="opacity"
+              values="0.06;0.2;0.06"
+              dur="0.28s"
+              repeatCount="indefinite"
+            />
+          </ellipse>
         </>
       )}
-
-      <path
-        d="M20 30 L0 8 M60 30 L80 8 M26 40 L6 56 M54 40 L74 56"
-        stroke="#0b1f3a"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M20 30 L0 8 M60 30 L80 8 M26 40 L6 56 M54 40 L74 56"
-        stroke="#1e4a72"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        opacity="0.75"
-      />
-
-      <rect x="18" y="20" width="44" height="26" rx="9" fill="#071525" />
-      <rect x="23" y="25" width="34" height="16" rx="4" fill="#143356" />
-      <rect x="28" y="28" width="24" height="6.5" rx="2" fill="#00c2e8" />
-      <rect x="33" y="42" width="14" height="9" rx="3" fill="#1c222c" />
-      <circle cx="40" cy="49" r="2.4" fill="#33d6f0" />
-
-      <rect x="10" y="27" width="11" height="15" rx="3" fill="#0e2748" />
-      <rect x="59" y="27" width="11" height="15" rx="3" fill="#0e2748" />
-
-      <rect x="50" y="35" width="32" height="5" rx="2.5" fill="#1c222c" />
-      <circle cx="84" cy="37.5" r="4.5" fill="#00c2e8" />
-
-      <path
-        d="M28 46 L21 60 M52 46 L59 60 M18 60 H38 M42 60 H62"
-        stroke="#6b778a"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-
-      {(
-        [
-          [0, 8, 21],
-          [80, 8, 21],
-          [6, 56, 16],
-          [74, 56, 16],
-        ] as const
-      ).map(([cx, cy, rx], i) => (
-        <g key={i}>
-          <circle cx={cx} cy={cy} r="3.4" fill="#0b1f3a" />
-          {spinning ? (
-            <motion.ellipse
-              cx={cx}
-              cy={cy}
-              rx={rx}
-              ry="2.5"
-              fill="#e8eef6"
-              animate={{
-                scaleX: i % 2 === 0 ? [1, 0.18, 1] : [0.18, 1, 0.18],
-                opacity: i % 2 === 0 ? [0.95, 0.28, 0.95] : [0.28, 0.95, 0.28],
-              }}
-              transition={{ duration: 0.13, repeat: Infinity, ease: "linear" }}
-            />
-          ) : (
-            <ellipse cx={cx} cy={cy} rx={rx} ry="2.5" fill="#e8eef6" opacity="0.7" />
-          )}
-        </g>
-      ))}
     </g>
   );
 }
