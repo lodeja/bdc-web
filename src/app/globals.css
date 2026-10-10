@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* BDC design tokens — deep navy, anthracite, electric cyan */
+:root {
+  --bdc-navy: #0b1f3a;
+  --bdc-navy-deep: #071525;
+  --bdc-navy-mid: #143356;
+  --bdc-anthracite: #1c222c;
+  --bdc-anthracite-soft: #2a3340;
+  --bdc-cyan: #00c2e8;
+  --bdc-cyan-bright: #33d6f0;
+  --bdc-cyan-dim: #009bb8;
+  --bdc-white: #ffffff;
+  --bdc-fog: #f4f7fb;
+  --bdc-mist: #e4ebf4;
+  --bdc-slate: #5a6578;
+  --bdc-ink: #0e1624;
+
+  --background: var(--bdc-fog);
+  --foreground: var(--bdc-ink);
+
+  --header-height: 4.25rem;
+  --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-bdc-navy: var(--bdc-navy);
+  --color-bdc-navy-deep: var(--bdc-navy-deep);
+  --color-bdc-navy-mid: var(--bdc-navy-mid);
+  --color-bdc-anthracite: var(--bdc-anthracite);
+  --color-bdc-anthracite-soft: var(--bdc-anthracite-soft);
+  --color-bdc-cyan: var(--bdc-cyan);
+  --color-bdc-cyan-bright: var(--bdc-cyan-bright);
+  --color-bdc-cyan-dim: var(--bdc-cyan-dim);
+  --color-bdc-white: var(--bdc-white);
+  --color-bdc-fog: var(--bdc-fog);
+  --color-bdc-mist: var(--bdc-mist);
+  --color-bdc-slate: var(--bdc-slate);
+  --color-bdc-ink: var(--bdc-ink);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), "Plus Jakarta Sans", sans-serif;
+  touch-action: manipulation;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--bdc-cyan) 35%, white);
+  color: var(--bdc-navy-deep);
+}
+
+:focus-visible {
+  outline: 2px solid var(--bdc-cyan);
+  outline-offset: 3px;
+}
+
+.bdc-skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  z-index: 100;
+  transform: translateY(-120%);
+  border-radius: 0.25rem;
+  background: var(--bdc-cyan);
+  color: var(--bdc-navy-deep);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: transform 0.35s var(--ease-premium);
+}
+
+.bdc-skip-link:focus {
+  transform: translateY(0.75rem);
+}
+
+.bdc-hero-atmosphere {
+  background:
+    radial-gradient(120% 80% at 78% 42%, rgba(0, 194, 232, 0.16) 0%, transparent 55%),
+    radial-gradient(90% 70% at 12% 88%, rgba(20, 51, 86, 0.55) 0%, transparent 50%),
+    linear-gradient(165deg, #071525 0%, #0b1f3a 42%, #143356 72%, #1c222c 100%);
+}
+
+.bdc-section-placeholder {
+  border-top: 1px solid color-mix(in oklab, var(--bdc-navy) 10%, transparent);
+}
+
+@media (pointer: fine) {
+  html {
+    overscroll-behavior: none;
+  }
+}
+
+@keyframes bdcFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bdc-fade-up {
+  animation: bdcFadeUp 0.45s var(--ease-premium) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bdc-fade-up {
+    animation: none;
+  }
+}

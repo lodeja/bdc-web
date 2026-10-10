@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="BDC">
+  <rect width="32" height="32" rx="7" fill="#0B1F3A"/>
+  <!-- Compact D-drone: letter mass + rotor discs -->
+  <path fill="#F4F7FB" fill-rule="evenodd" d="M7 8h7c6.2 0 10.5 3.8 10.5 8.5S20.2 25 14 25H7V8zm5.5 3.8v9.4H14c3.4 0 5.7-2 5.7-4.7s-2.3-4.7-5.7-4.7h-1.5z"/>
+  <circle cx="11" cy="8.2" r="3.2" fill="#F4F7FB"/>
+  <circle cx="23" cy="8.2" r="3.2" fill="#F4F7FB"/>
+  <circle cx="11" cy="8.2" r="1.9" fill="#00C2E8"/>
+  <circle cx="23" cy="8.2" r="1.9" fill="#00C2E8"/>
+  <circle cx="11" cy="8.2" r=".7" fill="#071525"/>
+  <circle cx="23" cy="8.2" r=".7" fill="#071525"/>
+  <rect x="8.4" y="13.5" width="3.4" height="5.2" rx="1" fill="#071525"/>
+  <rect x="9" y="15" width="2.2" height="1.8" rx=".5" fill="#00C2E8"/>
+</svg>
