@@ -124,20 +124,20 @@ const INTRO_DELAY_S = 1.0;
 let cleaningSessionComplete = false;
 
 /**
- * Bottom-cropped framing: waist / van mid-body sit on the viewBox floor
- * so only upper body + van top (with logo) read in-scene.
+ * Bottom-cropped framing at realistic scale vs tower floors (~82u).
+ * Operator ≈ half-height person; Sprinter top band ≈ long side profile.
  */
-const OPERATOR_STAND = { x: 548, y: VIEW_H - 4 };
-const VAN_PARK = { x: 372, y: VIEW_H - 2 };
+const OPERATOR_STAND = { x: 512, y: VIEW_H - 2 };
+const VAN_PARK = { x: 268, y: VIEW_H - 2 };
 /** Horizontal exit — same Y, off the right edge. */
-const VAN_EXIT_X = VIEW_W + 260;
+const VAN_EXIT_X = VIEW_W + 320;
 
-/** Head aim toward flying drone (degrees, SVG clockwise). */
+/** Hard-hat tip aim toward flying drone (degrees, SVG clockwise). */
 function lookAngleToward(targetX: number, targetY: number): number {
-  const pivotX = OPERATOR_STAND.x + 12;
-  const pivotY = OPERATOR_STAND.y - 70;
+  const pivotX = OPERATOR_STAND.x + 4;
+  const pivotY = OPERATOR_STAND.y - 42;
   const deg = (Math.atan2(targetY - pivotY, targetX - pivotX) * 180) / Math.PI;
-  return Math.max(-50, Math.min(10, deg));
+  return Math.max(-42, Math.min(8, deg));
 }
 
 export function DroneCleaningHeroAnimation() {
@@ -891,53 +891,42 @@ function FlatCloud({
 }
 
 /**
- * Upper-body-only operator (waist cropped by frame bottom).
- * ¾ toward facade; `lookId` head tracks the flying drone.
- * Local origin = waist / crop line (y=0 at bottom of figure).
+ * Upper-body crop only: hi-vis torso + white hard-hat silhouette (no face).
+ * Arms almost hidden; tiny controller at chest. `lookId` tilts the hat at the drone.
+ * Local origin = waist / crop line. Scale ≈ half a tower floor.
  */
 function FlatDroneOperator({ lookId }: { lookId: string }) {
-  const SKIN = "#D4A574";
   const VEST = "#D4E800";
-  const VEST_SIDE = "#9AAB00";
+  const VEST_DARK = "#B8C400";
   const STRIPE = "#ffffff";
-  const HELMET = "#F2F4F6";
-  const HELMET_ACCENT = "#00C2E8";
+  const HELMET = "#F4F6F8";
 
   return (
-    <g transform="scale(1.45) translate(0 -8)">
-      {/* Upper body only — waist on the crop line */}
-      <path d="M-22 8 L-20 -40 L12 -48 L20 6 Z" fill="#2A3340" />
-      <path d="M12 -48 L26 -40 L24 6 L20 6 Z" fill="#1A2030" />
+    <g transform="scale(0.72) translate(0 -2)">
+      {/* Shoulders / torso rising from crop — no legs, no big arms */}
+      <path d="M-16 6 L-14 -28 L14 -30 L16 6 Z" fill="#2A3340" />
+      <path d="M-17 2 L-12 -32 L12 -34 L15 2 Z" fill={VEST} />
+      <path d="M-12 -32 L12 -34 L10 -18 L-10 -16 Z" fill={VEST_DARK} opacity="0.55" />
+      <rect x="-12" y="-20" width="24" height="2.5" fill={STRIPE} opacity="0.9" />
+      <rect x="-11" y="-12" width="22" height="2" fill={STRIPE} opacity="0.7" />
 
-      {/* Hi-vis vest ¾ toward facade */}
-      <path d="M-24 -2 L-10 -50 L6 -44 L14 -52 L18 2 L-22 10 Z" fill={VEST} />
-      <path d="M14 -52 L28 -42 L26 4 L18 2 Z" fill={VEST_SIDE} />
-      <path d="M-20 -24 L16 -32 L17 -25 L-19 -17 Z" fill={STRIPE} opacity="0.95" />
-      <path d="M-19 -12 L16 -20 L17 -14 L-18 -6 Z" fill={STRIPE} opacity="0.7" />
+      {/* Subtle controller — no arm poses */}
+      <rect x="-5" y="-8" width="11" height="5" rx="1" fill="#12161C" opacity="0.85" />
+      <rect x="-3" y="-6.5" width="7" height="2" rx="0.4" fill="#00C2E8" opacity="0.7" />
 
-      <path d="M-24 -38 L-38 -20 L-32 -14 L-16 -32 Z" fill="#2A3340" />
-      <path d="M16 -40 L42 -64 L46 -56 L22 -30 Z" fill="#2F3640" />
-      <g transform="translate(38 -68) rotate(-42)">
-        <rect x="0" y="0" width="15" height="9" rx="1.5" fill="#12161C" />
-        <rect x="2" y="2" width="10" height="3.5" rx="0.5" fill="#00C2E8" />
-      </g>
-
-      <g transform="translate(6 -54)">
+      {/* Hard hat only — silhouette, tracks drone via rotate */}
+      <g transform="translate(0 -36)">
         <g id={lookId}>
-          <path d="M-2 0 L7 -3 L9 8 L0 10 Z" fill={SKIN} />
-          <ellipse cx="8" cy="-8" rx="10" ry="9.5" fill={SKIN} />
-          <ellipse cx="-1" cy="-6" rx="2.4" ry="3.2" fill="#C49464" />
+          {/* Neck stub hidden under hat brim */}
+          <ellipse cx="0" cy="4" rx="5" ry="3" fill="#2A3340" />
+          {/* Dome */}
           <path
-            d="M-5 -8 Q0 -22 11 -22 Q24 -19 22 -2 L17 4 L-3 4 Z"
+            d="M-11 2 Q-11 -12 0 -14 Q11 -12 11 2 L8 5 L-8 5 Z"
             fill={HELMET}
           />
-          <path d="M0 -6 L20 -3 L19 1 L-1 0 Z" fill={HELMET_ACCENT} />
-          <path
-            d="M5 -10 L20 -12 L21 -5 L6 -3 Z"
-            fill="#0B1F3A"
-            opacity="0.7"
-          />
-          <ellipse cx="13" cy="-16" rx="4" ry="2" fill="#ffffff" opacity="0.4" />
+          {/* Brim */}
+          <ellipse cx="0" cy="4" rx="13" ry="3.2" fill={HELMET} />
+          <ellipse cx="0" cy="3.2" rx="10" ry="1.6" fill="#E8EAED" opacity="0.5" />
         </g>
       </g>
     </g>
@@ -945,47 +934,54 @@ function FlatDroneOperator({ lookId }: { lookId: string }) {
 }
 
 /**
- * Matte black van — top half only (cropped at mid-body by frame).
- * Official silver JDC wordmark on the side panel; ¾ nose toward facade.
+ * Matte black Mercedes Sprinter side profile (high-roof), facing right.
+ * Bottom-cropped mid-body; logo on cargo flank at native aspect.
  */
 function FlatWorkVan() {
-  const MATTE = "#0C0C0C";
-  const MATTE_SIDE = "#050505";
-  const MATTE_TOP = "#1A1A1A";
-  const GLASS = "#3A4550";
+  const MATTE = "#0A0A0A";
+  const MATTE_HI = "#161616";
+  const GLASS = "#5A7A90";
+  const SEAM = "#1C1C1C";
   const logoHref = withBasePath("/brand/jdc-van-logo.png");
 
   return (
-    // Lifted so logo panel reads above the frame crop; lower body stays cut off
-    <g transform="scale(1.12) translate(0 -96)">
-      {/* Cargo side — matte black, ¾, nose right toward facade */}
-      <path d="M0 8 L130 -6 L138 100 L8 108 Z" fill={MATTE} />
-      <path d="M130 -6 L172 12 L172 108 L138 100 Z" fill={MATTE_SIDE} />
-      <path d="M2 8 L132 -6 L170 12 L130 2 Z" fill={MATTE_TOP} opacity="0.9" />
-
-      {/* Cab top / windshield */}
-      <path d="M130 4 L168 -8 L186 28 L186 100 L138 100 Z" fill={MATTE} />
-      <path d="M168 -8 L194 10 L194 102 L186 100 L186 28 Z" fill={MATTE_SIDE} />
-      <path d="M138 8 L166 -2 L176 30 L142 36 Z" fill={GLASS} opacity="0.85" />
-      <path d="M166 -2 L186 12 L176 30 Z" fill="#2A3340" opacity="0.7" />
-
-      {/* Panel seam — no cyan stripe */}
+    <g transform="scale(1.08) translate(0 -64)">
+      {/* High-roof cargo (Sprinter proportions) */}
       <path
-        d="M10 48 L132 36"
-        stroke="#222222"
-        strokeWidth="1.5"
-        opacity="0.7"
+        d="M2 10 L2 2 Q2 0 8 0 L132 0 L132 74 L2 74 Z"
+        fill={MATTE}
       />
+      <path d="M8 1.5 L130 1.5" stroke={MATTE_HI} strokeWidth="2.5" />
 
-      {/* Official silver JDC logo on matte black */}
+      {/* Cab with steep windshield rake + short hood */}
+      <path
+        d="M132 0 L146 0 Q155 1 162 10 L196 40 Q200 45 200 52 L200 74 L132 74 Z"
+        fill={MATTE}
+      />
+      <path
+        d="M146 4 L182 34 L194 44 L194 56 L152 56 L146 22 Z"
+        fill={GLASS}
+        opacity="0.95"
+      />
+      <rect x="134" y="12" width="18" height="32" rx="2" fill={GLASS} opacity="0.9" />
+      {/* Wing mirror */}
+      <path d="M130 18 L124 14 L124 28 L130 30 Z" fill="#2A2A2A" />
+      {/* Front lamp */}
+      <ellipse cx="198" cy="50" rx="4" ry="5" fill="#4A4A4A" />
+
+      {/* Sliding door + belt */}
+      <path d="M82 4 L82 72" stroke={SEAM} strokeWidth="2.5" />
+      <path d="M10 50 L132 50" stroke={SEAM} strokeWidth="1.25" opacity="0.9" />
+
+      {/* Logo on cargo panel — native aspect */}
       <image
         href={logoHref}
-        x={22}
-        y={8}
-        width={100}
-        height={64}
+        x={28}
+        y={5}
+        width={68}
+        height={44}
         preserveAspectRatio="xMidYMid meet"
-        opacity="0.98"
+        opacity="0.97"
       />
     </g>
   );
