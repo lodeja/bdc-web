@@ -2,6 +2,7 @@
 
 import gsap from "gsap";
 import { useEffect, useId, useMemo, useRef } from "react";
+import { withBasePath } from "@/lib/paths";
 
 /**
  * Flat-vector tower cleaning scene (SVG + GSAP).
@@ -123,13 +124,21 @@ const INTRO_DELAY_S = 1.0;
 let cleaningSessionComplete = false;
 
 /**
- * Ground placements (SVG user units) — kept high enough that with
- * xMaxYMax + 100dvh hero crop, crew stays in the visible band left of the tower.
+ * Bottom-cropped framing: waist / van mid-body sit on the viewBox floor
+ * so only upper body + van top (with logo) read in-scene.
  */
-const OPERATOR_STAND = { x: 500, y: 560 };
-const VAN_PARK = { x: 310, y: 568 };
-/** Van art faces right — exit off the right edge after boarding. */
-const VAN_EXIT_X = VIEW_W + 220;
+const OPERATOR_STAND = { x: 548, y: VIEW_H - 4 };
+const VAN_PARK = { x: 372, y: VIEW_H - 2 };
+/** Horizontal exit — same Y, off the right edge. */
+const VAN_EXIT_X = VIEW_W + 260;
+
+/** Head aim toward flying drone (degrees, SVG clockwise). */
+function lookAngleToward(targetX: number, targetY: number): number {
+  const pivotX = OPERATOR_STAND.x + 12;
+  const pivotY = OPERATOR_STAND.y - 70;
+  const deg = (Math.atan2(targetY - pivotY, targetX - pivotX) * 180) / Math.PI;
+  return Math.max(-50, Math.min(10, deg));
+}
 
 export function DroneCleaningHeroAnimation() {
   const uid = useId().replace(/:/g, "");
@@ -152,11 +161,12 @@ export function DroneCleaningHeroAnimation() {
     const drone = svg.querySelector<SVGGElement>(`#drone-${uid}`);
     const beams = svg.querySelector<SVGGElement>(`#beams-${uid}`);
     const operator = svg.querySelector<SVGGElement>(`#operator-${uid}`);
+    const look = svg.querySelector<SVGGElement>(`#operator-look-${uid}`);
     const van = svg.querySelector<SVGGElement>(`#van-${uid}`);
     const cloudFar = svg.querySelector<SVGGElement>(`#cloud-far-${uid}`);
     const cloudMid = svg.querySelector<SVGGElement>(`#cloud-mid-${uid}`);
 
-    if (!drone || !beams || !operator || !van) return;
+    if (!drone || !beams || !operator || !van || !look) return;
 
     cloudTlRef.current?.kill();
     const cloudTl = gsap.timeline({ repeat: -1 });
@@ -309,8 +319,21 @@ export function DroneCleaningHeroAnimation() {
       y: OPERATOR_STAND.y,
       opacity: 1,
       rotate: 0,
+      transformOrigin: "50% 100%",
     });
-    gsap.set(van, { x: VAN_PARK.x, y: VAN_PARK.y, opacity: 1 });
+    // Look group is authored with neck at local (0,0) — rotate around that pivot
+    gsap.set(look, {
+      rotate: lookAngleToward(TOWER.x + TOWER.w * 0.35, TOWER.y + 80),
+      svgOrigin: undefined,
+      transformOrigin: "0px 0px",
+    });
+    gsap.set(van, {
+      x: VAN_PARK.x,
+      y: VAN_PARK.y,
+      opacity: 1,
+      scale: 1,
+      transformOrigin: "50% 100%",
+    });
 
     mainTlRef.current?.kill();
     const tl = gsap.timeline({
@@ -322,27 +345,50 @@ export function DroneCleaningHeroAnimation() {
     mainTlRef.current = tl;
 
     // Beat 1 — site ready: operator + van hold ~1s before launch
-    tl.to(operator, { y: "-=2", duration: 0.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
+    tl.to(
+      operator,
+      { y: "-=2", duration: 0.5, ease: "sine.inOut", yoyo: true, repeat: 1 },
+      0,
+    );
     tl.to({}, { duration: INTRO_DELAY_S });
 
-    // Beat 2 — drone launch + approach
+    // Beat 2 — drone launch + approach (operator tracks the drone)
     tl.to(drone, { opacity: 1, duration: 0.4, ease: "power1.out" });
+    tl.to(
+      look,
+      {
+        rotate: lookAngleToward(droneStart.x, droneStart.y),
+        duration: 0.35,
+        ease: "sine.out",
+      },
+      "<",
+    );
     tl.to(drone, {
       x: hover(route[0]).x,
       y: hover(route[0]).y,
       duration: 1.45,
       ease: "power3.inOut",
     });
+    tl.to(
+      look,
+      {
+        rotate: lookAngleToward(hover(route[0]).x, hover(route[0]).y),
+        duration: 1.2,
+        ease: "sine.inOut",
+      },
+      "<",
+    );
     tl.to(drone, { y: "+=2", duration: 0.35, ease: "sine.inOut" });
     tl.to(drone, { y: "-=2", duration: 0.35, ease: "sine.inOut" });
 
-    // Beat 3 — window-by-window clean (operator watches)
+    // Beat 3 — window-by-window clean; head/body stay aimed at the flying drone
     route.forEach((w, i) => {
       const pos = hover(w);
       const mask = dirtyMasks[i];
       const travel = i === 0 ? 0.14 : 0.36 + seeded(w.id, 1) * 0.1;
       const cleanDur = 0.5 + seeded(w.id, 2) * 0.1;
       const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.2;
+      const aim = lookAngleToward(pos.x, pos.y);
 
       if (i > 0) {
         const prev = route[i - 1];
@@ -362,16 +408,15 @@ export function DroneCleaningHeroAnimation() {
           ">+0.03",
         );
         tl.to(drone, { rotate: 0, duration: 0.22, ease: "sine.out" }, ">-0.14");
-      }
-
-      // Occasional operator glance / controller nudge while cleaning
-      if (i === 4 || i === 12) {
         tl.to(
-          operator,
-          { rotate: i === 4 ? -3 : 2, duration: 0.35, ease: "sine.inOut" },
+          look,
+          { rotate: aim, duration: travel * 0.9, ease: "sine.inOut" },
           "<",
         );
-        tl.to(operator, { rotate: 0, duration: 0.4, ease: "sine.out" }, ">-0.05");
+        // Keep torso upright — only the head tracks the drone
+        tl.to(operator, { rotate: 0, duration: travel, ease: "sine.out" }, "<");
+      } else {
+        tl.to(look, { rotate: aim, duration: 0.35, ease: "sine.out" }, "<");
       }
 
       tl.to(beams, { opacity: 1, duration: 0.14, ease: "power1.out" }, ">-0.04");
@@ -404,7 +449,7 @@ export function DroneCleaningHeroAnimation() {
       }
     });
 
-    // Beat 4 — drone packs up / exits sky
+    // Beat 4 — drone packs up / exits sky (operator follows, then drops aim)
     tl.to(beams, { opacity: 0, duration: 0.25, ease: "power1.in" });
     tl.to(drone, {
       x: TOWER.x + TOWER.w * 0.2,
@@ -413,6 +458,15 @@ export function DroneCleaningHeroAnimation() {
       duration: 0.85,
       ease: "power2.inOut",
     });
+    tl.to(
+      look,
+      {
+        rotate: lookAngleToward(TOWER.x + TOWER.w * 0.2, TOWER.y - 40),
+        duration: 0.7,
+        ease: "sine.inOut",
+      },
+      "<",
+    );
     tl.to(drone, {
       x: droneExit.x,
       y: droneExit.y,
@@ -420,32 +474,33 @@ export function DroneCleaningHeroAnimation() {
       duration: 1.4,
       ease: "power3.in",
     });
-    tl.to(drone, { opacity: 0, duration: 0.2 }, ">-0.2");
-
-    // Beat 5 — operator walks to van, boards, drives off (right)
-    tl.to(operator, {
-      x: VAN_PARK.x + 100,
-      duration: 0.9,
-      ease: "power1.inOut",
-    });
     tl.to(
-      operator,
+      look,
       {
-        y: OPERATOR_STAND.y - 3,
-        duration: 0.18,
-        yoyo: true,
-        repeat: 3,
-        ease: "sine.inOut",
+        rotate: lookAngleToward(droneExit.x, droneExit.y),
+        duration: 0.6,
+        ease: "sine.in",
       },
       "<",
     );
-    tl.to(operator, { opacity: 0, duration: 0.25, ease: "power1.in" });
+    tl.to(drone, { opacity: 0, duration: 0.2 }, ">-0.2");
+    tl.to(operator, { rotate: 0, duration: 0.3, ease: "sine.out" }, "<");
+    tl.to(look, { rotate: -8, duration: 0.35, ease: "sine.out" }, "<");
+
+    // Beat 5 — operator slides to van (upper body), boards; van drives horizontally
+    tl.to(operator, {
+      x: VAN_PARK.x + 110,
+      duration: 0.85,
+      ease: "power1.inOut",
+    });
+    tl.to(operator, { opacity: 0, duration: 0.28, ease: "power1.in" }, ">-0.1");
+    // Smooth horizontal drive — locked Y, soft accel, fade at edge
     tl.to(van, {
       x: VAN_EXIT_X,
-      duration: 1.55,
-      ease: "power2.in",
+      duration: 1.85,
+      ease: "power1.inOut",
     });
-    tl.to(van, { opacity: 0, duration: 0.2 }, ">-0.25");
+    tl.to(van, { opacity: 0, duration: 0.35, ease: "power1.in" }, ">-0.4");
 
     return () => {
       tl.kill();
@@ -539,14 +594,24 @@ export function DroneCleaningHeroAnimation() {
           ))}
         </g>
 
-        {/* Work van (parked, later exits left) — behind operator */}
+        {/* Soft ground fade — crew/van are bottom-cropped against this edge */}
+        <rect
+          x={TOWER.x - 280}
+          y={VIEW_H - 28}
+          width={TOWER.w + TOWER.side + 320}
+          height={28}
+          fill="#6E7682"
+          opacity="0.25"
+        />
+
+        {/* Matte black van — top half only (logo panel), further back */}
         <g id={`van-${uid}`}>
           <FlatWorkVan />
         </g>
 
-        {/* Drone operator — helmet + hi-vis, watches facade */}
+        {/* Operator — upper body only at frame bottom, looks at drone */}
         <g id={`operator-${uid}`}>
-          <FlatDroneOperator />
+          <FlatDroneOperator lookId={`operator-look-${uid}`} />
         </g>
 
         {/* Gray icon drone — ¾ side view, nose toward facade */}
@@ -826,99 +891,102 @@ function FlatCloud({
 }
 
 /**
- * Flat-vector drone operator: white helmet + neon hi-vis vest,
- * holding a small remote. Drawn at local origin (feet ≈ y=90).
+ * Upper-body-only operator (waist cropped by frame bottom).
+ * ¾ toward facade; `lookId` head tracks the flying drone.
+ * Local origin = waist / crop line (y=0 at bottom of figure).
  */
-function FlatDroneOperator() {
-  const NAVY = "#1E2228";
+function FlatDroneOperator({ lookId }: { lookId: string }) {
   const SKIN = "#D4A574";
   const VEST = "#D4E800";
-  const VEST_DARK = "#B8C900";
+  const VEST_SIDE = "#9AAB00";
   const STRIPE = "#ffffff";
   const HELMET = "#F2F4F6";
   const HELMET_ACCENT = "#00C2E8";
 
-  // Slightly larger so the figure reads at hero scale
   return (
-    <g transform="scale(1.35)">
-      {/* Boots */}
-      <rect x="-11" y="82" width="9" height="8" rx="1.5" fill={NAVY} />
-      <rect x="2" y="82" width="9" height="8" rx="1.5" fill={NAVY} />
-      {/* Legs */}
-      <rect x="-9" y="52" width="8" height="32" rx="2" fill="#2A3340" />
-      <rect x="1" y="52" width="8" height="32" rx="2" fill="#2A3340" />
-      {/* Torso under vest */}
-      <rect x="-12" y="28" width="24" height="28" rx="3" fill="#343C48" />
-      {/* Hi-vis vest */}
-      <path
-        d="M-13 28 L-11 22 L-4 26 L0 22 L4 26 L11 22 L13 28 L12 54 L-12 54 Z"
-        fill={VEST}
-      />
-      <path d="M-13 28 L-4 34 L0 30 L4 34 L13 28 L12 38 L-12 38 Z" fill={VEST_DARK} />
-      {/* Reflective strips */}
-      <rect x="-11" y="40" width="22" height="3" fill={STRIPE} opacity="0.9" />
-      <rect x="-11" y="47" width="22" height="2.5" fill={STRIPE} opacity="0.75" />
-      {/* Arms + remote */}
-      <rect x="-20" y="30" width="8" height="18" rx="2" fill="#343C48" />
-      <rect x="12" y="30" width="8" height="14" rx="2" fill="#343C48" />
-      <rect x="14" y="42" width="12" height="8" rx="1.5" fill="#1E2228" />
-      <rect x="16" y="44" width="8" height="3" rx="0.5" fill="#00C2E8" />
-      {/* Neck + head */}
-      <rect x="-3" y="18" width="6" height="8" rx="1" fill={SKIN} />
-      <circle cx="0" cy="12" r="9" fill={SKIN} />
-      {/* Helmet */}
-      <path
-        d="M-11 12 Q-11 2 0 1 Q11 2 11 12 L9 16 L-9 16 Z"
-        fill={HELMET}
-      />
-      <rect x="-10" y="12" width="20" height="3" fill={HELMET_ACCENT} />
-      <ellipse cx="0" cy="6" rx="5" ry="2.5" fill="#ffffff" opacity="0.35" />
+    <g transform="scale(1.45) translate(0 -8)">
+      {/* Upper body only — waist on the crop line */}
+      <path d="M-22 8 L-20 -40 L12 -48 L20 6 Z" fill="#2A3340" />
+      <path d="M12 -48 L26 -40 L24 6 L20 6 Z" fill="#1A2030" />
+
+      {/* Hi-vis vest ¾ toward facade */}
+      <path d="M-24 -2 L-10 -50 L6 -44 L14 -52 L18 2 L-22 10 Z" fill={VEST} />
+      <path d="M14 -52 L28 -42 L26 4 L18 2 Z" fill={VEST_SIDE} />
+      <path d="M-20 -24 L16 -32 L17 -25 L-19 -17 Z" fill={STRIPE} opacity="0.95" />
+      <path d="M-19 -12 L16 -20 L17 -14 L-18 -6 Z" fill={STRIPE} opacity="0.7" />
+
+      <path d="M-24 -38 L-38 -20 L-32 -14 L-16 -32 Z" fill="#2A3340" />
+      <path d="M16 -40 L42 -64 L46 -56 L22 -30 Z" fill="#2F3640" />
+      <g transform="translate(38 -68) rotate(-42)">
+        <rect x="0" y="0" width="15" height="9" rx="1.5" fill="#12161C" />
+        <rect x="2" y="2" width="10" height="3.5" rx="0.5" fill="#00C2E8" />
+      </g>
+
+      <g transform="translate(6 -54)">
+        <g id={lookId}>
+          <path d="M-2 0 L7 -3 L9 8 L0 10 Z" fill={SKIN} />
+          <ellipse cx="8" cy="-8" rx="10" ry="9.5" fill={SKIN} />
+          <ellipse cx="-1" cy="-6" rx="2.4" ry="3.2" fill="#C49464" />
+          <path
+            d="M-5 -8 Q0 -22 11 -22 Q24 -19 22 -2 L17 4 L-3 4 Z"
+            fill={HELMET}
+          />
+          <path d="M0 -6 L20 -3 L19 1 L-1 0 Z" fill={HELMET_ACCENT} />
+          <path
+            d="M5 -10 L20 -12 L21 -5 L6 -3 Z"
+            fill="#0B1F3A"
+            opacity="0.7"
+          />
+          <ellipse cx="13" cy="-16" rx="4" ry="2" fill="#ffffff" opacity="0.4" />
+        </g>
+      </g>
     </g>
   );
 }
 
 /**
- * Flat side-view work van (nose left). Local origin ≈ rear bumper / wheel line.
+ * Matte black van — top half only (cropped at mid-body by frame).
+ * Official silver JDC wordmark on the side panel; ¾ nose toward facade.
  */
 function FlatWorkVan() {
-  const BODY = "#1C222C";
-  const CAB = "#143356";
-  const ACCENT = "#00C2E8";
-  const GLASS = "#7EB8E0";
-  const WHEEL = "#1E2228";
-  const RIM = "#5A6578";
+  const MATTE = "#0C0C0C";
+  const MATTE_SIDE = "#050505";
+  const MATTE_TOP = "#1A1A1A";
+  const GLASS = "#3A4550";
+  const logoHref = withBasePath("/brand/jdc-van-logo.png");
 
   return (
-    <g transform="scale(1.15)">
-      {/* Shadow */}
-      <ellipse cx="70" cy="78" rx="78" ry="6" fill="#0E1624" opacity="0.18" />
-      {/* Cargo box */}
-      <rect x="8" y="18" width="118" height="52" rx="4" fill={BODY} />
-      {/* Cab */}
-      <path d="M126 34 L158 34 L168 52 L168 70 L126 70 Z" fill={CAB} />
-      {/* Windshield */}
-      <path d="M132 38 L154 38 L160 50 L132 50 Z" fill={GLASS} />
-      {/* Cyan stripe + JDC mark block */}
-      <rect x="8" y="38" width="118" height="6" fill={ACCENT} />
-      <rect x="28" y="28" width="36" height="14" rx="2" fill="#0B1F3A" />
-      <text
-        x="46"
-        y="38"
-        textAnchor="middle"
-        fill={ACCENT}
-        fontSize="9"
-        fontFamily="system-ui, sans-serif"
-        fontWeight="700"
-      >
-        JDC
-      </text>
-      {/* Wheels */}
-      <circle cx="36" cy="72" r="12" fill={WHEEL} />
-      <circle cx="36" cy="72" r="5" fill={RIM} />
-      <circle cx="148" cy="72" r="12" fill={WHEEL} />
-      <circle cx="148" cy="72" r="5" fill={RIM} />
-      {/* Light */}
-      <rect x="164" y="48" width="6" height="8" rx="1" fill="#F2D06B" />
+    // Lifted so logo panel reads above the frame crop; lower body stays cut off
+    <g transform="scale(1.12) translate(0 -96)">
+      {/* Cargo side — matte black, ¾, nose right toward facade */}
+      <path d="M0 8 L130 -6 L138 100 L8 108 Z" fill={MATTE} />
+      <path d="M130 -6 L172 12 L172 108 L138 100 Z" fill={MATTE_SIDE} />
+      <path d="M2 8 L132 -6 L170 12 L130 2 Z" fill={MATTE_TOP} opacity="0.9" />
+
+      {/* Cab top / windshield */}
+      <path d="M130 4 L168 -8 L186 28 L186 100 L138 100 Z" fill={MATTE} />
+      <path d="M168 -8 L194 10 L194 102 L186 100 L186 28 Z" fill={MATTE_SIDE} />
+      <path d="M138 8 L166 -2 L176 30 L142 36 Z" fill={GLASS} opacity="0.85" />
+      <path d="M166 -2 L186 12 L176 30 Z" fill="#2A3340" opacity="0.7" />
+
+      {/* Panel seam — no cyan stripe */}
+      <path
+        d="M10 48 L132 36"
+        stroke="#222222"
+        strokeWidth="1.5"
+        opacity="0.7"
+      />
+
+      {/* Official silver JDC logo on matte black */}
+      <image
+        href={logoHref}
+        x={22}
+        y={8}
+        width={100}
+        height={64}
+        preserveAspectRatio="xMidYMid meet"
+        opacity="0.98"
+      />
     </g>
   );
 }
