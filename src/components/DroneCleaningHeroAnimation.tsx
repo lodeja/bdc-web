@@ -411,20 +411,20 @@ export function DroneCleaningHeroAnimation() {
         {/* Flat sun disc */}
         <circle cx="175" cy="78" r="34" fill="#F2D06B" />
 
-        {/* Fewer flat-bottom cumulus (ref): wide gaps, lower + varied heights */}
-        <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.46">
-          <FlatCloud x={30} y={155} scale={0.9} variant="wide" />
-          <FlatCloud x={620} y={125} scale={0.65} variant="small" />
-          <FlatCloud x={30 + 1200} y={155} scale={0.9} variant="wide" />
-          <FlatCloud x={620 + 1200} y={125} scale={0.65} variant="small" />
+        {/* Flat-bottom cumulus matching user ref sheet — fewer, wider spaced */}
+        <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.48">
+          <FlatCloud x={40} y={160} scale={0.95} variant="c7" />
+          <FlatCloud x={640} y={128} scale={0.7} variant="c2" />
+          <FlatCloud x={40 + 1200} y={160} scale={0.95} variant="c7" />
+          <FlatCloud x={640 + 1200} y={128} scale={0.7} variant="c2" />
         </g>
-        <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.55">
-          <FlatCloud x={60} y={235} scale={0.8} variant="peak" />
-          <FlatCloud x={520} y={205} scale={0.95} variant="asymmetric" />
-          <FlatCloud x={900} y={255} scale={0.62} variant="puff" />
-          <FlatCloud x={60 + 1280} y={235} scale={0.8} variant="peak" />
-          <FlatCloud x={520 + 1280} y={205} scale={0.95} variant="asymmetric" />
-          <FlatCloud x={900 + 1280} y={255} scale={0.62} variant="puff" />
+        <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.56">
+          <FlatCloud x={50} y={242} scale={0.85} variant="c5" />
+          <FlatCloud x={480} y={210} scale={0.9} variant="c4" />
+          <FlatCloud x={880} y={258} scale={0.72} variant="c9" />
+          <FlatCloud x={50 + 1280} y={242} scale={0.85} variant="c5" />
+          <FlatCloud x={480 + 1280} y={210} scale={0.9} variant="c4" />
+          <FlatCloud x={880 + 1280} y={258} scale={0.72} variant="c9" />
         </g>
 
         {/* Distant flat skyline silhouettes */}
@@ -621,80 +621,118 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
   );
 }
 
-type CloudVariant = "small" | "puff" | "peak" | "wide" | "asymmetric";
+/**
+ * Cloud shapes from the user reference sheet (flat-bottom cumulus).
+ * Each bump is a circle seated on the baseline (cy = baseline - r)
+ * so the silhouette has a perfectly flat bottom and sharp base corners.
+ */
+const CLOUD_SHAPES: Record<string, { x: number; r: number }[]> = {
+  /** Tiny twin hump */
+  c1: [
+    { x: 16, r: 14 },
+    { x: 34, r: 16 },
+  ],
+  /** Compact triple */
+  c2: [
+    { x: 16, r: 14 },
+    { x: 36, r: 18 },
+    { x: 58, r: 14 },
+  ],
+  /** Small with taller center-right */
+  c3: [
+    { x: 18, r: 15 },
+    { x: 40, r: 20 },
+    { x: 64, r: 17 },
+    { x: 84, r: 12 },
+  ],
+  /** Medium low multi-hump */
+  c4: [
+    { x: 16, r: 14 },
+    { x: 38, r: 18 },
+    { x: 62, r: 22 },
+    { x: 88, r: 18 },
+    { x: 112, r: 14 },
+  ],
+  /** Tall central peak */
+  c5: [
+    { x: 18, r: 15 },
+    { x: 42, r: 22 },
+    { x: 72, r: 30 },
+    { x: 102, r: 22 },
+    { x: 126, r: 14 },
+  ],
+  /** Asymmetric left-heavy */
+  c6: [
+    { x: 22, r: 20 },
+    { x: 50, r: 26 },
+    { x: 80, r: 18 },
+    { x: 104, r: 14 },
+    { x: 124, r: 11 },
+  ],
+  /** Wide sprawling */
+  c7: [
+    { x: 18, r: 14 },
+    { x: 42, r: 20 },
+    { x: 72, r: 28 },
+    { x: 106, r: 24 },
+    { x: 138, r: 18 },
+    { x: 164, r: 14 },
+    { x: 184, r: 10 },
+  ],
+  /** Mid with twin peaks */
+  c8: [
+    { x: 18, r: 14 },
+    { x: 42, r: 24 },
+    { x: 70, r: 18 },
+    { x: 96, r: 26 },
+    { x: 124, r: 16 },
+  ],
+  /** Short puffy four */
+  c9: [
+    { x: 16, r: 13 },
+    { x: 36, r: 18 },
+    { x: 60, r: 20 },
+    { x: 84, r: 14 },
+  ],
+};
+
+type CloudVariant = keyof typeof CLOUD_SHAPES;
 
 /**
- * Flat-bottom cumulus clouds from the reference sheet:
- * perfectly flat base + overlapping circular bumps on top.
+ * Flat-bottom cumulus from the attached reference sheet.
  * Single white fill; opacity set by parent.
  */
 function FlatCloud({
   x,
   y,
   scale = 1,
-  variant = "puff",
+  variant = "c4",
 }: {
   x: number;
   y: number;
   scale?: number;
   variant?: CloudVariant;
 }) {
+  const bumps = CLOUD_SHAPES[variant] ?? CLOUD_SHAPES.c4;
+  const maxR = Math.max(...bumps.map((b) => b.r));
+  const left = Math.min(...bumps.map((b) => b.x - b.r));
+  const right = Math.max(...bumps.map((b) => b.x + b.r));
+  // Place baseline so the tallest lobe fits under local y=0
+  const baseline = maxR;
   const t = `translate(${x} ${y}) scale(${scale})`;
 
-  if (variant === "small") {
-    return (
-      <g transform={t}>
-        <rect x="8" y="28" width="72" height="14" />
-        <circle cx="24" cy="26" r="16" />
-        <circle cx="46" cy="20" r="20" />
-        <circle cx="70" cy="26" r="14" />
-      </g>
-    );
-  }
-  if (variant === "peak") {
-    return (
-      <g transform={t}>
-        <rect x="6" y="40" width="130" height="14" />
-        <circle cx="28" cy="36" r="16" />
-        <circle cx="56" cy="22" r="24" />
-        <circle cx="88" cy="14" r="28" />
-        <circle cx="118" cy="26" r="20" />
-      </g>
-    );
-  }
-  if (variant === "wide") {
-    return (
-      <g transform={t}>
-        <rect x="0" y="42" width="200" height="16" />
-        <circle cx="24" cy="40" r="18" />
-        <circle cx="56" cy="28" r="24" />
-        <circle cx="96" cy="18" r="30" />
-        <circle cx="136" cy="26" r="24" />
-        <circle cx="170" cy="36" r="18" />
-        <circle cx="192" cy="42" r="12" />
-      </g>
-    );
-  }
-  if (variant === "asymmetric") {
-    return (
-      <g transform={t}>
-        <rect x="4" y="36" width="150" height="14" />
-        <circle cx="30" cy="22" r="26" />
-        <circle cx="62" cy="16" r="28" />
-        <circle cx="98" cy="28" r="18" />
-        <circle cx="128" cy="34" r="14" />
-        <circle cx="148" cy="36" r="10" />
-      </g>
-    );
-  }
-  /* puff — medium balanced bumps */
   return (
     <g transform={t}>
-      <rect x="6" y="38" width="140" height="14" />
-      <circle cx="28" cy="34" r="18" />
-      <circle cx="58" cy="22" r="24" />
-      <circle cx="94" cy="20" r="26" />
-      <circle cx="128" cy="30" r="18" />
+      {/* Base slab — guarantees a razor-flat bottom edge */}
+      <rect
+        x={left}
+        y={baseline - Math.min(...bumps.map((b) => b.r)) * 0.55}
+        width={right - left}
+        height={baseline - (baseline - Math.min(...bumps.map((b) => b.r)) * 0.55)}
+      />
+      {bumps.map((b, i) => (
+        <circle key={i} cx={b.x} cy={baseline - b.r} r={b.r} />
+      ))}
     </g>
   );
 }
