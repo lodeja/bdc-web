@@ -10,11 +10,11 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0">
         <DroneCleaningHeroAnimation />
         <div
-          className="absolute inset-0 bg-gradient-to-r from-bdc-navy-deep/92 via-bdc-navy-deep/40 to-transparent sm:via-bdc-navy-deep/18 sm:to-transparent"
+          className="absolute inset-0 bg-gradient-to-r from-bdc-navy-deep/90 via-bdc-navy-deep/35 to-transparent sm:via-bdc-navy-deep/12 sm:to-transparent"
           aria-hidden="true"
         />
         <div
-          className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-bdc-navy-deep/45 to-transparent"
+          className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-bdc-navy-deep/30 to-transparent"
           aria-hidden="true"
         />
       </div>
