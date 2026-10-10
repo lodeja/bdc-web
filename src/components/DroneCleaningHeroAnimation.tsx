@@ -4,10 +4,10 @@ import gsap from "gsap";
 import { useEffect, useId, useMemo, useRef } from "react";
 
 /**
- * Premium one-shot tower cleaning scene (SVG + GSAP).
- * LottieFiles AI was not available — custom orchestration.
- * Drone silhouette based on Meldrone / MelClean Solar industrial cleaning drone
- * (hexacopter, hose feed, dual underside spray nozzles).
+ * Flat-vector tower cleaning scene (SVG + GSAP).
+ * Art refs: Airbnb / Tamesis-style flat illustration, gray tower,
+ * single white transparent puffy clouds, simple icon drone,
+ * clean windows with diagonal glass gleams (window ref).
  */
 
 const COLS = 4;
@@ -15,16 +15,25 @@ const ROWS = 6;
 const VIEW_W = 960;
 const VIEW_H = 720;
 
+const SKY = "#7EB8E0";
+const SKY_MID = "#5A9BCF";
+const SKY_LOW = "#3A7AAD";
 const TOWER = {
-  x: 520,
-  y: 72,
-  w: 280,
-  h: 560,
-  padX: 22,
-  padY: 28,
-  gapX: 12,
-  gapY: 14,
+  /** Lowered so a clear band of sky sits above the roof */
+  x: 555,
+  y: 268,
+  w: 240,
+  h: 380,
+  padX: 18,
+  padY: 22,
+  gapX: 11,
+  gapY: 11,
 };
+const GRAY_LIGHT = "#D4D7DC";
+const GRAY = "#B0B5BD";
+const GRAY_MID = "#8E949E";
+const GRAY_DARK = "#6E747E";
+const FRAME = "#1A1D24";
 
 type Win = {
   id: string;
@@ -64,7 +73,6 @@ function buildWindows(): Win[] {
   return list;
 }
 
-/** Serpentine: L→R on even rows, R→L on odd rows */
 function buildRoute(windows: Win[]): Win[] {
   const route: Win[] = [];
   for (let row = 0; row < ROWS; row++) {
@@ -78,15 +86,14 @@ function buildRoute(windows: Win[]): Win[] {
   return route;
 }
 
-/** Deterministic 0–1 from window id (stable across remounts in a session) */
 function seeded(id: string, salt = 0): number {
   let h = salt * 374761393;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
   return (h % 1000) / 1000;
 }
 
-const DRONE_OFFSET_X = -78; // hover left of glass, nozzles aim +X
-const DRONE_OFFSET_Y = -6;
+const DRONE_OFFSET_X = -72;
+const DRONE_OFFSET_Y = -4;
 
 export function DroneCleaningHeroAnimation() {
   const uid = useId().replace(/:/g, "");
@@ -108,28 +115,26 @@ export function DroneCleaningHeroAnimation() {
 
     const drone = svg.querySelector<SVGGElement>(`#drone-${uid}`);
     const beams = svg.querySelector<SVGGElement>(`#beams-${uid}`);
-    const hose = svg.querySelector<SVGPathElement>(`#hose-${uid}`);
     const cloudFar = svg.querySelector<SVGGElement>(`#cloud-far-${uid}`);
     const cloudMid = svg.querySelector<SVGGElement>(`#cloud-mid-${uid}`);
     const cloudNear = svg.querySelector<SVGGElement>(`#cloud-near-${uid}`);
 
     if (!drone || !beams) return;
 
-    // Persistent clouds — independent of cleaning timeline
     cloudTlRef.current?.kill();
     const cloudTl = gsap.timeline({ repeat: -1 });
     cloudTlRef.current = cloudTl;
     if (cloudFar) {
       gsap.set(cloudFar, { x: 0 });
-      cloudTl.to(cloudFar, { x: -420, duration: 90, ease: "none" }, 0);
+      cloudTl.to(cloudFar, { x: -480, duration: 100, ease: "none" }, 0);
     }
     if (cloudMid) {
       gsap.set(cloudMid, { x: 0 });
-      cloudTl.to(cloudMid, { x: -520, duration: 60, ease: "none" }, 0);
+      cloudTl.to(cloudMid, { x: -560, duration: 68, ease: "none" }, 0);
     }
     if (cloudNear) {
       gsap.set(cloudNear, { x: 0 });
-      cloudTl.to(cloudNear, { x: -640, duration: 42, ease: "none" }, 0);
+      cloudTl.to(cloudNear, { x: -680, duration: 46, ease: "none" }, 0);
     }
 
     const dirtyMasks = route.map((w) =>
@@ -139,7 +144,6 @@ export function DroneCleaningHeroAnimation() {
       svg.querySelector<SVGGElement>(`#sparkle-${w.id}-${uid}`),
     );
 
-    // Reset visual state — full dirt coverage
     dirtyMasks.forEach((m, i) => {
       if (!m) return;
       const w = route[i];
@@ -158,7 +162,6 @@ export function DroneCleaningHeroAnimation() {
       });
       gsap.set(drone, { opacity: 0 });
       gsap.set(beams, { opacity: 0 });
-      if (hose) gsap.set(hose, { opacity: 0 });
       return () => {
         cloudTl.kill();
         cloudTlRef.current = null;
@@ -170,40 +173,36 @@ export function DroneCleaningHeroAnimation() {
       y: w.cy + DRONE_OFFSET_Y,
     });
 
-    const start = { x: 120, y: 180 };
-    const exit = { x: VIEW_W + 140, y: 96 };
+    const start = { x: 150, y: 150 };
+    const exit = { x: VIEW_W + 120, y: 100 };
 
     gsap.set(drone, { x: start.x, y: start.y, opacity: 0, rotate: 0 });
-    if (hose) gsap.set(hose, { opacity: 0.85 });
 
     mainTlRef.current?.kill();
     const tl = gsap.timeline({ defaults: { ease: "power2.inOut" } });
     mainTlRef.current = tl;
 
-    // Phase A — entrance
-    tl.to(drone, { opacity: 1, duration: 0.45, ease: "power1.out" })
+    tl.to(drone, { opacity: 1, duration: 0.4, ease: "power1.out" })
       .to(drone, {
         x: hover(route[0]).x,
         y: hover(route[0]).y,
-        duration: 1.6,
+        duration: 1.5,
         ease: "power3.inOut",
       })
-      .to(drone, { y: "+=3", duration: 0.55, ease: "sine.inOut" })
-      .to(drone, { y: "-=3", duration: 0.55, ease: "sine.inOut" });
+      .to(drone, { y: "+=2.5", duration: 0.45, ease: "sine.inOut" })
+      .to(drone, { y: "-=2.5", duration: 0.45, ease: "sine.inOut" });
 
-    // Phases B–D — window-by-window
     route.forEach((w, i) => {
       const pos = hover(w);
       const mask = dirtyMasks[i];
       const sparkle = sparkles[i];
-      const travel = i === 0 ? 0.2 : 0.42 + seeded(w.id, 1) * 0.12;
-      const cleanDur = 0.58 + seeded(w.id, 2) * 0.12;
-      const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.28;
+      const travel = i === 0 ? 0.16 : 0.38 + seeded(w.id, 1) * 0.1;
+      const cleanDur = 0.52 + seeded(w.id, 2) * 0.1;
+      const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.22;
 
       if (i > 0) {
-        // Gentle bank into travel direction
         const prev = route[i - 1];
-        const bank = Math.max(-5, Math.min(5, (pos.y - hover(prev).y) * 0.08));
+        const bank = Math.max(-4, Math.min(4, (pos.y - hover(prev).y) * 0.07));
         tl.to(
           drone,
           {
@@ -213,20 +212,14 @@ export function DroneCleaningHeroAnimation() {
             duration: travel,
             ease: "power2.inOut",
           },
-          ">+0.04",
+          ">+0.03",
         );
-        tl.to(drone, { rotate: 0, duration: 0.28, ease: "sine.out" }, ">-0.2");
+        tl.to(drone, { rotate: 0, duration: 0.24, ease: "sine.out" }, ">-0.16");
       }
 
-      // Stabilize + activate beams aimed at this window
-      tl.to(beams, { opacity: 1, duration: 0.18, ease: "power1.out" }, ">-0.05");
-      tl.to(
-        drone,
-        { y: pos.y + 2, duration: 0.22, ease: "sine.inOut" },
-        "<",
-      );
+      tl.to(beams, { opacity: 1, duration: 0.15, ease: "power1.out" }, ">-0.04");
+      tl.to(drone, { y: pos.y + 1.5, duration: 0.18, ease: "sine.inOut" }, "<");
 
-      // Dirt wipe with the jet: clear from left (beam side) → right
       if (mask) {
         tl.to(
           mask,
@@ -235,11 +228,10 @@ export function DroneCleaningHeroAnimation() {
             duration: cleanDur,
             ease: "power1.inOut",
           },
-          "<0.12",
+          "<0.1",
         );
       }
 
-      // One-shot sparkle — independent so it never blocks the flight path
       if (sparkle) {
         tl.call(
           () => {
@@ -248,14 +240,14 @@ export function DroneCleaningHeroAnimation() {
               .to(sparkle, {
                 opacity: 1,
                 scale: 1,
-                duration: 0.28,
+                duration: 0.24,
                 delay: sparkleDelay,
                 ease: "power2.out",
               })
               .to(sparkle, {
                 opacity: 0,
-                scale: 1.15,
-                duration: 0.55,
+                scale: 1.1,
+                duration: 0.48,
                 ease: "power1.in",
               });
           },
@@ -264,33 +256,27 @@ export function DroneCleaningHeroAnimation() {
         );
       }
 
-      // Soften beams between windows (still "working")
       if (i < route.length - 1) {
-        tl.to(beams, { opacity: 0.45, duration: 0.12 }, ">-0.05");
+        tl.to(beams, { opacity: 0.4, duration: 0.1 }, ">-0.04");
       }
     });
 
-    // Phase E — beams off, exit
-    tl.to(beams, { opacity: 0, duration: 0.35, ease: "power1.in" });
+    tl.to(beams, { opacity: 0, duration: 0.28, ease: "power1.in" });
     tl.to(drone, {
-      x: TOWER.x + TOWER.w * 0.35,
-      y: TOWER.y - 20,
-      rotate: -4,
-      duration: 1.1,
+      x: TOWER.x + TOWER.w * 0.28,
+      y: TOWER.y - 40,
+      rotate: -3,
+      duration: 1,
       ease: "power2.inOut",
     });
     tl.to(drone, {
       x: exit.x,
       y: exit.y,
-      rotate: -8,
-      opacity: 1,
-      duration: 1.8,
+      rotate: -6,
+      duration: 1.65,
       ease: "power3.in",
     });
-    tl.to(drone, { opacity: 0, duration: 0.25 }, ">-0.2");
-    if (hose) tl.to(hose, { opacity: 0, duration: 0.2 }, "<");
-
-    // Phase F — clouds keep running via cloudTl (not killed here)
+    tl.to(drone, { opacity: 0, duration: 0.2 }, ">-0.16");
 
     return () => {
       tl.kill();
@@ -305,445 +291,380 @@ export function DroneCleaningHeroAnimation() {
       ref={rootRef}
       className="relative h-full w-full overflow-hidden"
       role="img"
-      aria-label="Animatie van een professionele reinigingsdrone die raam per raam een torengevel schoonmaakt"
+      aria-label="Animatie van een reinigingsdrone die raam per raam een torengevel schoonmaakt"
     >
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         className="h-full w-full"
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio="xMidYMax slice"
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0.1" y2="1">
-            <stop offset="0%" stopColor="#4a90c2" />
-            <stop offset="32%" stopColor="#1e4f7a" />
-            <stop offset="68%" stopColor="#0f2a48" />
-            <stop offset="100%" stopColor="#071525" />
-          </linearGradient>
-          <linearGradient id={`tower-${uid}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#2c3545" />
-            <stop offset="55%" stopColor="#1c2430" />
-            <stop offset="100%" stopColor="#121820" />
-          </linearGradient>
-          <linearGradient id={`tower-side-${uid}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#0e141c" />
-            <stop offset="100%" stopColor="#1a222e" />
-          </linearGradient>
-          <linearGradient id={`clean-glass-${uid}`} x1="0" y1="0" x2="0.2" y2="1">
-            <stop offset="0%" stopColor="#c8eef8" />
-            <stop offset="45%" stopColor="#5bb8d4" />
-            <stop offset="100%" stopColor="#2a6f8c" />
-          </linearGradient>
-          <linearGradient id={`dirty-glass-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4a4e52" />
-            <stop offset="100%" stopColor="#262a2e" />
+          <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={SKY} />
+            <stop offset="55%" stopColor={SKY_MID} />
+            <stop offset="100%" stopColor={SKY_LOW} />
           </linearGradient>
           <linearGradient id={`beam-${uid}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#e8fbff" stopOpacity="0.15" />
-            <stop offset="35%" stopColor="#b8f0ff" stopOpacity="0.75" />
-            <stop offset="100%" stopColor="#7ad4ea" stopOpacity="0.2" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.05" />
+            <stop offset="45%" stopColor="#ffffff" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#c8eef8" stopOpacity="0.2" />
           </linearGradient>
-          <radialGradient id={`mist-${uid}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#a8e8f5" stopOpacity="0" />
-          </radialGradient>
-          <filter id={`soft-${uid}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.2" />
-          </filter>
+          <linearGradient id={`win-glass-${uid}`} x1="0" y1="0" x2="0.15" y2="1">
+            <stop offset="0%" stopColor="#5BA8D0" />
+            <stop offset="55%" stopColor="#3A8FB5" />
+            <stop offset="100%" stopColor="#2E7A9E" />
+          </linearGradient>
         </defs>
 
-        {/* Sky */}
         <rect width={VIEW_W} height={VIEW_H} fill={`url(#sky-${uid})`} />
 
-        {/* Cloud layers (duplicated for seamless drift) */}
-        <g id={`cloud-far-${uid}`} opacity="0.55">
-          <CloudBand y={90} fill="#d8eaf6" opacity={0.55} />
-          <CloudBand y={90} fill="#d8eaf6" opacity={0.55} xOffset={420} />
+        {/* Soft sun disc — flat vector accent */}
+        <circle cx="200" cy="88" r="36" fill="#F5D76E" opacity="0.85" />
+        <circle cx="200" cy="88" r="48" fill="#F5D76E" opacity="0.18" />
+
+        {/* Clouds — single white transparent colour, flat-bottom puffs */}
+        <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.42">
+          <PuffyCloud x={30} y={56} scale={1} />
+          <PuffyCloud x={260} y={40} scale={0.7} variant="wisp" />
+          <PuffyCloud x={480} y={72} scale={0.9} />
+          <PuffyCloud x={30 + 480} y={56} scale={1} />
+          <PuffyCloud x={260 + 480} y={40} scale={0.7} variant="wisp" />
+          <PuffyCloud x={480 + 480} y={72} scale={0.9} />
         </g>
-        <g id={`cloud-mid-${uid}`} opacity="0.7">
-          <CloudBand y={150} fill="#e8f4fc" opacity={0.65} scale={1.15} />
-          <CloudBand
-            y={150}
-            fill="#e8f4fc"
-            opacity={0.65}
-            scale={1.15}
-            xOffset={520}
-          />
+        <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.5">
+          <PuffyCloud x={90} y={118} scale={1.1} />
+          <PuffyCloud x={380} y={98} scale={0.8} variant="small" />
+          <PuffyCloud x={90 + 560} y={118} scale={1.1} />
+          <PuffyCloud x={380 + 560} y={98} scale={0.8} variant="small" />
         </g>
-        <g id={`cloud-near-${uid}`} opacity="0.45">
-          <CloudBand y={210} fill="#f2f8fd" opacity={0.5} scale={0.85} />
-          <CloudBand
-            y={210}
-            fill="#f2f8fd"
-            opacity={0.5}
-            scale={0.85}
-            xOffset={640}
-          />
+        <g id={`cloud-near-${uid}`} fill="#ffffff" opacity="0.55">
+          <PuffyCloud x={50} y={168} scale={0.65} variant="small" />
+          <PuffyCloud x={320} y={150} scale={0.95} />
+          <PuffyCloud x={50 + 680} y={168} scale={0.65} variant="small" />
+          <PuffyCloud x={320 + 680} y={150} scale={0.95} />
         </g>
 
-        {/* Distant skyline hint */}
-        <g opacity="0.25" fill="#0a1624">
-          <rect x="40" y="420" width="36" height="220" />
-          <rect x="90" y="380" width="28" height="260" />
-          <rect x="130" y="450" width="48" height="190" />
-          <rect x="200" y="400" width="22" height="240" />
+        {/* Distant flat skyline */}
+        <g fill="#8FBFDD" opacity="0.45">
+          <rect x="36" y="500" width="34" height="140" />
+          <rect x="78" y="460" width="28" height="180" />
+          <rect x="114" y="520" width="46" height="120" />
+          <rect x="172" y="480" width="24" height="160" />
+          <rect x="208" y="530" width="40" height="110" />
         </g>
 
-        {/* Ground / horizon */}
+        {/* Ground band */}
         <path
-          d={`M0 ${VIEW_H - 70} L${VIEW_W} ${VIEW_H - 100} L${VIEW_W} ${VIEW_H} L0 ${VIEW_H} Z`}
-          fill="#071018"
-          opacity="0.85"
+          d={`M0 ${VIEW_H - 52} L${VIEW_W} ${VIEW_H - 72} L${VIEW_W} ${VIEW_H} L0 ${VIEW_H} Z`}
+          fill={GRAY_DARK}
+        />
+        <path
+          d={`M0 ${VIEW_H - 52} L${VIEW_W} ${VIEW_H - 72} L${VIEW_W} ${VIEW_H - 64} L0 ${VIEW_H - 44} Z`}
+          fill={GRAY_MID}
+          opacity="0.55"
         />
 
-        {/* Tower */}
+        {/* Gray flat tower */}
         <g>
+          <path
+            d={`M${TOWER.x + TOWER.w} ${TOWER.y}
+                L${TOWER.x + TOWER.w + 26} ${TOWER.y + 20}
+                L${TOWER.x + TOWER.w + 26} ${TOWER.y + TOWER.h + 14}
+                L${TOWER.x + TOWER.w} ${TOWER.y + TOWER.h} Z`}
+            fill={GRAY_DARK}
+          />
           <rect
             x={TOWER.x}
             y={TOWER.y}
             width={TOWER.w}
             height={TOWER.h}
             rx="4"
-            fill={`url(#tower-${uid})`}
+            fill={GRAY}
           />
-          {/* Side face for depth */}
-          <path
-            d={`M${TOWER.x + TOWER.w} ${TOWER.y}
-                L${TOWER.x + TOWER.w + 36} ${TOWER.y + 28}
-                L${TOWER.x + TOWER.w + 36} ${TOWER.y + TOWER.h + 20}
-                L${TOWER.x + TOWER.w} ${TOWER.y + TOWER.h} Z`}
-            fill={`url(#tower-side-${uid})`}
-          />
-          {/* Roof cap */}
+          {/* Subtle floor bands */}
+          {[0, 1, 2, 3].map((i) => (
+            <rect
+              key={i}
+              x={TOWER.x}
+              y={TOWER.y + 70 + i * 88}
+              width={TOWER.w}
+              height="6"
+              fill={GRAY_MID}
+              opacity="0.4"
+            />
+          ))}
+          {/* Roof */}
           <rect
             x={TOWER.x - 6}
             y={TOWER.y - 14}
             width={TOWER.w + 12}
             height="14"
-            rx="2"
-            fill="#243040"
+            rx="3"
+            fill={GRAY_MID}
           />
           <rect
-            x={TOWER.x + TOWER.w * 0.35}
-            y={TOWER.y - 34}
-            width={TOWER.w * 0.18}
-            height="22"
+            x={TOWER.x + TOWER.w * 0.4}
+            y={TOWER.y - 32}
+            width={TOWER.w * 0.16}
+            height="20"
             rx="2"
-            fill="#1a2430"
+            fill={GRAY_DARK}
+          />
+          {/* Soft façade highlight */}
+          <rect
+            x={TOWER.x}
+            y={TOWER.y}
+            width="10"
+            height={TOWER.h}
+            fill={GRAY_LIGHT}
+            opacity="0.35"
           />
 
-          {/* Windows */}
-          {windows.map((w) => {
-            const streakSeed = seeded(w.id, 7);
-            return (
-              <g key={w.id}>
-                {/* Clean glass (revealed as dirt clip shrinks left→right with the jet) */}
-                <rect
-                  x={w.x}
-                  y={w.y}
-                  width={w.w}
-                  height={w.h}
-                  rx="2"
-                  fill={`url(#clean-glass-${uid})`}
-                />
-                <path
-                  d={`M${w.x + 3} ${w.y + 4} L${w.x + w.w - 8} ${w.y + w.h - 10}`}
-                  stroke="#fff"
-                  strokeWidth="1.2"
-                  opacity="0.35"
-                />
-
-                <clipPath id={`dirt-clip-${w.id}-${uid}`}>
-                  <rect
-                    id={`dirty-mask-${w.id}-${uid}`}
-                    x={w.x}
-                    y={w.y}
-                    width={w.w}
-                    height={w.h}
-                  />
-                </clipPath>
-
-                <g clipPath={`url(#dirt-clip-${w.id}-${uid})`}>
-                  <rect
-                    x={w.x}
-                    y={w.y}
-                    width={w.w}
-                    height={w.h}
-                    fill={`url(#dirty-glass-${uid})`}
-                  />
-                  <rect
-                    x={w.x}
-                    y={w.y}
-                    width={w.w}
-                    height={w.h}
-                    fill="#1c2228"
-                    opacity="0.4"
-                  />
-                  {[0, 1, 2].map((s) => (
-                    <rect
-                      key={s}
-                      x={w.x + 4 + s * (w.w / 3.2) + streakSeed * 4}
-                      y={w.y + 2}
-                      width={1.6 + (s % 2)}
-                      height={w.h - 4}
-                      fill="#0e1216"
-                      opacity={0.28 + seeded(w.id, s + 10) * 0.22}
-                    />
-                  ))}
-                  <circle
-                    cx={w.x + w.w * (0.3 + streakSeed * 0.2)}
-                    cy={w.y + w.h * 0.35}
-                    r="2.2"
-                    fill="#12161a"
-                    opacity="0.45"
-                  />
-                  <circle
-                    cx={w.x + w.w * 0.7}
-                    cy={w.y + w.h * (0.55 + streakSeed * 0.15)}
-                    r="1.6"
-                    fill="#12161a"
-                    opacity="0.4"
-                  />
-                </g>
-
-                <rect
-                  x={w.x}
-                  y={w.y}
-                  width={w.w}
-                  height={w.h}
-                  rx="2"
-                  fill="none"
-                  stroke="#0a1018"
-                  strokeWidth="1.5"
-                  opacity="0.55"
-                />
-
-                <g
-                  id={`sparkle-${w.id}-${uid}`}
-                  opacity="0"
-                  style={{ transformOrigin: `${w.cx}px ${w.cy - 4}px` }}
-                >
-                  <g transform={`translate(${w.cx} ${w.cy - 4})`}>
-                    <path
-                      d="M0 -7 L1.2 -1.2 L7 0 L1.2 1.2 L0 7 L-1.2 1.2 L-7 0 L-1.2 -1.2 Z"
-                      fill="#fff"
-                      opacity="0.9"
-                    />
-                    <circle
-                      cx="5"
-                      cy="-3"
-                      r="1.1"
-                      fill="#e8fbff"
-                      opacity="0.8"
-                    />
-                  </g>
-                </g>
-              </g>
-            );
-          })}
+          {windows.map((w) => (
+            <FlatWindow key={w.id} w={w} uid={uid} />
+          ))}
         </g>
 
-        {/* Drone + beams (transformed as a unit) */}
+        {/* Simple icon drone */}
         <g id={`drone-${uid}`}>
-          {/* Water beams — from dual nozzles toward glass (+X) */}
           <g id={`beams-${uid}`} opacity="0">
-            <ellipse
-              cx="70"
-              cy="8"
-              rx="48"
-              ry="16"
-              fill={`url(#mist-${uid})`}
-              opacity="0.55"
-              filter={`url(#soft-${uid})`}
-            />
-            <ellipse
-              cx="70"
-              cy="22"
-              rx="48"
-              ry="14"
-              fill={`url(#mist-${uid})`}
-              opacity="0.45"
-              filter={`url(#soft-${uid})`}
-            />
-            {[0, 1, 2, 3, 4].map((i) => (
+            {[0, 1, 2, 3].map((i) => (
               <line
-                key={`b1-${i}`}
-                x1="42"
-                y1={0 + i * 1.8}
-                x2="102"
-                y2={-1 + i * 2.2}
+                key={i}
+                x1="28"
+                y1={2 + i * 3}
+                x2="78"
+                y2={1 + i * 3.4}
                 stroke={`url(#beam-${uid})`}
-                strokeWidth="1.35"
+                strokeWidth="1.6"
                 strokeLinecap="round"
-                opacity={0.85 - i * 0.08}
+                opacity={0.9 - i * 0.12}
               />
             ))}
-            {[0, 1, 2, 3, 4].map((i) => (
-              <line
-                key={`b2-${i}`}
-                x1="42"
-                y1={18 + i * 1.8}
-                x2="102"
-                y2={20 + i * 2.2}
-                stroke={`url(#beam-${uid})`}
-                strokeWidth="1.25"
-                strokeLinecap="round"
-                opacity={0.8 - i * 0.08}
-              />
-            ))}
-            <ellipse cx="104" cy="12" rx="11" ry="20" fill="#e8fbff" opacity="0.2" />
+            <ellipse cx="80" cy="8" rx="8" ry="12" fill="#fff" opacity="0.22" />
           </g>
-
-          {/* Supply hose */}
-          <path
-            id={`hose-${uid}`}
-            d="M8 28 C4 48, 2 70, 6 110 C8 140, 4 170, 8 210"
-            fill="none"
-            stroke="#2a3038"
-            strokeWidth="3.2"
-            strokeLinecap="round"
-            opacity="0.85"
-          />
-          <path
-            d="M8 28 C4 48, 2 70, 6 110 C8 140, 4 170, 8 210"
-            fill="none"
-            stroke="#5a6570"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-            opacity="0.5"
-          />
-
-          <MeldroneStyleDrone />
+          <SimpleDrone />
         </g>
       </svg>
-
     </div>
   );
 }
 
-function CloudBand({
-  y,
-  fill,
-  opacity,
-  scale = 1,
-  xOffset = 0,
-}: {
-  y: number;
-  fill: string;
-  opacity: number;
-  scale?: number;
-  xOffset?: number;
-}) {
+/** Window ref: thick frame, blue glass, wave, diagonal gleams */
+function FlatWindow({ w, uid }: { w: Win; uid: string }) {
+  const streakSeed = seeded(w.id, 7);
+  const midY = w.y + w.h * 0.58;
+  const wave = `M${w.x} ${midY}
+    Q${w.x + w.w * 0.28} ${midY - 5}, ${w.x + w.w * 0.55} ${midY + 1}
+    T${w.x + w.w} ${midY}
+    L${w.x + w.w} ${w.y + w.h}
+    L${w.x} ${w.y + w.h} Z`;
+
   return (
-    <g
-      transform={`translate(${xOffset} ${y}) scale(${scale})`}
-      fill={fill}
-      opacity={opacity}
-    >
-      <ellipse cx="80" cy="0" rx="70" ry="22" />
-      <ellipse cx="140" cy="-8" rx="50" ry="18" />
-      <ellipse cx="200" cy="4" rx="60" ry="20" />
-      <ellipse cx="320" cy="-4" rx="80" ry="24" />
-      <ellipse cx="390" cy="6" rx="45" ry="16" />
+    <g>
+      <rect
+        x={w.x}
+        y={w.y}
+        width={w.w}
+        height={w.h}
+        fill={`url(#win-glass-${uid})`}
+      />
+      <path d={wave} fill="#4FC3E0" opacity="0.95" />
+
+      <clipPath id={`win-clip-${w.id}-${uid}`}>
+        <rect x={w.x} y={w.y} width={w.w} height={w.h} />
+      </clipPath>
+      <g clipPath={`url(#win-clip-${w.id}-${uid})`}>
+        <rect
+          x={w.x + w.w * 0.06}
+          y={w.y - w.h}
+          width={w.w * 0.13}
+          height={w.h * 2.5}
+          fill="#A8D8EA"
+          opacity="0.8"
+          transform={`rotate(-40 ${w.cx} ${w.cy})`}
+        />
+        <rect
+          x={w.x + w.w * 0.3}
+          y={w.y - w.h}
+          width={w.w * 0.07}
+          height={w.h * 2.5}
+          fill="#F2FBFF"
+          opacity="0.92"
+          transform={`rotate(-40 ${w.cx} ${w.cy})`}
+        />
+        <rect
+          x={w.x + w.w * 0.46}
+          y={w.y - w.h}
+          width={w.w * 0.18}
+          height={w.h * 2.5}
+          fill="#8ECDE3"
+          opacity="0.72"
+          transform={`rotate(-40 ${w.cx} ${w.cy})`}
+        />
+      </g>
+
+      <clipPath id={`dirt-clip-${w.id}-${uid}`}>
+        <rect
+          id={`dirty-mask-${w.id}-${uid}`}
+          x={w.x}
+          y={w.y}
+          width={w.w}
+          height={w.h}
+        />
+      </clipPath>
+
+      <g clipPath={`url(#dirt-clip-${w.id}-${uid})`}>
+        <rect x={w.x} y={w.y} width={w.w} height={w.h} fill="#7A8088" />
+        <rect
+          x={w.x}
+          y={w.y}
+          width={w.w}
+          height={w.h}
+          fill="#5A6068"
+          opacity="0.5"
+        />
+        {[0, 1, 2].map((s) => (
+          <rect
+            key={s}
+            x={w.x + 3 + s * (w.w / 3.1) + streakSeed * 3}
+            y={w.y + 2}
+            width={1.8}
+            height={w.h - 4}
+            fill="#2A2E34"
+            opacity={0.2 + seeded(w.id, s + 10) * 0.18}
+          />
+        ))}
+      </g>
+
+      {/* Thick dark frame (window ref) */}
+      <rect
+        x={w.x}
+        y={w.y}
+        width={w.w}
+        height={w.h}
+        fill="none"
+        stroke={FRAME}
+        strokeWidth="3"
+        rx="1"
+      />
+
+      <g
+        id={`sparkle-${w.id}-${uid}`}
+        opacity="0"
+        style={{ transformOrigin: `${w.cx}px ${w.cy - 2}px` }}
+      >
+        <g transform={`translate(${w.cx} ${w.cy - 2})`}>
+          <path
+            d="M0 -5 L0.9 -0.9 L5 0 L0.9 0.9 L0 5 L-0.9 0.9 L-5 0 L-0.9 -0.9 Z"
+            fill="#ffffff"
+            opacity="0.95"
+          />
+        </g>
+      </g>
     </g>
   );
 }
 
 /**
- * Simplified Meldrone industrial cleaning drone (MelClean Solar ref):
- * hexacopter arms, battery pack, tall skids, hose mount, dual spray booms.
+ * Flat-bottom puffy clouds — single white fill only (opacity set by parent).
+ * Shapes from cloud reference sheet.
  */
-function MeldroneStyleDrone() {
-  const rotors: [number, number][] = [
-    [-32, -16],
-    [28, -18],
-    [-34, 14],
-    [30, 16],
-    [-8, -30],
-    [10, 30],
-  ];
+function PuffyCloud({
+  x,
+  y,
+  scale = 1,
+  variant = "puff",
+}: {
+  x: number;
+  y: number;
+  scale?: number;
+  variant?: "puff" | "wisp" | "small";
+}) {
+  if (variant === "wisp") {
+    return (
+      <g transform={`translate(${x} ${y}) scale(${scale})`}>
+        <path d="M0 14 H130 Q142 14 142 6 Q142 -2 128 -2 H18 Q0 -2 0 10 Z" />
+      </g>
+    );
+  }
+  if (variant === "small") {
+    return (
+      <g transform={`translate(${x} ${y}) scale(${scale})`}>
+        <path d="M12 30 H72 Q82 30 82 20 Q82 10 70 10 Q70 0 56 2 Q46 -4 38 6 Q28 0 20 8 Q8 10 8 20 Q8 30 12 30 Z" />
+      </g>
+    );
+  }
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <path d="M14 50 H155 Q168 50 168 36 Q168 26 154 26 Q158 12 140 8 Q126 -4 108 4 Q98 -8 80 0 Q64 -12 48 4 Q34 -4 22 8 Q6 10 4 24 Q-6 26 -4 38 Q-4 50 14 50 Z" />
+    </g>
+  );
+}
+
+/**
+ * Ultra-simple icon drone (Airbnb / Tamesis plane complexity).
+ * Gray body, four arms, spinning discs, tiny spray nub — no industrial detail.
+ */
+function SimpleDrone() {
   return (
     <g>
-      {rotors.map(([cx, cy], i) => (
-        <g key={i}>
-          <ellipse
-            cx={cx}
-            cy={cy}
-            rx="18"
-            ry="2.6"
-            fill="#d0dae6"
-            opacity="0.9"
-          >
-            <animate
-              attributeName="rx"
-              values="18;5;18"
-              dur={`${0.1 + (i % 3) * 0.012}s`}
-              repeatCount="indefinite"
-            />
-          </ellipse>
-          <circle cx={cx} cy={cy} r="2.8" fill="#0a1420" />
-          <circle cx={cx} cy={cy} r="1.2" fill="#3a4a5a" />
-        </g>
+      {/* Prop discs */}
+      {(
+        [
+          [-22, -14],
+          [22, -14],
+          [-22, 14],
+          [22, 14],
+        ] as const
+      ).map(([cx, cy], i) => (
+        <ellipse key={i} cx={cx} cy={cy} rx="11" ry="2.2" fill="#E8EEF4" opacity="0.9">
+          <animate
+            attributeName="rx"
+            values="11;3;11"
+            dur={`${0.12 + (i % 2) * 0.02}s`}
+            repeatCount="indefinite"
+          />
+        </ellipse>
       ))}
 
+      {/* Arms */}
       <path
-        d="M0 0 L-32 -16 M0 0 L28 -18 M0 0 L-34 14 M0 0 L30 16 M0 0 L-8 -30 M0 0 L10 30"
-        stroke="#151d28"
-        strokeWidth="3.6"
+        d="M0 0 L-22 -14 M0 0 L22 -14 M0 0 L-22 14 M0 0 L22 14"
+        stroke={GRAY_DARK}
+        strokeWidth="2.8"
         strokeLinecap="round"
         fill="none"
       />
 
-      {/* Industrial chassis + silver battery (signature Meldrone look) */}
-      <rect x="-20" y="-14" width="40" height="28" rx="5" fill="#0a121c" />
-      <rect x="-16" y="-10" width="18" height="20" rx="2.5" fill="#9aa3ad" />
-      <rect x="-14" y="-7" width="14" height="3" rx="1" fill="#c5ccd4" />
-      <rect x="-14" y="2" width="14" height="3" rx="1" fill="#6b737c" />
-      <rect x="5" y="-8" width="12" height="16" rx="2" fill="#143356" />
+      {/* Body — one rounded block */}
       <rect
-        x="-12"
-        y="-1"
-        width="24"
-        height="3.5"
-        rx="1"
-        fill="#00c2e8"
-        opacity="0.9"
+        x="-14"
+        y="-9"
+        width="28"
+        height="18"
+        rx="5"
+        fill={GRAY_MID}
       />
+      <rect x="-8" y="-3" width="16" height="4" rx="2" fill="#5BC4DE" />
 
-      {/* Tall clearance skids */}
-      <path
-        d="M-16 12 L-20 38 M16 12 L20 38 M-8 12 L-10 38 M8 12 L10 38"
-        stroke="#3a4450"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M-24 38 H-16 M16 38 H24 M-14 38 H-6 M6 38 H14"
-        stroke="#6a7580"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-      />
+      {/* Tiny hubs */}
+      {(
+        [
+          [-22, -14],
+          [22, -14],
+          [-22, 14],
+          [22, 14],
+        ] as const
+      ).map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="2.4" fill={FRAME} />
+      ))}
 
-      {/* Dual metallic spray arms → nozzles toward façade (+X) */}
-      <path
-        d="M12 4 C24 0, 34 -2, 42 2"
-        fill="none"
-        stroke="#6a727c"
-        strokeWidth="2.8"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 16 C24 16, 34 18, 42 22"
-        fill="none"
-        stroke="#6a727c"
-        strokeWidth="2.8"
-        strokeLinecap="round"
-      />
-      <circle cx="42" cy="2" r="3.2" fill="#00c2e8" />
-      <circle cx="42" cy="22" r="3.2" fill="#00c2e8" />
-      <circle cx="42" cy="2" r="1.4" fill="#e8fbff" />
-      <circle cx="42" cy="22" r="1.4" fill="#e8fbff" />
+      {/* Compact spray nub toward façade */}
+      <path d="M14 0 L28 2 L14 5 Z" fill={GRAY_DARK} />
+      <circle cx="28" cy="2.5" r="2.2" fill="#5BC4DE" />
     </g>
   );
 }

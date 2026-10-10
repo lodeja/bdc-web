@@ -93,9 +93,8 @@ body {
 
 .bdc-hero-atmosphere {
   background:
-    radial-gradient(120% 80% at 78% 42%, rgba(0, 194, 232, 0.16) 0%, transparent 55%),
-    radial-gradient(90% 70% at 12% 88%, rgba(20, 51, 86, 0.55) 0%, transparent 50%),
-    linear-gradient(165deg, #071525 0%, #0b1f3a 42%, #143356 72%, #1c222c 100%);
+    radial-gradient(90% 60% at 82% 28%, rgba(126, 184, 224, 0.4) 0%, transparent 55%),
+    linear-gradient(165deg, #0b1f3a 0%, #143356 48%, #2a6fa3 100%);
 }
 
 .bdc-section-placeholder {
