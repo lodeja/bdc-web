@@ -17,7 +17,7 @@ cd "$WORK"
 git init -q
 git checkout -b gh-pages
 git config user.email "pages-bot@users.noreply.github.com"
-git config user.name "BDC Pages Deploy"
+git config user.name "JDC Pages Deploy"
 git add -A
 git commit -qm "Deploy static site to GitHub Pages"
 git remote add origin "https://github.com/lodeja/bdc-web.git"

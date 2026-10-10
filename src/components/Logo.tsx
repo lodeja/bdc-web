@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { withBasePath } from "@/lib/paths";
 
 type LogoProps = {
@@ -14,6 +13,7 @@ type LogoProps = {
 /**
  * JDC mark: bold JDC letterforms with cleaning drone fused into the D crown.
  * SVG variants in /public/brand/ (mark, mono, wordmark, favicon).
+ * Uses <img> (not next/image) so SVG marks render reliably on static Pages.
  */
 export function Logo({
   className = "h-10 w-auto",
@@ -26,14 +26,15 @@ export function Logo({
   );
 
   return (
-    <Image
+    // eslint-disable-next-line @next/next/no-img-element -- SVG brand mark; basePath via withBasePath
+    <img
       src={src}
       alt={title}
       width={320}
       height={180}
       className={className}
-      priority={priority}
-      unoptimized
+      decoding="async"
+      {...(priority ? { fetchPriority: "high" as const } : {})}
     />
   );
 }

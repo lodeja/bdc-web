@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 72" role="img" aria-labelledby="jdcWmTitle">
-  <title id="jdcWmTitle">Janssens Drone Cleaning  JDC</title>
-  <!-- Compact horizontal: mono mark + wordmark -->
+  <title id="jdcWmTitle">Janssens Drone Cleaning - JDC</title>
   <g transform="translate(0,-4) scale(0.34)">
     <g fill="#0B1F3A">
       <path d="M72 52h36v88c0 22-14 36-38 36-16 0-28-6-34-16l22-14c2 4 6 6 12 6 8 0 12-4 12-14V52z"/>
