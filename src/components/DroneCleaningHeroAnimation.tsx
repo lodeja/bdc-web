@@ -23,7 +23,6 @@ const SKYLINE = "#8FBFDD";
 const GRAY_FACE = "#C5C9D0";
 const GRAY_SIDE = "#8B909A";
 const GRAY_BAND = "#A8ADB6";
-const GRAY_ROOF = "#9AA0AA";
 const FRAME = "#1E2228";
 
 /** Clean glass (window reference) */
@@ -332,26 +331,30 @@ export function DroneCleaningHeroAnimation() {
         {/* Flat sun disc */}
         <circle cx="175" cy="78" r="34" fill="#F2D06B" />
 
-        {/* Geometric white-transparent clouds (single colour) */}
+        {/* Geometric white-transparent clouds — lowered, varied shapes */}
         <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.38">
-          <GeoCloud x={40} y={48} scale={1} />
-          <GeoCloud x={280} y={32} scale={0.75} variant="wisp" />
-          <GeoCloud x={500} y={64} scale={0.95} />
-          <GeoCloud x={40 + 480} y={48} scale={1} />
-          <GeoCloud x={280 + 480} y={32} scale={0.75} variant="wisp" />
-          <GeoCloud x={500 + 480} y={64} scale={0.95} />
+          <GeoCloud x={40} y={118} scale={1} variant="puff" />
+          <GeoCloud x={260} y={98} scale={0.8} variant="step" />
+          <GeoCloud x={460} y={132} scale={0.9} variant="ridge" />
+          <GeoCloud x={40 + 480} y={118} scale={1} variant="block" />
+          <GeoCloud x={260 + 480} y={98} scale={0.8} variant="plateau" />
+          <GeoCloud x={460 + 480} y={132} scale={0.9} variant="wisp" />
         </g>
         <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.48">
-          <GeoCloud x={100} y={110} scale={1.05} />
-          <GeoCloud x={400} y={92} scale={0.7} variant="small" />
-          <GeoCloud x={100 + 560} y={110} scale={1.05} />
-          <GeoCloud x={400 + 560} y={92} scale={0.7} variant="small" />
+          <GeoCloud x={90} y={178} scale={1.05} variant="terrace" />
+          <GeoCloud x={360} y={158} scale={0.75} variant="small" />
+          <GeoCloud x={560} y={190} scale={0.85} variant="ridge" />
+          <GeoCloud x={90 + 560} y={178} scale={1.05} variant="puff" />
+          <GeoCloud x={360 + 560} y={158} scale={0.75} variant="step" />
+          <GeoCloud x={560 + 560} y={190} scale={0.85} variant="block" />
         </g>
         <g id={`cloud-near-${uid}`} fill="#ffffff" opacity="0.55">
-          <GeoCloud x={60} y={155} scale={0.6} variant="small" />
-          <GeoCloud x={340} y={140} scale={0.9} />
-          <GeoCloud x={60 + 680} y={155} scale={0.6} variant="small" />
-          <GeoCloud x={340 + 680} y={140} scale={0.9} />
+          <GeoCloud x={50} y={228} scale={0.65} variant="small" />
+          <GeoCloud x={280} y={210} scale={0.9} variant="plateau" />
+          <GeoCloud x={500} y={242} scale={0.7} variant="wisp" />
+          <GeoCloud x={50 + 680} y={228} scale={0.65} variant="terrace" />
+          <GeoCloud x={280 + 680} y={210} scale={0.9} variant="puff" />
+          <GeoCloud x={500 + 680} y={242} scale={0.7} variant="step" />
         </g>
 
         {/* Distant flat skyline silhouettes */}
@@ -403,21 +406,6 @@ export function DroneCleaningHeroAnimation() {
             fill="#E2E5EA"
             opacity="0.45"
           />
-          {/* Roof slab */}
-          <rect
-            x={TOWER.x - 8}
-            y={TOWER.y - 16}
-            width={TOWER.w + 16}
-            height="16"
-            fill={GRAY_ROOF}
-          />
-          <rect
-            x={TOWER.x + TOWER.w * 0.38}
-            y={TOWER.y - 36}
-            width={TOWER.w * 0.18}
-            height="22"
-            fill={GRAY_SIDE}
-          />
 
           {windows.map((w) => (
             <FlatWindow key={w.id} w={w} uid={uid} />
@@ -449,7 +437,7 @@ export function DroneCleaningHeroAnimation() {
   );
 }
 
-/** Clean window ref: blue glass, wavy base, diagonal gleams. Dirty = brown grime. */
+/** Clean window: blue glass + gleams. Dirty = light haze / soft streaks. */
 function FlatWindow({ w, uid }: { w: Win; uid: string }) {
   const s = seeded(w.id, 7);
   const midY = w.y + w.h * 0.55;
@@ -498,7 +486,7 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
         />
       </g>
 
-      {/* Dirt clip — brown / muddy grime, not gray */}
+      {/* Dirt clip — subtle warm haze, not heavy brown grime */}
       <clipPath id={`dirt-clip-${w.id}-${uid}`}>
         <rect
           id={`dirty-mask-${w.id}-${uid}`}
@@ -509,60 +497,51 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
         />
       </clipPath>
       <g clipPath={`url(#dirt-clip-${w.id}-${uid})`}>
-        <rect x={w.x} y={w.y} width={w.w} height={w.h} fill="#8B7355" />
+        {/* Soft translucent film — glass still reads through */}
         <rect
           x={w.x}
           y={w.y}
           width={w.w}
           height={w.h}
-          fill="#5C4033"
-          opacity="0.55"
+          fill="#C9B89A"
+          opacity="0.32"
         />
-        {/* Vertical rain streaks — warm brown */}
+        <rect
+          x={w.x}
+          y={w.y}
+          width={w.w}
+          height={w.h}
+          fill="#A89070"
+          opacity="0.14"
+        />
+        {/* Light vertical streaks */}
         {[0, 1, 2, 3].map((i) => (
           <rect
             key={`st-${i}`}
-            x={w.x + 3 + i * (w.w / 3.6) + s * 4}
-            y={w.y + 1}
-            width={2 + (i % 2)}
-            height={w.h - 2}
-            fill="#3E2A1A"
-            opacity={0.28 + seeded(w.id, i + 4) * 0.25}
+            x={w.x + 4 + i * (w.w / 3.8) + s * 3}
+            y={w.y + 2}
+            width={1.2 + (i % 2) * 0.6}
+            height={w.h - 4}
+            fill="#8A7358"
+            opacity={0.12 + seeded(w.id, i + 4) * 0.12}
           />
         ))}
-        {/* Irregular mud blotches */}
+        {/* Soft haze patches — very light */}
         <ellipse
-          cx={w.x + w.w * (0.28 + s * 0.15)}
-          cy={w.y + w.h * 0.32}
-          rx={4 + s * 3}
-          ry={3 + s * 2}
-          fill="#4A3220"
-          opacity="0.55"
+          cx={w.x + w.w * (0.3 + s * 0.12)}
+          cy={w.y + w.h * 0.35}
+          rx={5 + s * 2}
+          ry={3.5 + s}
+          fill="#B5A078"
+          opacity="0.18"
         />
         <ellipse
-          cx={w.x + w.w * 0.68}
-          cy={w.y + w.h * (0.58 + s * 0.12)}
-          rx={5}
-          ry={3.5}
-          fill="#3A2818"
-          opacity="0.5"
-        />
-        <ellipse
-          cx={w.x + w.w * 0.45}
-          cy={w.y + w.h * 0.78}
+          cx={w.x + w.w * 0.66}
+          cy={w.y + w.h * (0.62 + s * 0.1)}
           rx={6}
-          ry={2.5}
-          fill="#6B4E32"
-          opacity="0.45"
-        />
-        {/* Haze film */}
-        <rect
-          x={w.x}
-          y={w.y}
-          width={w.w}
-          height={w.h}
-          fill="#C4A882"
-          opacity="0.22"
+          ry={3}
+          fill="#A8926E"
+          opacity="0.14"
         />
       </g>
 
@@ -594,9 +573,19 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
   );
 }
 
+type CloudVariant =
+  | "puff"
+  | "wisp"
+  | "small"
+  | "step"
+  | "ridge"
+  | "block"
+  | "plateau"
+  | "terrace";
+
 /**
- * Geometric clouds: flat bottom + overlapping circles on top.
- * Single white fill — transparency set by parent group.
+ * Geometric clouds — multiple flat-vector silhouettes.
+ * Single white fill; transparency set by parent group.
  */
 function GeoCloud({
   x,
@@ -607,18 +596,21 @@ function GeoCloud({
   x: number;
   y: number;
   scale?: number;
-  variant?: "puff" | "wisp" | "small";
+  variant?: CloudVariant;
 }) {
+  const t = `translate(${x} ${y}) scale(${scale})`;
+
   if (variant === "wisp") {
     return (
-      <g transform={`translate(${x} ${y}) scale(${scale})`}>
-        <rect x="0" y="8" width="140" height="14" rx="7" />
+      <g transform={t}>
+        <rect x="0" y="10" width="120" height="12" rx="6" />
+        <rect x="40" y="4" width="55" height="10" rx="5" />
       </g>
     );
   }
   if (variant === "small") {
     return (
-      <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <g transform={t}>
         <rect x="10" y="22" width="70" height="16" rx="2" />
         <circle cx="22" cy="20" r="14" />
         <circle cx="44" cy="14" r="18" />
@@ -626,11 +618,57 @@ function GeoCloud({
       </g>
     );
   }
+  if (variant === "step") {
+    return (
+      <g transform={t}>
+        <rect x="0" y="28" width="48" height="22" rx="1" />
+        <rect x="40" y="14" width="56" height="36" rx="1" />
+        <rect x="88" y="22" width="42" height="28" rx="1" />
+      </g>
+    );
+  }
+  if (variant === "ridge") {
+    return (
+      <g transform={t}>
+        <path d="M0 40 L28 12 L56 40 L84 8 L112 40 L140 18 L168 40 Z" />
+        <rect x="0" y="36" width="168" height="14" rx="1" />
+      </g>
+    );
+  }
+  if (variant === "block") {
+    return (
+      <g transform={t}>
+        <rect x="4" y="18" width="36" height="30" rx="2" />
+        <rect x="32" y="8" width="52" height="40" rx="2" />
+        <rect x="76" y="16" width="40" height="32" rx="2" />
+        <rect x="108" y="24" width="28" height="24" rx="2" />
+      </g>
+    );
+  }
+  if (variant === "plateau") {
+    return (
+      <g transform={t}>
+        <rect x="8" y="20" width="150" height="28" rx="3" />
+        <rect x="36" y="6" width="90" height="20" rx="3" />
+      </g>
+    );
+  }
+  if (variant === "terrace") {
+    return (
+      <g transform={t}>
+        <rect x="0" y="34" width="160" height="16" rx="1" />
+        <rect x="18" y="20" width="50" height="18" rx="1" />
+        <rect x="78" y="12" width="44" height="26" rx="1" />
+        <rect x="118" y="24" width="32" height="14" rx="1" />
+        <circle cx="48" cy="18" r="12" />
+        <circle cx="100" cy="10" r="14" />
+      </g>
+    );
+  }
+  /* puff — classic flat base + overlapping circles */
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      {/* Flat base */}
+    <g transform={t}>
       <rect x="8" y="36" width="150" height="20" rx="2" />
-      {/* Geometric puffs */}
       <circle cx="28" cy="30" r="20" />
       <circle cx="58" cy="18" r="26" />
       <circle cx="92" cy="14" r="28" />
