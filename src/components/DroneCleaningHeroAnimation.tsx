@@ -22,7 +22,6 @@ const SKYLINE = "#8FBFDD";
 /** Gray tower palette */
 const GRAY_FACE = "#C5C9D0";
 const GRAY_SIDE = "#8B909A";
-const GRAY_BAND = "#A8ADB6";
 const FRAME = "#1E2228";
 
 /** Clean glass (window reference) */
@@ -100,9 +99,15 @@ function buildRoute(windows: Win[]): Win[] {
 }
 
 function seeded(id: string, salt = 0): number {
-  let h = salt * 374761393;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return (h % 1000) / 1000;
+  // FNV-1a style — similar window ids must not cluster
+  let h = 2166136261 ^ (salt * 374761393);
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  h ^= salt >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 2246822507);
+  return ((h >>> 0) % 10000) / 10000;
 }
 
 const DRONE_OFFSET_X = -70;
@@ -142,11 +147,11 @@ export function DroneCleaningHeroAnimation() {
     // Wider loop period — fewer clouds, more horizontal spacing
     if (cloudFar) {
       gsap.set(cloudFar, { x: 0 });
-      cloudTl.to(cloudFar, { x: -960, duration: 120, ease: "none" }, 0);
+      cloudTl.to(cloudFar, { x: -1200, duration: 140, ease: "none" }, 0);
     }
     if (cloudMid) {
       gsap.set(cloudMid, { x: 0 });
-      cloudTl.to(cloudMid, { x: -1100, duration: 78, ease: "none" }, 0);
+      cloudTl.to(cloudMid, { x: -1280, duration: 95, ease: "none" }, 0);
     }
 
     const dirtyMasks = route.map((w) =>
@@ -163,14 +168,14 @@ export function DroneCleaningHeroAnimation() {
 
     const startPermanentBlink = (w: Win, i: number) => {
       const shine = shines[i];
-      const sparkle = sparkles[i];
-      const dur = 1.8 + seeded(w.id, 5) * 1.4;
+      const sparkleGroup = sparkles[i];
+      const dur = 2.2 + seeded(w.id, 5) * 1.6;
       const delay = seeded(w.id, 6) * 1.1;
       if (shine) {
-        gsap.set(shine, { opacity: 0.45 });
+        gsap.set(shine, { opacity: 0.55 });
         blinkTweens.push(
           gsap.to(shine, {
-            opacity: 1,
+            opacity: 0.95,
             duration: dur,
             repeat: -1,
             yoyo: true,
@@ -179,19 +184,25 @@ export function DroneCleaningHeroAnimation() {
           }),
         );
       }
-      if (sparkle) {
-        gsap.set(sparkle, { opacity: 0.15, scale: 0.7 });
-        blinkTweens.push(
-          gsap.to(sparkle, {
-            opacity: 0.95,
-            scale: 1.05,
-            duration: 1.1 + seeded(w.id, 8) * 0.7,
-            repeat: -1,
-            yoyo: true,
-            ease: "sine.inOut",
-            delay: delay + 0.15 + seeded(w.id, 9) * 0.6,
-          }),
-        );
+      if (sparkleGroup) {
+        gsap.set(sparkleGroup, { opacity: 1, attr: { opacity: 1 } });
+        const dots = sparkleGroup.querySelectorAll<SVGGElement>("[data-spark]");
+        dots.forEach((dot, j) => {
+          const base = 0.1 + seeded(w.id, 20 + j) * 0.14;
+          const peak = 0.28 + seeded(w.id, 30 + j) * 0.28;
+          gsap.set(dot, { opacity: base, scale: 0.9 });
+          blinkTweens.push(
+            gsap.to(dot, {
+              opacity: peak,
+              scale: 1 + seeded(w.id, 40 + j) * 0.12,
+              duration: 1.6 + seeded(w.id, 50 + j) * 1.5,
+              repeat: -1,
+              yoyo: true,
+              ease: "sine.inOut",
+              delay: delay + seeded(w.id, 60 + j) * 1.2,
+            }),
+          );
+        });
       }
     };
 
@@ -211,10 +222,14 @@ export function DroneCleaningHeroAnimation() {
       gsap.set(m, { attr: { x: w.x, width: w.w } });
     });
     sparkles.forEach((s) => {
-      if (s) gsap.set(s, { opacity: 0, scale: 0.5, transformOrigin: "50% 50%" });
+      if (!s) return;
+      gsap.set(s, { opacity: 0 });
+      s.querySelectorAll<SVGGElement>("[data-spark]").forEach((dot) => {
+        gsap.set(dot, { opacity: 0, scale: 0.7, transformOrigin: "50% 50%" });
+      });
     });
     shines.forEach((s) => {
-      if (s) gsap.set(s, { opacity: 0.35 });
+      if (s) gsap.set(s, { opacity: 0.4 });
     });
     gsap.set(beams, { opacity: 0 });
 
@@ -222,10 +237,17 @@ export function DroneCleaningHeroAnimation() {
     if (reduce) {
       clearAllDirt();
       shines.forEach((s) => {
-        if (s) gsap.set(s, { opacity: 0.85 });
+        if (s) gsap.set(s, { opacity: 0.75 });
       });
-      sparkles.forEach((s) => {
-        if (s) gsap.set(s, { opacity: 0.55, scale: 1 });
+      sparkles.forEach((s, i) => {
+        if (!s) return;
+        gsap.set(s, { opacity: 1, attr: { opacity: 1 } });
+        s.querySelectorAll<SVGGElement>("[data-spark]").forEach((dot, j) => {
+          gsap.set(dot, {
+            opacity: 0.22 + seeded(route[i].id, 70 + j) * 0.2,
+            scale: 1,
+          });
+        });
       });
       return () => {
         cloudTl.kill();
@@ -389,23 +411,20 @@ export function DroneCleaningHeroAnimation() {
         {/* Flat sun disc */}
         <circle cx="175" cy="78" r="34" fill="#F2D06B" />
 
-        {/* Fewer flat-bottom cumulus clouds (ref sheet), spread horizontally */}
-        <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.5">
-          <FlatCloud x={40} y={120} scale={1.05} variant="wide" />
-          <FlatCloud x={380} y={95} scale={0.85} variant="peak" />
-          <FlatCloud x={720} y={140} scale={0.7} variant="small" />
-          {/* Seamless loop duplicates */}
-          <FlatCloud x={40 + 960} y={120} scale={1.05} variant="wide" />
-          <FlatCloud x={380 + 960} y={95} scale={0.85} variant="peak" />
-          <FlatCloud x={720 + 960} y={140} scale={0.7} variant="small" />
+        {/* Fewer flat-bottom cumulus (ref): wide gaps, lower + varied heights */}
+        <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.46">
+          <FlatCloud x={30} y={155} scale={0.9} variant="wide" />
+          <FlatCloud x={620} y={125} scale={0.65} variant="small" />
+          <FlatCloud x={30 + 1200} y={155} scale={0.9} variant="wide" />
+          <FlatCloud x={620 + 1200} y={125} scale={0.65} variant="small" />
         </g>
-        <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.58">
-          <FlatCloud x={160} y={200} scale={0.9} variant="long" />
-          <FlatCloud x={520} y={175} scale={1} variant="puff" />
-          <FlatCloud x={880} y={210} scale={0.75} variant="asymmetric" />
-          <FlatCloud x={160 + 1100} y={200} scale={0.9} variant="long" />
-          <FlatCloud x={520 + 1100} y={175} scale={1} variant="puff" />
-          <FlatCloud x={880 + 1100} y={210} scale={0.75} variant="asymmetric" />
+        <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.55">
+          <FlatCloud x={60} y={235} scale={0.8} variant="peak" />
+          <FlatCloud x={520} y={205} scale={0.95} variant="asymmetric" />
+          <FlatCloud x={900} y={255} scale={0.62} variant="puff" />
+          <FlatCloud x={60 + 1280} y={235} scale={0.8} variant="peak" />
+          <FlatCloud x={520 + 1280} y={205} scale={0.95} variant="asymmetric" />
+          <FlatCloud x={900 + 1280} y={255} scale={0.62} variant="puff" />
         </g>
 
         {/* Distant flat skyline silhouettes */}
@@ -428,34 +447,13 @@ export function DroneCleaningHeroAnimation() {
                 L${TOWER.x + TOWER.w} ${VIEW_H} Z`}
             fill={GRAY_SIDE}
           />
-          {/* Front face */}
+          {/* Front face — solid gray, no bands / edge stripes */}
           <rect
             x={TOWER.x}
             y={TOWER.y}
             width={TOWER.w}
             height={TOWER.h}
             fill={GRAY_FACE}
-          />
-          {/* Floor bands — flat graphic detail */}
-          {Array.from({ length: ROWS + 1 }).map((_, i) => (
-            <rect
-              key={i}
-              x={TOWER.x}
-              y={TOWER.y + TOWER.padY - 8 + i * ((TOWER.h - TOWER.padY * 2) / ROWS + TOWER.gapY)}
-              width={TOWER.w}
-              height="5"
-              fill={GRAY_BAND}
-              opacity="0.55"
-            />
-          ))}
-          {/* Left edge highlight */}
-          <rect
-            x={TOWER.x}
-            y={TOWER.y}
-            width="8"
-            height={TOWER.h}
-            fill="#E2E5EA"
-            opacity="0.45"
           />
 
           {windows.map((w) => (
@@ -488,7 +486,27 @@ export function DroneCleaningHeroAnimation() {
   );
 }
 
-/** Clean window: blue glass + gleams. Dirty = light haze / soft streaks. */
+/** Seeded sparkle layout — 3–5 dots, varied size/position inside the pane. */
+function buildWindowSparkles(w: Win) {
+  const count = 3 + Math.floor(seeded(w.id, 11) * 3); // 3–5
+  const list: { x: number; y: number; size: number; rot: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    const px = 0.12 + seeded(w.id, 12 + i * 3) * 0.76;
+    const py = 0.14 + seeded(w.id, 22 + i * 5) * 0.72;
+    // Varied but keep overall subtle
+    const size = 1.8 + seeded(w.id, 32 + i * 7) * 3.6; // ~1.8–5.4
+    const rot = seeded(w.id, 42 + i * 11) * 60 - 30;
+    list.push({
+      x: w.x + w.w * px,
+      y: w.y + w.h * py,
+      size,
+      rot,
+    });
+  }
+  return list;
+}
+
+/** Clean window: blue glass + soft gleams. Dirty = light haze. */
 function FlatWindow({ w, uid }: { w: Win; uid: string }) {
   const s = seeded(w.id, 7);
   const midY = w.y + w.h * 0.55;
@@ -497,6 +515,7 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
     T${w.x + w.w} ${midY - 1}
     L${w.x + w.w} ${w.y + w.h}
     L${w.x} ${w.y + w.h} Z`;
+  const sparkles = buildWindowSparkles(w);
 
   return (
     <g>
@@ -507,43 +526,25 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
       <clipPath id={`win-clip-${w.id}-${uid}`}>
         <rect x={w.x} y={w.y} width={w.w} height={w.h} />
       </clipPath>
-      {/* Shine gleams — permanently blink after clean */}
+      {/* Soft reflection — one thin streak + very faint companion */}
       <g id={`shine-${w.id}-${uid}`} clipPath={`url(#win-clip-${w.id}-${uid})`}>
         <rect
-          x={w.x + w.w * 0.08}
+          x={w.x + w.w * 0.3}
           y={w.y - w.h}
-          width={w.w * 0.12}
-          height={w.h * 2.6}
-          fill={GLASS_GLEAM}
-          opacity="0.9"
-          transform={`rotate(-38 ${w.cx} ${w.cy})`}
-        />
-        <rect
-          x={w.x + w.w * 0.32}
-          y={w.y - w.h}
-          width={w.w * 0.07}
+          width={w.w * 0.038}
           height={w.h * 2.6}
           fill={GLASS_GLEAM_BRIGHT}
-          opacity="1"
+          opacity="0.32"
           transform={`rotate(-38 ${w.cx} ${w.cy})`}
         />
         <rect
-          x={w.x + w.w * 0.48}
+          x={w.x + w.w * 0.42}
           y={w.y - w.h}
-          width={w.w * 0.16}
+          width={w.w * 0.055}
           height={w.h * 2.6}
           fill={GLASS_GLEAM}
-          opacity="0.8"
+          opacity="0.14"
           transform={`rotate(-38 ${w.cx} ${w.cy})`}
-        />
-        {/* Soft white wash for a clearer “blink” */}
-        <rect
-          x={w.x}
-          y={w.y}
-          width={w.w}
-          height={w.h}
-          fill="#ffffff"
-          opacity="0.12"
         />
       </g>
 
@@ -558,7 +559,6 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
         />
       </clipPath>
       <g clipPath={`url(#dirt-clip-${w.id}-${uid})`}>
-        {/* Very light warm haze — glass + gleams stay visible */}
         <rect
           x={w.x}
           y={w.y}
@@ -567,19 +567,17 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
           fill="#D2C4A8"
           opacity="0.2"
         />
-        {/* Thin soft streaks */}
-        {[0, 1, 2].map((i) => (
+        {[0, 1].map((i) => (
           <rect
             key={`st-${i}`}
-            x={w.x + 6 + i * (w.w / 3.2) + s * 2.5}
+            x={w.x + 8 + i * (w.w / 2.4) + s * 2.5}
             y={w.y + 3}
             width={1}
             height={w.h - 6}
             fill="#9A8468"
-            opacity={0.1 + seeded(w.id, i + 4) * 0.1}
+            opacity={0.08 + seeded(w.id, i + 4) * 0.08}
           />
         ))}
-        {/* Faint haze patch */}
         <ellipse
           cx={w.x + w.w * (0.35 + s * 0.1)}
           cy={w.y + w.h * 0.4}
@@ -601,30 +599,29 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
         strokeWidth="3.2"
       />
 
-      <g
-        id={`sparkle-${w.id}-${uid}`}
-        opacity="0"
-        style={{ transformOrigin: `${w.cx}px ${w.cy - 2}px` }}
-      >
-        <g transform={`translate(${w.cx} ${w.cy - 2})`}>
-          <path
-            d="M0 -5 L0.8 -0.8 L5 0 L0.8 0.8 L0 5 L-0.8 0.8 L-5 0 L-0.8 -0.8 Z"
-            fill="#ffffff"
-            opacity="0.95"
-          />
-        </g>
+      {/* Multiple subtle sparkles — appear after clean */}
+      <g id={`sparkle-${w.id}-${uid}`} opacity="0" clipPath={`url(#win-clip-${w.id}-${uid})`}>
+        {sparkles.map((sp, i) => (
+          <g
+            key={`sp-${i}`}
+            data-spark
+            style={{ transformOrigin: `${sp.x}px ${sp.y}px` }}
+          >
+            <g transform={`translate(${sp.x} ${sp.y}) rotate(${sp.rot}) scale(${sp.size / 5})`}>
+              <path
+                d="M0 -5 L0.7 -0.7 L5 0 L0.7 0.7 L0 5 L-0.7 0.7 L-5 0 L-0.7 -0.7 Z"
+                fill="#ffffff"
+                opacity="0.85"
+              />
+            </g>
+          </g>
+        ))}
       </g>
     </g>
   );
 }
 
-type CloudVariant =
-  | "small"
-  | "puff"
-  | "peak"
-  | "wide"
-  | "long"
-  | "asymmetric";
+type CloudVariant = "small" | "puff" | "peak" | "wide" | "asymmetric";
 
 /**
  * Flat-bottom cumulus clouds from the reference sheet:
@@ -651,19 +648,6 @@ function FlatCloud({
         <circle cx="24" cy="26" r="16" />
         <circle cx="46" cy="20" r="20" />
         <circle cx="70" cy="26" r="14" />
-      </g>
-    );
-  }
-  if (variant === "long") {
-    return (
-      <g transform={t}>
-        <rect x="4" y="32" width="170" height="14" />
-        <circle cx="22" cy="30" r="14" />
-        <circle cx="48" cy="24" r="18" />
-        <circle cx="80" cy="22" r="20" />
-        <circle cx="114" cy="24" r="18" />
-        <circle cx="146" cy="28" r="16" />
-        <circle cx="168" cy="32" r="12" />
       </g>
     );
   }
