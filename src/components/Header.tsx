@@ -52,9 +52,22 @@ export function Header() {
         <Link
           href="#top"
           className="relative z-10 flex shrink-0 items-center rounded-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
-          onClick={() => setOpen(false)}
+          onClick={(e) => {
+            setOpen(false);
+            // Force true top — empty/hash targets can leave residual scrollY
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            if (typeof history !== "undefined") {
+              history.replaceState(null, "", "#top");
+            }
+          }}
         >
-          <Logo className="h-9 w-auto text-white sm:h-10" variant="mono" idSuffix="hdr" />
+          <Logo
+            className="h-9 w-auto text-white sm:h-10"
+            variant="mono"
+            idSuffix="hdr"
+            priority
+          />
         </Link>
 
         <nav

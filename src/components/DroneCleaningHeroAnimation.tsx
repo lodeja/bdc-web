@@ -108,6 +108,9 @@ function seeded(id: string, salt = 0): number {
 const DRONE_OFFSET_X = -70;
 const DRONE_OFFSET_Y = -2;
 
+/** Survives React Strict Mode remount — one-shot clean must not re-dirty. */
+let cleaningSessionComplete = false;
+
 export function DroneCleaningHeroAnimation() {
   const uid = useId().replace(/:/g, "");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -192,6 +195,16 @@ export function DroneCleaningHeroAnimation() {
       }
     };
 
+    const clearAllDirt = () => {
+      dirtyMasks.forEach((m, i) => {
+        if (!m) return;
+        const w = route[i];
+        gsap.set(m, { attr: { x: w.x + w.w, width: 0 } });
+      });
+      gsap.set(drone, { opacity: 0 });
+      gsap.set(beams, { opacity: 0 });
+    };
+
     dirtyMasks.forEach((m, i) => {
       if (!m) return;
       const w = route[i];
@@ -205,21 +218,27 @@ export function DroneCleaningHeroAnimation() {
     });
     gsap.set(beams, { opacity: 0 });
 
+    // Reduced motion: cleaned + steady gleams (no flight, no blink loops)
     if (reduce) {
-      dirtyMasks.forEach((m, i) => {
-        if (!m) return;
-        const w = route[i];
-        gsap.set(m, { attr: { x: w.x + w.w, width: 0 } });
-      });
+      clearAllDirt();
       shines.forEach((s) => {
         if (s) gsap.set(s, { opacity: 0.85 });
       });
       sparkles.forEach((s) => {
         if (s) gsap.set(s, { opacity: 0.55, scale: 1 });
       });
-      gsap.set(drone, { opacity: 0 });
-      gsap.set(beams, { opacity: 0 });
       return () => {
+        cloudTl.kill();
+        cloudTlRef.current = null;
+      };
+    }
+
+    // Remount after one-shot finished (Strict Mode / HMR): stay clean, resume blink
+    if (cleaningSessionComplete) {
+      clearAllDirt();
+      route.forEach((w, i) => startPermanentBlink(w, i));
+      return () => {
+        blinkTweens.forEach((t) => t.kill());
         cloudTl.kill();
         cloudTlRef.current = null;
       };
@@ -236,7 +255,12 @@ export function DroneCleaningHeroAnimation() {
     gsap.set(drone, { x: start.x, y: start.y, opacity: 0, rotate: 0 });
 
     mainTlRef.current?.kill();
-    const tl = gsap.timeline({ defaults: { ease: "power2.inOut" } });
+    const tl = gsap.timeline({
+      defaults: { ease: "power2.inOut" },
+      onComplete: () => {
+        cleaningSessionComplete = true;
+      },
+    });
     mainTlRef.current = tl;
 
     tl.to(drone, { opacity: 1, duration: 0.4, ease: "power1.out" })
@@ -252,7 +276,6 @@ export function DroneCleaningHeroAnimation() {
     route.forEach((w, i) => {
       const pos = hover(w);
       const mask = dirtyMasks[i];
-      const sparkle = sparkles[i];
       const travel = i === 0 ? 0.14 : 0.36 + seeded(w.id, 1) * 0.1;
       const cleanDur = 0.5 + seeded(w.id, 2) * 0.1;
       const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.2;
@@ -323,6 +346,8 @@ export function DroneCleaningHeroAnimation() {
     tl.to(drone, { opacity: 0, duration: 0.18 }, ">-0.14");
 
     return () => {
+      // If cleanup runs before finish (Strict Mode), keep partial progress
+      // by marking complete only via onComplete; kill active tweens cleanly.
       tl.kill();
       mainTlRef.current = null;
       delayedCalls.forEach((t) => t.kill());

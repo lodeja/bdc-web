@@ -38,26 +38,35 @@ const SECTIONS = [
 ] as const;
 
 export function SectionAnchors() {
+  const lastId = SECTIONS[SECTIONS.length - 1]?.id;
+
   return (
     <div className="bg-bdc-fog">
-      {SECTIONS.map((section) => (
-        <section
-          key={section.id}
-          id={section.id}
-          className="bdc-section-placeholder scroll-mt-[var(--header-height)]"
-          aria-labelledby={`${section.id}-heading`}
-        >
-          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-            <h2
-              id={`${section.id}-heading`}
-              className="text-2xl font-semibold tracking-tight text-bdc-navy sm:text-3xl"
-            >
-              {section.title}
-            </h2>
-            <p className="mt-3 max-w-xl text-bdc-slate">{section.note}</p>
-          </div>
-        </section>
-      ))}
+      {SECTIONS.map((section) => {
+        const isLast = section.id === lastId;
+        return (
+          <section
+            key={section.id}
+            id={section.id}
+            className={`bdc-section-placeholder scroll-mt-[var(--header-height)] ${
+              isLast
+                ? "min-h-[calc(100dvh-var(--header-height))]"
+                : "min-h-[min(70dvh,36rem)]"
+            }`}
+            aria-labelledby={`${section.id}-heading`}
+          >
+            <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+              <h2
+                id={`${section.id}-heading`}
+                className="text-2xl font-semibold tracking-tight text-bdc-navy sm:text-3xl"
+              >
+                {section.title}
+              </h2>
+              <p className="mt-3 max-w-xl text-bdc-slate">{section.note}</p>
+            </div>
+          </section>
+        );
+      })}
 
       {/* Minimal footer stub so page feels closed — full footer in Phase 3 */}
       <footer className="border-t border-bdc-navy/10 bg-bdc-navy-deep py-10 text-white/60">

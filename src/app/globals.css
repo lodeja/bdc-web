@@ -45,6 +45,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: var(--header-height);
   color-scheme: dark;
   -webkit-tap-highlight-color: transparent;
 }
