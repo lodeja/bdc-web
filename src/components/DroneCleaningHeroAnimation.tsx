@@ -461,23 +461,23 @@ export function DroneCleaningHeroAnimation() {
           ))}
         </g>
 
-        {/* Simple gray icon drone */}
+        {/* Gray icon drone — ¾ side view, nose toward facade */}
         <g id={`drone-${uid}`}>
           <g id={`beams-${uid}`} opacity="0">
             {[0, 1, 2, 3].map((i) => (
               <line
                 key={i}
-                x1="22"
-                y1={0 + i * 3.2}
-                x2="72"
-                y2={-1 + i * 3.6}
+                x1="30"
+                y1={5 + i * 2.8}
+                x2="78"
+                y2={3 + i * 3.4}
                 stroke={`url(#beam-${uid})`}
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 opacity={0.85 - i * 0.12}
               />
             ))}
-            <ellipse cx="74" cy="6" rx="7" ry="11" fill="#ffffff" opacity="0.2" />
+            <ellipse cx="80" cy="8" rx="7" ry="11" fill="#ffffff" opacity="0.2" />
           </g>
           <SimpleDrone />
         </g>
@@ -738,58 +738,114 @@ function FlatCloud({
 }
 
 /**
- * Minimal gray drone — few colours, subtle translucent prop discs.
+ * Minimal gray cleaning drone in ¾ side view (nose → facade).
+ * Matches the tower’s side-angle scene — not a top-down X icon.
  */
 function SimpleDrone() {
-  const hubs: [number, number][] = [
-    [-20, -12],
-    [20, -12],
-    [-20, 12],
-    [20, 12],
+  // Far (rear) props sit higher/smaller; near (front) props larger — depth cue
+  const farProps: { cx: number; cy: number; rx: number; ry: number }[] = [
+    { cx: -18, cy: -14, rx: 9, ry: 2.2 },
+    { cx: 8, cy: -16, rx: 8, ry: 2 },
   ];
+  const nearProps: { cx: number; cy: number; rx: number; ry: number }[] = [
+    { cx: -16, cy: 10, rx: 12, ry: 2.6 },
+    { cx: 12, cy: 8, rx: 11, ry: 2.5 },
+  ];
+
   return (
     <g>
-      {/* Subtle propeller discs — low-contrast, soft spin */}
-      {hubs.map(([cx, cy], i) => (
-        <ellipse
-          key={`p-${i}`}
-          cx={cx}
-          cy={cy}
-          rx="12"
-          ry="2"
-          fill="#ffffff"
-          opacity="0.35"
-        >
-          <animate
-            attributeName="rx"
-            values="12;4;12"
-            dur={`${0.14 + (i % 2) * 0.02}s`}
-            repeatCount="indefinite"
-          />
-        </ellipse>
+      {/* Far arms + spinning discs (receding) */}
+      <path
+        d="M-4 -2 L-18 -14 M4 -3 L8 -16"
+        stroke="#5A6068"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        fill="none"
+      />
+      {farProps.map((p, i) => (
+        <g key={`far-${i}`}>
+          <ellipse
+            cx={p.cx}
+            cy={p.cy}
+            rx={p.rx}
+            ry={p.ry}
+            fill="#ffffff"
+            opacity="0.28"
+          >
+            <animate
+              attributeName="rx"
+              values={`${p.rx};${p.rx * 0.35};${p.rx}`}
+              dur={`${0.15 + (i % 2) * 0.02}s`}
+              repeatCount="indefinite"
+            />
+          </ellipse>
+          <circle cx={p.cx} cy={p.cy} r="1.8" fill="#2A2E34" />
+        </g>
       ))}
 
-      {/* Arms */}
+      {/* Fuselage — side block + lighter top plane (¾ read) */}
       <path
-        d="M0 0 L-20 -12 M0 0 L20 -12 M0 0 L-20 12 M0 0 L20 12"
-        stroke="#5A6068"
+        d="M-14 -2 L-10 -9 L12 -11 L16 -3 L14 7 L-12 8 Z"
+        fill="#5A6068"
+      />
+      <path
+        d="M-12 -1 L-8 -7 L11 -9 L14 -2 L12 6 L-10 7 Z"
+        fill="#6E747E"
+      />
+      <path
+        d="M-8 -7 L11 -9 L14 -2 L-4 -1 Z"
+        fill="#8A9098"
+        opacity="0.85"
+      />
+      {/* Dark sensor / camera under nose */}
+      <ellipse cx="10" cy="4" rx="3.2" ry="2" fill="#3A4048" />
+
+      {/* Near arms + discs (closer to camera) */}
+      <path
+        d="M-4 2 L-16 10 M6 2 L12 8"
+        stroke="#4A5058"
         strokeWidth="2.4"
         strokeLinecap="round"
         fill="none"
       />
-
-      {/* Body — single gray block */}
-      <rect x="-12" y="-8" width="24" height="16" rx="4" fill="#6E747E" />
-      {/* Tiny darker panel — no cyan branding */}
-      <rect x="-6" y="-2" width="12" height="3" rx="1" fill="#4A5058" />
-
-      {hubs.map(([cx, cy], i) => (
-        <circle key={`h-${i}`} cx={cx} cy={cy} r="2.2" fill="#2A2E34" />
+      {nearProps.map((p, i) => (
+        <g key={`near-${i}`}>
+          <ellipse
+            cx={p.cx}
+            cy={p.cy}
+            rx={p.rx}
+            ry={p.ry}
+            fill="#ffffff"
+            opacity="0.38"
+          >
+            <animate
+              attributeName="rx"
+              values={`${p.rx};${p.rx * 0.35};${p.rx}`}
+              dur={`${0.13 + (i % 2) * 0.02}s`}
+              repeatCount="indefinite"
+            />
+          </ellipse>
+          <circle cx={p.cx} cy={p.cy} r="2.1" fill="#2A2E34" />
+        </g>
       ))}
 
-      {/* Compact spray tip */}
-      <path d="M12 0 L26 2 L12 4 Z" fill="#5A6068" />
-      <circle cx="26" cy="2" r="1.8" fill="#8A9098" />
+      {/* Short landing skids */}
+      <path
+        d="M-10 8 L-11 15 M8 7 L9 14"
+        stroke="#3A4048"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M-14 15 L-8 15 M6 14 L12 14"
+        stroke="#3A4048"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+
+      {/* Spray boom aimed at facade (right) */}
+      <path d="M14 3 L30 5 L14 7 Z" fill="#5A6068" />
+      <circle cx="31" cy="5" r="2" fill="#8A9098" />
     </g>
   );
 }
