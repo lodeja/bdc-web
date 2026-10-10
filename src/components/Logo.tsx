@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { withBasePath } from "@/lib/paths";
 
 type LogoProps = {
   className?: string;
@@ -20,10 +21,11 @@ export function Logo({
   title = "Belgian Drone Cleaning",
   priority = false,
 }: LogoProps) {
-  const src =
+  const src = withBasePath(
     variant === "mono"
       ? "/brand/bdc-logo-white-cyan.png"
-      : "/brand/bdc-logo.png";
+      : "/brand/bdc-logo.png",
+  );
 
   return (
     <Image

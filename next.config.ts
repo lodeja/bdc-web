@@ -7,6 +7,7 @@ import type { NextConfig } from "next";
  */
 const isGitHubPages = process.env.GITHUB_PAGES === "true";
 const repoName = "bdc-web";
+const basePath = isGitHubPages ? `/${repoName}` : "";
 
 const nextConfig: NextConfig = {
   output: "export",
@@ -15,8 +16,13 @@ const nextConfig: NextConfig = {
   },
   // Needed for GitHub Pages nested project paths
   trailingSlash: true,
-  basePath: isGitHubPages ? `/${repoName}` : undefined,
-  assetPrefix: isGitHubPages ? `/${repoName}/` : undefined,
+  basePath: basePath || undefined,
+  assetPrefix: basePath ? `${basePath}/` : undefined,
+  // Expose to client + metadata so /brand/* and similar get the prefix
+  // (next/image unoptimized does not always rewrite public URLs on export).
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
+  },
   turbopack: {
     rules: {
       "*.css": {
