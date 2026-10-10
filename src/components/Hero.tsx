@@ -22,15 +22,13 @@ export function Hero() {
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="max-w-xl lg:max-w-2xl">
           <div className="mb-8 text-white sm:mb-10" translate="no">
+            {/* Wordmark already includes “JANSSENS DRONE CLEANING” — no duplicate text */}
             <Logo
-              className="h-12 w-auto sm:h-14 md:h-16"
-              variant="mono"
+              className="h-28 w-auto sm:h-32 md:h-36"
+              variant="wordmark"
               idSuffix="hero"
               priority
             />
-            <p className="mt-3 text-sm font-medium tracking-[0.18em] text-bdc-cyan uppercase sm:text-base">
-              Janssens Drone Cleaning
-            </p>
           </div>
 
           <h1

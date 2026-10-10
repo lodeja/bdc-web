@@ -63,7 +63,7 @@ export function Header() {
           }}
         >
           <Logo
-            className="h-9 w-auto text-white sm:h-10"
+            className="h-10 w-auto sm:h-11"
             variant="mono"
             idSuffix="hdr"
             priority

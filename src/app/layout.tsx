@@ -45,7 +45,10 @@ export const metadata: Metadata = {
     follow: true,
   },
   icons: {
-    icon: withBasePath("/brand/favicon.svg"),
+    icon: [
+      { url: withBasePath("/brand/favicon.png"), type: "image/png", sizes: "512x512" },
+      { url: withBasePath("/brand/favicon-32.png"), type: "image/png", sizes: "32x32" },
+    ],
   },
 };
 

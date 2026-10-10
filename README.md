@@ -22,6 +22,6 @@ GITHUB_PAGES=true npm run build   # static export with /bdc-web basePath
 
 ## Brand
 
-Logo SVGs in `/public/brand/`: `jdc-mark.svg`, `jdc-mono.svg`, `jdc-wordmark.svg`, `favicon.svg`.
+Logo PNGs in `/public/brand/` (transparent): `jdc-mark.png`, `jdc-mono.png`, `jdc-wordmark.png`, `jdc-mark-dark.png`, `favicon.png`.
 
 Contact placeholders: `src/lib/contact.ts`.

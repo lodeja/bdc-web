@@ -20,11 +20,11 @@ export function Footer() {
             href="#top"
             className="inline-flex rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
           >
-            <Logo className="h-9 w-auto" variant="mono" idSuffix="ftr" />
+            <Logo className="h-11 w-auto" variant="mono" idSuffix="ftr" />
           </a>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/55">
-            Janssens Drone Cleaning — professionele drone-reiniging voor daken,
-            gevels, zonnepanelen en geschikte industriële oppervlakken.
+            Professionele drone-reiniging voor daken, gevels, zonnepanelen en
+            geschikte industriële oppervlakken.
           </p>
         </div>
 
