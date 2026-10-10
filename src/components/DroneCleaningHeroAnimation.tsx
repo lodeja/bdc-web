@@ -1,504 +1,749 @@
 "use client";
 
-import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-  animate,
-} from "motion/react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import gsap from "gsap";
+import { useEffect, useId, useMemo, useRef } from "react";
 
-/** One-shot window cleaning — never resets to dirty. */
-const COLS = 5;
-const ROWS = 7;
-const TOTAL = COLS * ROWS;
-/** Seconds to clean all windows (single pass, no loop) */
-const CLEAN_SECONDS = 24;
+/**
+ * Premium one-shot tower cleaning scene (SVG + GSAP).
+ * LottieFiles AI was not available — custom orchestration.
+ * Drone silhouette based on Meldrone / MelClean Solar industrial cleaning drone
+ * (hexacopter, hose feed, dual underside spray nozzles).
+ */
 
-/** Survives React Strict Mode remounts in the same page session */
-let sessionCleanComplete = false;
+const COLS = 4;
+const ROWS = 6;
+const VIEW_W = 960;
+const VIEW_H = 720;
 
-const BUILDING = {
-  originX: 420,
-  originY: 110,
-  colW: 58,
-  rowH: 52,
-  skewX: 18,
-  winW: 42,
-  winH: 36,
+const TOWER = {
+  x: 520,
+  y: 72,
+  w: 280,
+  h: 560,
+  padX: 22,
+  padY: 28,
+  gapX: 12,
+  gapY: 14,
 };
 
 type Win = {
-  id: number;
+  id: string;
   col: number;
   row: number;
   x: number;
   y: number;
+  w: number;
+  h: number;
   cx: number;
   cy: number;
 };
 
 function buildWindows(): Win[] {
+  const cellW =
+    (TOWER.w - TOWER.padX * 2 - TOWER.gapX * (COLS - 1)) / COLS;
+  const cellH =
+    (TOWER.h - TOWER.padY * 2 - TOWER.gapY * (ROWS - 1)) / ROWS;
   const list: Win[] = [];
-  let id = 0;
-  // Column-major, top→bottom then next bay (drone works vertically)
-  for (let col = 0; col < COLS; col++) {
-    for (let row = 0; row < ROWS; row++) {
-      const x =
-        BUILDING.originX + col * BUILDING.colW + row * (BUILDING.skewX / ROWS);
-      const y = BUILDING.originY + row * BUILDING.rowH;
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      const x = TOWER.x + TOWER.padX + col * (cellW + TOWER.gapX);
+      const y = TOWER.y + TOWER.padY + row * (cellH + TOWER.gapY);
       list.push({
-        id: id++,
+        id: `w-${row}-${col}`,
         col,
         row,
         x,
         y,
-        cx: x + BUILDING.winW / 2,
-        cy: y + BUILDING.winH / 2,
+        w: cellW,
+        h: cellH,
+        cx: x + cellW / 2,
+        cy: y + cellH / 2,
       });
     }
   }
   return list;
 }
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
+/** Serpentine: L→R on even rows, R→L on odd rows */
+function buildRoute(windows: Win[]): Win[] {
+  const route: Win[] = [];
+  for (let row = 0; row < ROWS; row++) {
+    const rowWins = windows.filter((w) => w.row === row);
+    route.push(
+      ...(row % 2 === 0
+        ? rowWins.sort((a, b) => a.col - b.col)
+        : rowWins.sort((a, b) => b.col - a.col)),
+    );
+  }
+  return route;
 }
 
-/** Smoothstep for drone ease between windows */
-function smooth(t: number) {
-  const x = Math.min(1, Math.max(0, t));
-  return x * x * (3 - 2 * x);
+/** Deterministic 0–1 from window id (stable across remounts in a session) */
+function seeded(id: string, salt = 0): number {
+  let h = salt * 374761393;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return (h % 1000) / 1000;
 }
+
+const DRONE_OFFSET_X = -78; // hover left of glass, nozzles aim +X
+const DRONE_OFFSET_Y = -6;
 
 export function DroneCleaningHeroAnimation() {
-  const reduceMotion = useReducedMotion();
   const uid = useId().replace(/:/g, "");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const mainTlRef = useRef<gsap.core.Timeline | null>(null);
+  const cloudTlRef = useRef<gsap.core.Timeline | null>(null);
+
   const windows = useMemo(() => buildWindows(), []);
-  const progress = useMotionValue(sessionCleanComplete || reduceMotion ? 1 : 0);
-  const [done, setDone] = useState(
-    () => Boolean(sessionCleanComplete || reduceMotion),
-  );
-  const [cleaned, setCleaned] = useState(() =>
-    sessionCleanComplete || reduceMotion ? TOTAL : 0,
-  );
-  const maxCleaned = useRef(cleaned);
+  const route = useMemo(() => buildRoute(windows), [windows]);
 
   useEffect(() => {
-    if (reduceMotion || sessionCleanComplete) {
-      progress.set(1);
-      setDone(true);
-      setCleaned(TOTAL);
-      maxCleaned.current = TOTAL;
-      return;
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const drone = svg.querySelector<SVGGElement>(`#drone-${uid}`);
+    const beams = svg.querySelector<SVGGElement>(`#beams-${uid}`);
+    const hose = svg.querySelector<SVGPathElement>(`#hose-${uid}`);
+    const cloudFar = svg.querySelector<SVGGElement>(`#cloud-far-${uid}`);
+    const cloudMid = svg.querySelector<SVGGElement>(`#cloud-mid-${uid}`);
+    const cloudNear = svg.querySelector<SVGGElement>(`#cloud-near-${uid}`);
+
+    if (!drone || !beams) return;
+
+    // Persistent clouds — independent of cleaning timeline
+    cloudTlRef.current?.kill();
+    const cloudTl = gsap.timeline({ repeat: -1 });
+    cloudTlRef.current = cloudTl;
+    if (cloudFar) {
+      gsap.set(cloudFar, { x: 0 });
+      cloudTl.to(cloudFar, { x: -420, duration: 90, ease: "none" }, 0);
     }
-    progress.set(0);
-    const controls = animate(progress, 1, {
-      duration: CLEAN_SECONDS,
-      ease: "linear",
-      onComplete: () => {
-        sessionCleanComplete = true;
-        setDone(true);
-        setCleaned(TOTAL);
-        maxCleaned.current = TOTAL;
-      },
-    });
-    return () => controls.stop();
-  }, [progress, reduceMotion]);
+    if (cloudMid) {
+      gsap.set(cloudMid, { x: 0 });
+      cloudTl.to(cloudMid, { x: -520, duration: 60, ease: "none" }, 0);
+    }
+    if (cloudNear) {
+      gsap.set(cloudNear, { x: 0 });
+      cloudTl.to(cloudNear, { x: -640, duration: 42, ease: "none" }, 0);
+    }
 
-  useEffect(() => {
-    return progress.on("change", (p) => {
-      // Monotonic: windows only get cleaner, never dirtier
-      const idx = Math.min(TOTAL, Math.floor(p * TOTAL + 0.92));
-      if (idx > maxCleaned.current) {
-        maxCleaned.current = idx;
-        setCleaned(idx);
+    const dirtyMasks = route.map((w) =>
+      svg.querySelector<SVGRectElement>(`#dirty-mask-${w.id}-${uid}`),
+    );
+    const sparkles = route.map((w) =>
+      svg.querySelector<SVGGElement>(`#sparkle-${w.id}-${uid}`),
+    );
+
+    // Reset visual state — full dirt coverage
+    dirtyMasks.forEach((m, i) => {
+      if (!m) return;
+      const w = route[i];
+      gsap.set(m, { attr: { x: w.x, width: w.w } });
+    });
+    sparkles.forEach((s) => {
+      if (s) gsap.set(s, { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" });
+    });
+    gsap.set(beams, { opacity: 0 });
+
+    if (reduce) {
+      dirtyMasks.forEach((m, i) => {
+        if (!m) return;
+        const w = route[i];
+        gsap.set(m, { attr: { x: w.x + w.w, width: 0 } });
+      });
+      gsap.set(drone, { opacity: 0 });
+      gsap.set(beams, { opacity: 0 });
+      if (hose) gsap.set(hose, { opacity: 0 });
+      return () => {
+        cloudTl.kill();
+        cloudTlRef.current = null;
+      };
+    }
+
+    const hover = (w: Win) => ({
+      x: w.cx + DRONE_OFFSET_X,
+      y: w.cy + DRONE_OFFSET_Y,
+    });
+
+    const start = { x: 120, y: 180 };
+    const exit = { x: VIEW_W + 140, y: 96 };
+
+    gsap.set(drone, { x: start.x, y: start.y, opacity: 0, rotate: 0 });
+    if (hose) gsap.set(hose, { opacity: 0.85 });
+
+    mainTlRef.current?.kill();
+    const tl = gsap.timeline({ defaults: { ease: "power2.inOut" } });
+    mainTlRef.current = tl;
+
+    // Phase A — entrance
+    tl.to(drone, { opacity: 1, duration: 0.45, ease: "power1.out" })
+      .to(drone, {
+        x: hover(route[0]).x,
+        y: hover(route[0]).y,
+        duration: 1.6,
+        ease: "power3.inOut",
+      })
+      .to(drone, { y: "+=3", duration: 0.55, ease: "sine.inOut" })
+      .to(drone, { y: "-=3", duration: 0.55, ease: "sine.inOut" });
+
+    // Phases B–D — window-by-window
+    route.forEach((w, i) => {
+      const pos = hover(w);
+      const mask = dirtyMasks[i];
+      const sparkle = sparkles[i];
+      const travel = i === 0 ? 0.2 : 0.42 + seeded(w.id, 1) * 0.12;
+      const cleanDur = 0.58 + seeded(w.id, 2) * 0.12;
+      const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.28;
+
+      if (i > 0) {
+        // Gentle bank into travel direction
+        const prev = route[i - 1];
+        const bank = Math.max(-5, Math.min(5, (pos.y - hover(prev).y) * 0.08));
+        tl.to(
+          drone,
+          {
+            x: pos.x,
+            y: pos.y,
+            rotate: bank,
+            duration: travel,
+            ease: "power2.inOut",
+          },
+          ">+0.04",
+        );
+        tl.to(drone, { rotate: 0, duration: 0.28, ease: "sine.out" }, ">-0.2");
+      }
+
+      // Stabilize + activate beams aimed at this window
+      tl.to(beams, { opacity: 1, duration: 0.18, ease: "power1.out" }, ">-0.05");
+      tl.to(
+        drone,
+        { y: pos.y + 2, duration: 0.22, ease: "sine.inOut" },
+        "<",
+      );
+
+      // Dirt wipe with the jet: clear from left (beam side) → right
+      if (mask) {
+        tl.to(
+          mask,
+          {
+            attr: { x: w.x + w.w, width: 0 },
+            duration: cleanDur,
+            ease: "power1.inOut",
+          },
+          "<0.12",
+        );
+      }
+
+      // One-shot sparkle — independent so it never blocks the flight path
+      if (sparkle) {
+        tl.call(
+          () => {
+            gsap
+              .timeline()
+              .to(sparkle, {
+                opacity: 1,
+                scale: 1,
+                duration: 0.28,
+                delay: sparkleDelay,
+                ease: "power2.out",
+              })
+              .to(sparkle, {
+                opacity: 0,
+                scale: 1.15,
+                duration: 0.55,
+                ease: "power1.in",
+              });
+          },
+          undefined,
+          ">-0.02",
+        );
+      }
+
+      // Soften beams between windows (still "working")
+      if (i < route.length - 1) {
+        tl.to(beams, { opacity: 0.45, duration: 0.12 }, ">-0.05");
       }
     });
-  }, [progress]);
 
-  const droneX = useTransform(progress, (p) => {
-    const f = Math.min(TOTAL - 1.001, p * TOTAL);
-    const i0 = Math.floor(f);
-    const i1 = Math.min(TOTAL - 1, i0 + 1);
-    const t = smooth(f - i0);
-    const a = windows[i0];
-    const b = windows[i1];
-    // Stand left of glass so the boom aims into the façade (+X)
-    return lerp(a.cx - 88, b.cx - 88, t);
-  });
+    // Phase E — beams off, exit
+    tl.to(beams, { opacity: 0, duration: 0.35, ease: "power1.in" });
+    tl.to(drone, {
+      x: TOWER.x + TOWER.w * 0.35,
+      y: TOWER.y - 20,
+      rotate: -4,
+      duration: 1.1,
+      ease: "power2.inOut",
+    });
+    tl.to(drone, {
+      x: exit.x,
+      y: exit.y,
+      rotate: -8,
+      opacity: 1,
+      duration: 1.8,
+      ease: "power3.in",
+    });
+    tl.to(drone, { opacity: 0, duration: 0.25 }, ">-0.2");
+    if (hose) tl.to(hose, { opacity: 0, duration: 0.2 }, "<");
 
-  const droneY = useTransform(progress, (p) => {
-    const f = Math.min(TOTAL - 1.001, p * TOTAL);
-    const i0 = Math.floor(f);
-    const i1 = Math.min(TOTAL - 1, i0 + 1);
-    const t = smooth(f - i0);
-    const a = windows[i0];
-    const b = windows[i1];
-    return lerp(a.cy - 28, b.cy - 28, t);
-  });
+    // Phase F — clouds keep running via cloudTl (not killed here)
 
-  // Nose into glass (+X). Small pitch only — keep boom aimed at the façade.
-  const droneRotate = useTransform(progress, (p) => {
-    const f = Math.min(TOTAL - 1.001, p * TOTAL);
-    const i0 = Math.floor(f);
-    const i1 = Math.min(TOTAL - 1, i0 + 1);
-    const a = windows[i0];
-    const b = windows[i1];
-    const dy = b.cy - a.cy;
-    // Descending bay → slight nose-down; climbing to next column → nose-up
-    return Math.max(-6, Math.min(14, dy > 0 ? 10 : dy < 0 ? -4 : 6));
-  });
-
-  // Closer columns read larger; far bays recede with the perspective slab
-  const droneScale = useTransform(progress, (p) => {
-    const f = Math.min(TOTAL - 1.001, p * TOTAL);
-    const i0 = Math.floor(f);
-    const col = windows[i0]?.col ?? 0;
-    return 1.08 - col * 0.06;
-  });
-
-  const activeIndex = Math.min(TOTAL - 1, cleaned);
-  const target = windows[activeIndex] ?? windows[0];
-  const spraying = !done && !reduceMotion;
+    return () => {
+      tl.kill();
+      mainTlRef.current = null;
+      cloudTl.kill();
+      cloudTlRef.current = null;
+    };
+  }, [uid, route]);
 
   return (
     <div
+      ref={rootRef}
       className="relative h-full w-full overflow-hidden"
       role="img"
-      aria-label="Animatie van een reinigingsdrone die raam per raam een gebouwgevel schoonmaakt"
+      aria-label="Animatie van een professionele reinigingsdrone die raam per raam een torengevel schoonmaakt"
     >
       <svg
-        viewBox="0 0 960 720"
+        ref={svgRef}
+        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         className="h-full w-full"
         preserveAspectRatio="xMidYMid slice"
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0.2" y2="1">
-            <stop offset="0%" stopColor="#050d18" />
-            <stop offset="55%" stopColor="#0c223c" />
-            <stop offset="100%" stopColor="#152536" />
+          <linearGradient id={`sky-${uid}`} x1="0" y1="0" x2="0.1" y2="1">
+            <stop offset="0%" stopColor="#4a90c2" />
+            <stop offset="32%" stopColor="#1e4f7a" />
+            <stop offset="68%" stopColor="#0f2a48" />
+            <stop offset="100%" stopColor="#071525" />
           </linearGradient>
-          <linearGradient id={`wall-${uid}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#2a3344" />
+          <linearGradient id={`tower-${uid}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#2c3545" />
+            <stop offset="55%" stopColor="#1c2430" />
+            <stop offset="100%" stopColor="#121820" />
+          </linearGradient>
+          <linearGradient id={`tower-side-${uid}`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#0e141c" />
             <stop offset="100%" stopColor="#1a222e" />
           </linearGradient>
-          <linearGradient id={`dirtyG-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3a4030" />
-            <stop offset="100%" stopColor="#1c2218" />
+          <linearGradient id={`clean-glass-${uid}`} x1="0" y1="0" x2="0.2" y2="1">
+            <stop offset="0%" stopColor="#c8eef8" />
+            <stop offset="45%" stopColor="#5bb8d4" />
+            <stop offset="100%" stopColor="#2a6f8c" />
           </linearGradient>
-          <linearGradient id={`cleanG-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a6e6f8" />
-            <stop offset="100%" stopColor="#2a7fa3" />
+          <linearGradient id={`dirty-glass-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#4a4e52" />
+            <stop offset="100%" stopColor="#262a2e" />
           </linearGradient>
-          <filter
-            id={`glow-${uid}`}
-            x="-40%"
-            y="-40%"
-            width="180%"
-            height="180%"
-          >
-            <feGaussianBlur stdDeviation="2.5" result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <linearGradient id={`beam-${uid}`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#e8fbff" stopOpacity="0.15" />
+            <stop offset="35%" stopColor="#b8f0ff" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#7ad4ea" stopOpacity="0.2" />
+          </linearGradient>
+          <radialGradient id={`mist-${uid}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#a8e8f5" stopOpacity="0" />
+          </radialGradient>
+          <filter id={`soft-${uid}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="1.2" />
           </filter>
         </defs>
 
-        <rect width="960" height="720" fill={`url(#sky-${uid})`} />
-        <ellipse
-          cx="180"
-          cy="100"
-          rx="200"
-          ry="60"
-          fill="#1a3a58"
-          opacity="0.25"
-        />
-        <g opacity="0.35" fill="#081420">
-          <rect x="30" y="320" width="50" height="320" />
-          <rect x="90" y="260" width="44" height="380" />
-          <rect x="145" y="340" width="70" height="300" />
-          <rect x="230" y="280" width="40" height="360" />
-        </g>
-        <path d="M0 640 L960 600 L960 720 L0 720 Z" fill="#080f18" />
+        {/* Sky */}
+        <rect width={VIEW_W} height={VIEW_H} fill={`url(#sky-${uid})`} />
 
-        {/* Perspective building slab */}
+        {/* Cloud layers (duplicated for seamless drift) */}
+        <g id={`cloud-far-${uid}`} opacity="0.55">
+          <CloudBand y={90} fill="#d8eaf6" opacity={0.55} />
+          <CloudBand y={90} fill="#d8eaf6" opacity={0.55} xOffset={420} />
+        </g>
+        <g id={`cloud-mid-${uid}`} opacity="0.7">
+          <CloudBand y={150} fill="#e8f4fc" opacity={0.65} scale={1.15} />
+          <CloudBand
+            y={150}
+            fill="#e8f4fc"
+            opacity={0.65}
+            scale={1.15}
+            xOffset={520}
+          />
+        </g>
+        <g id={`cloud-near-${uid}`} opacity="0.45">
+          <CloudBand y={210} fill="#f2f8fd" opacity={0.5} scale={0.85} />
+          <CloudBand
+            y={210}
+            fill="#f2f8fd"
+            opacity={0.5}
+            scale={0.85}
+            xOffset={640}
+          />
+        </g>
+
+        {/* Distant skyline hint */}
+        <g opacity="0.25" fill="#0a1624">
+          <rect x="40" y="420" width="36" height="220" />
+          <rect x="90" y="380" width="28" height="260" />
+          <rect x="130" y="450" width="48" height="190" />
+          <rect x="200" y="400" width="22" height="240" />
+        </g>
+
+        {/* Ground / horizon */}
         <path
-          d={`M${BUILDING.originX - 24} ${BUILDING.originY - 30}
-              L${BUILDING.originX + COLS * BUILDING.colW + 40} ${BUILDING.originY - 10}
-              L${BUILDING.originX + COLS * BUILDING.colW + BUILDING.skewX + 20} ${BUILDING.originY + ROWS * BUILDING.rowH + 40}
-              L${BUILDING.originX - 10} ${BUILDING.originY + ROWS * BUILDING.rowH + 50} Z`}
-          fill={`url(#wall-${uid})`}
-        />
-        <path
-          d={`M${BUILDING.originX + COLS * BUILDING.colW + 40} ${BUILDING.originY - 10}
-              L${BUILDING.originX + COLS * BUILDING.colW + 70} ${BUILDING.originY + 20}
-              L${BUILDING.originX + COLS * BUILDING.colW + BUILDING.skewX + 50} ${BUILDING.originY + ROWS * BUILDING.rowH + 70}
-              L${BUILDING.originX + COLS * BUILDING.colW + BUILDING.skewX + 20} ${BUILDING.originY + ROWS * BUILDING.rowH + 40} Z`}
-          fill="#121820"
+          d={`M0 ${VIEW_H - 70} L${VIEW_W} ${VIEW_H - 100} L${VIEW_W} ${VIEW_H} L0 ${VIEW_H} Z`}
+          fill="#071018"
           opacity="0.85"
         />
 
-        {windows.map((w) => {
-          const isClean = w.id < cleaned;
-          const isActive = w.id === cleaned && !done && !reduceMotion;
-          return (
-            <g key={w.id}>
-              <rect
-                x={w.x}
-                y={w.y}
-                width={BUILDING.winW}
-                height={BUILDING.winH}
-                rx="2"
-                fill={
-                  isClean
-                    ? `url(#cleanG-${uid})`
-                    : `url(#dirtyG-${uid})`
-                }
-                opacity={isActive ? 0.9 : 1}
-              />
-              {isClean && (
-                <>
-                  <path
-                    d={`M${w.x + 4} ${w.y + 4} L${w.x + BUILDING.winW - 6} ${w.y + BUILDING.winH - 10}`}
-                    stroke="#fff"
-                    strokeWidth="1.5"
-                    opacity="0.4"
-                  />
-                  {/* Permanent subtle shimmer — never dirties again */}
-                  <motion.rect
-                    x={w.x}
-                    y={w.y}
-                    width={BUILDING.winW}
-                    height={BUILDING.winH}
-                    rx="2"
-                    fill="#fff"
-                    initial={{ opacity: 0.06 }}
-                    animate={{ opacity: [0.04, 0.14, 0.04] }}
-                    transition={{
-                      duration: 3.4 + (w.id % 5) * 0.4,
-                      repeat: Infinity,
-                      delay: (w.id % 7) * 0.22,
-                      ease: "easeInOut",
-                    }}
-                  />
-                </>
-              )}
-              {!isClean && (
+        {/* Tower */}
+        <g>
+          <rect
+            x={TOWER.x}
+            y={TOWER.y}
+            width={TOWER.w}
+            height={TOWER.h}
+            rx="4"
+            fill={`url(#tower-${uid})`}
+          />
+          {/* Side face for depth */}
+          <path
+            d={`M${TOWER.x + TOWER.w} ${TOWER.y}
+                L${TOWER.x + TOWER.w + 36} ${TOWER.y + 28}
+                L${TOWER.x + TOWER.w + 36} ${TOWER.y + TOWER.h + 20}
+                L${TOWER.x + TOWER.w} ${TOWER.y + TOWER.h} Z`}
+            fill={`url(#tower-side-${uid})`}
+          />
+          {/* Roof cap */}
+          <rect
+            x={TOWER.x - 6}
+            y={TOWER.y - 14}
+            width={TOWER.w + 12}
+            height="14"
+            rx="2"
+            fill="#243040"
+          />
+          <rect
+            x={TOWER.x + TOWER.w * 0.35}
+            y={TOWER.y - 34}
+            width={TOWER.w * 0.18}
+            height="22"
+            rx="2"
+            fill="#1a2430"
+          />
+
+          {/* Windows */}
+          {windows.map((w) => {
+            const streakSeed = seeded(w.id, 7);
+            return (
+              <g key={w.id}>
+                {/* Clean glass (revealed as dirt clip shrinks left→right with the jet) */}
                 <rect
                   x={w.x}
                   y={w.y}
-                  width={BUILDING.winW}
-                  height={BUILDING.winH}
+                  width={w.w}
+                  height={w.h}
                   rx="2"
-                  fill="#2a1c12"
+                  fill={`url(#clean-glass-${uid})`}
+                />
+                <path
+                  d={`M${w.x + 3} ${w.y + 4} L${w.x + w.w - 8} ${w.y + w.h - 10}`}
+                  stroke="#fff"
+                  strokeWidth="1.2"
                   opacity="0.35"
                 />
-              )}
-              {isActive && (
-                <motion.rect
-                  x={w.x - 2}
-                  y={w.y - 2}
-                  width={BUILDING.winW + 4}
-                  height={BUILDING.winH + 4}
-                  rx="3"
-                  fill="none"
-                  stroke="#00c2e8"
-                  strokeWidth="2"
-                  filter={`url(#glow-${uid})`}
-                  animate={{ opacity: [0.35, 1, 0.35] }}
-                  transition={{ duration: 0.4, repeat: Infinity }}
-                />
-              )}
-            </g>
-          );
-        })}
-      </svg>
 
-      {!reduceMotion && (
-        <svg
-          viewBox="0 0 960 720"
-          className="pointer-events-none absolute inset-0 h-full w-full"
-          preserveAspectRatio="xMidYMid slice"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id={`liveSpray-${uid}`} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#e8fbff" stopOpacity="0" />
-              <stop offset="40%" stopColor="#7ae8ff" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#00c2e8" stopOpacity="0.2" />
-            </linearGradient>
-          </defs>
-          <motion.g style={{ x: droneX, y: droneY, scale: droneScale }}>
-            <motion.g
-              style={{
-                rotate: droneRotate,
-                transformBox: "fill-box",
-                transformOrigin: "40px 28px",
-              }}
-              animate={{ y: done ? [0, -4, 0] : [0, -2, 0] }}
-              transition={{
-                duration: done ? 3.2 : 1.1,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              {spraying && (
-                <motion.g
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: [0.55, 1, 0.55] }}
-                  transition={{ duration: 0.35, repeat: Infinity }}
-                >
-                  {/* Spray jet into the glass (right / +X) */}
-                  <ellipse
-                    cx="96"
-                    cy="30"
-                    rx="52"
-                    ry="22"
-                    fill={`url(#liveSpray-${uid})`}
+                <clipPath id={`dirt-clip-${w.id}-${uid}`}>
+                  <rect
+                    id={`dirty-mask-${w.id}-${uid}`}
+                    x={w.x}
+                    y={w.y}
+                    width={w.w}
+                    height={w.h}
                   />
-                  {[0, 1, 2, 3, 4, 5].map((i) => (
-                    <motion.line
-                      key={i}
-                      x1="72"
-                      y1={24 + i * 2.2}
-                      x2="118"
-                      y2={22 + i * 2.6}
-                      stroke="#e8fbff"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      animate={{ opacity: [0.25, 1, 0.25] }}
-                      transition={{
-                        duration: 0.26,
-                        repeat: Infinity,
-                        delay: i * 0.035,
-                      }}
+                </clipPath>
+
+                <g clipPath={`url(#dirt-clip-${w.id}-${uid})`}>
+                  <rect
+                    x={w.x}
+                    y={w.y}
+                    width={w.w}
+                    height={w.h}
+                    fill={`url(#dirty-glass-${uid})`}
+                  />
+                  <rect
+                    x={w.x}
+                    y={w.y}
+                    width={w.w}
+                    height={w.h}
+                    fill="#1c2228"
+                    opacity="0.4"
+                  />
+                  {[0, 1, 2].map((s) => (
+                    <rect
+                      key={s}
+                      x={w.x + 4 + s * (w.w / 3.2) + streakSeed * 4}
+                      y={w.y + 2}
+                      width={1.6 + (s % 2)}
+                      height={w.h - 4}
+                      fill="#0e1216"
+                      opacity={0.28 + seeded(w.id, s + 10) * 0.22}
                     />
                   ))}
-                </motion.g>
-              )}
-              <PerspectiveDrone />
-            </motion.g>
-          </motion.g>
-        </svg>
-      )}
+                  <circle
+                    cx={w.x + w.w * (0.3 + streakSeed * 0.2)}
+                    cy={w.y + w.h * 0.35}
+                    r="2.2"
+                    fill="#12161a"
+                    opacity="0.45"
+                  />
+                  <circle
+                    cx={w.x + w.w * 0.7}
+                    cy={w.y + w.h * (0.55 + streakSeed * 0.15)}
+                    r="1.6"
+                    fill="#12161a"
+                    opacity="0.4"
+                  />
+                </g>
 
-      {reduceMotion && (
-        <svg
-          viewBox="0 0 960 720"
-          className="pointer-events-none absolute inset-0 h-full w-full"
-          preserveAspectRatio="xMidYMid slice"
-          aria-hidden="true"
-        >
-          <g transform={`translate(${target.cx - 88} ${target.cy - 28})`}>
-            <ellipse cx="86" cy="30" rx="40" ry="28" fill="#00c2e8" opacity="0.2" />
-            <PerspectiveDrone spinning={false} />
+                <rect
+                  x={w.x}
+                  y={w.y}
+                  width={w.w}
+                  height={w.h}
+                  rx="2"
+                  fill="none"
+                  stroke="#0a1018"
+                  strokeWidth="1.5"
+                  opacity="0.55"
+                />
+
+                <g
+                  id={`sparkle-${w.id}-${uid}`}
+                  opacity="0"
+                  style={{ transformOrigin: `${w.cx}px ${w.cy - 4}px` }}
+                >
+                  <g transform={`translate(${w.cx} ${w.cy - 4})`}>
+                    <path
+                      d="M0 -7 L1.2 -1.2 L7 0 L1.2 1.2 L0 7 L-1.2 1.2 L-7 0 L-1.2 -1.2 Z"
+                      fill="#fff"
+                      opacity="0.9"
+                    />
+                    <circle
+                      cx="5"
+                      cy="-3"
+                      r="1.1"
+                      fill="#e8fbff"
+                      opacity="0.8"
+                    />
+                  </g>
+                </g>
+              </g>
+            );
+          })}
+        </g>
+
+        {/* Drone + beams (transformed as a unit) */}
+        <g id={`drone-${uid}`}>
+          {/* Water beams — from dual nozzles toward glass (+X) */}
+          <g id={`beams-${uid}`} opacity="0">
+            <ellipse
+              cx="70"
+              cy="8"
+              rx="48"
+              ry="16"
+              fill={`url(#mist-${uid})`}
+              opacity="0.55"
+              filter={`url(#soft-${uid})`}
+            />
+            <ellipse
+              cx="70"
+              cy="22"
+              rx="48"
+              ry="14"
+              fill={`url(#mist-${uid})`}
+              opacity="0.45"
+              filter={`url(#soft-${uid})`}
+            />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <line
+                key={`b1-${i}`}
+                x1="42"
+                y1={0 + i * 1.8}
+                x2="102"
+                y2={-1 + i * 2.2}
+                stroke={`url(#beam-${uid})`}
+                strokeWidth="1.35"
+                strokeLinecap="round"
+                opacity={0.85 - i * 0.08}
+              />
+            ))}
+            {[0, 1, 2, 3, 4].map((i) => (
+              <line
+                key={`b2-${i}`}
+                x1="42"
+                y1={18 + i * 1.8}
+                x2="102"
+                y2={20 + i * 2.2}
+                stroke={`url(#beam-${uid})`}
+                strokeWidth="1.25"
+                strokeLinecap="round"
+                opacity={0.8 - i * 0.08}
+              />
+            ))}
+            <ellipse cx="104" cy="12" rx="11" ry="20" fill="#e8fbff" opacity="0.2" />
           </g>
-        </svg>
-      )}
+
+          {/* Supply hose */}
+          <path
+            id={`hose-${uid}`}
+            d="M8 28 C4 48, 2 70, 6 110 C8 140, 4 170, 8 210"
+            fill="none"
+            stroke="#2a3038"
+            strokeWidth="3.2"
+            strokeLinecap="round"
+            opacity="0.85"
+          />
+          <path
+            d="M8 28 C4 48, 2 70, 6 110 C8 140, 4 170, 8 210"
+            fill="none"
+            stroke="#5a6570"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            opacity="0.5"
+          />
+
+          <MeldroneStyleDrone />
+        </g>
+      </svg>
+
     </div>
   );
 }
 
-/** Drone in 3/4 view, nose pointing right (into the façade / windows). */
-function PerspectiveDrone({ spinning = true }: { spinning?: boolean }) {
+function CloudBand({
+  y,
+  fill,
+  opacity,
+  scale = 1,
+  xOffset = 0,
+}: {
+  y: number;
+  fill: string;
+  opacity: number;
+  scale?: number;
+  xOffset?: number;
+}) {
+  return (
+    <g
+      transform={`translate(${xOffset} ${y}) scale(${scale})`}
+      fill={fill}
+      opacity={opacity}
+    >
+      <ellipse cx="80" cy="0" rx="70" ry="22" />
+      <ellipse cx="140" cy="-8" rx="50" ry="18" />
+      <ellipse cx="200" cy="4" rx="60" ry="20" />
+      <ellipse cx="320" cy="-4" rx="80" ry="24" />
+      <ellipse cx="390" cy="6" rx="45" ry="16" />
+    </g>
+  );
+}
+
+/**
+ * Simplified Meldrone industrial cleaning drone (MelClean Solar ref):
+ * hexacopter arms, battery pack, tall skids, hose mount, dual spray booms.
+ */
+function MeldroneStyleDrone() {
+  const rotors: [number, number][] = [
+    [-32, -16],
+    [28, -18],
+    [-34, 14],
+    [30, 16],
+    [-8, -30],
+    [10, 30],
+  ];
   return (
     <g>
-      <g opacity="0.85">
-        <ellipse cx="8" cy="8" rx="16" ry="2.2" fill="#c8d4e0">
-          {spinning && (
+      {rotors.map(([cx, cy], i) => (
+        <g key={i}>
+          <ellipse
+            cx={cx}
+            cy={cy}
+            rx="18"
+            ry="2.6"
+            fill="#d0dae6"
+            opacity="0.9"
+          >
             <animate
               attributeName="rx"
-              values="16;4;16"
-              dur="0.14s"
-              repeatCount="indefinite"
-            />
-          )}
-        </ellipse>
-        <ellipse cx="22" cy="48" rx="12" ry="2" fill="#c8d4e0">
-          {spinning && (
-            <animate
-              attributeName="rx"
-              values="12;3;12"
-              dur="0.14s"
-              begin="0.03s"
-              repeatCount="indefinite"
-            />
-          )}
-        </ellipse>
-        <circle cx="8" cy="8" r="2.5" fill="#0b1f3a" />
-        <circle cx="22" cy="48" r="2.2" fill="#0b1f3a" />
-      </g>
-
-      <path
-        d="M18 22 L8 8 M28 34 L22 48 M34 20 L58 10 M40 36 L62 48"
-        stroke="#0b1f3a"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-      />
-
-      <ellipse cx="36" cy="28" rx="22" ry="12" fill="#071525" />
-      <ellipse cx="38" cy="27" rx="16" ry="8" fill="#143356" />
-      <rect x="28" y="23" width="22" height="6" rx="2" fill="#00c2e8" />
-
-      {/* Nose / spray boom into glass */}
-      <path d="M52 26 L78 30 L52 34 Z" fill="#0e2748" />
-      <circle cx="78" cy="30" r="3.5" fill="#00c2e8" />
-
-      <ellipse cx="60" cy="8" rx="20" ry="2.5" fill="#e8eef6">
-        {spinning && (
-          <animate
-            attributeName="rx"
-            values="20;5;20"
-            dur="0.12s"
-            repeatCount="indefinite"
-          />
-        )}
-      </ellipse>
-      <ellipse cx="66" cy="48" rx="17" ry="2.3" fill="#e8eef6">
-        {spinning && (
-          <animate
-            attributeName="rx"
-            values="17;4;17"
-            dur="0.12s"
-            begin="0.02s"
-            repeatCount="indefinite"
-          />
-        )}
-      </ellipse>
-      <circle cx="60" cy="8" r="3" fill="#0b1f3a" />
-      <circle cx="66" cy="48" r="2.8" fill="#0b1f3a" />
-
-      <path
-        d="M24 38 L18 52 M44 38 L50 52 M14 52 H28 M40 52 H56"
-        stroke="#6b778a"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-
-      {spinning && (
-        <>
-          <ellipse cx="60" cy="8" rx="22" ry="5" fill="#00c2e8" opacity="0.12">
-            <animate
-              attributeName="opacity"
-              values="0.08;0.22;0.08"
-              dur="0.3s"
+              values="18;5;18"
+              dur={`${0.1 + (i % 3) * 0.012}s`}
               repeatCount="indefinite"
             />
           </ellipse>
-          <ellipse cx="66" cy="48" rx="18" ry="4" fill="#00c2e8" opacity="0.1">
-            <animate
-              attributeName="opacity"
-              values="0.06;0.2;0.06"
-              dur="0.28s"
-              repeatCount="indefinite"
-            />
-          </ellipse>
-        </>
-      )}
+          <circle cx={cx} cy={cy} r="2.8" fill="#0a1420" />
+          <circle cx={cx} cy={cy} r="1.2" fill="#3a4a5a" />
+        </g>
+      ))}
+
+      <path
+        d="M0 0 L-32 -16 M0 0 L28 -18 M0 0 L-34 14 M0 0 L30 16 M0 0 L-8 -30 M0 0 L10 30"
+        stroke="#151d28"
+        strokeWidth="3.6"
+        strokeLinecap="round"
+        fill="none"
+      />
+
+      {/* Industrial chassis + silver battery (signature Meldrone look) */}
+      <rect x="-20" y="-14" width="40" height="28" rx="5" fill="#0a121c" />
+      <rect x="-16" y="-10" width="18" height="20" rx="2.5" fill="#9aa3ad" />
+      <rect x="-14" y="-7" width="14" height="3" rx="1" fill="#c5ccd4" />
+      <rect x="-14" y="2" width="14" height="3" rx="1" fill="#6b737c" />
+      <rect x="5" y="-8" width="12" height="16" rx="2" fill="#143356" />
+      <rect
+        x="-12"
+        y="-1"
+        width="24"
+        height="3.5"
+        rx="1"
+        fill="#00c2e8"
+        opacity="0.9"
+      />
+
+      {/* Tall clearance skids */}
+      <path
+        d="M-16 12 L-20 38 M16 12 L20 38 M-8 12 L-10 38 M8 12 L10 38"
+        stroke="#3a4450"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M-24 38 H-16 M16 38 H24 M-14 38 H-6 M6 38 H14"
+        stroke="#6a7580"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+
+      {/* Dual metallic spray arms → nozzles toward façade (+X) */}
+      <path
+        d="M12 4 C24 0, 34 -2, 42 2"
+        fill="none"
+        stroke="#6a727c"
+        strokeWidth="2.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 16 C24 16, 34 18, 42 22"
+        fill="none"
+        stroke="#6a727c"
+        strokeWidth="2.8"
+        strokeLinecap="round"
+      />
+      <circle cx="42" cy="2" r="3.2" fill="#00c2e8" />
+      <circle cx="42" cy="22" r="3.2" fill="#00c2e8" />
+      <circle cx="42" cy="2" r="1.4" fill="#e8fbff" />
+      <circle cx="42" cy="22" r="1.4" fill="#e8fbff" />
     </g>
   );
 }
