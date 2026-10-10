@@ -113,8 +113,8 @@ function seeded(id: string, salt = 0): number {
 const DRONE_OFFSET_X = -70;
 const DRONE_OFFSET_Y = -2;
 
-/** Survives React Strict Mode remount — one-shot clean must not re-dirty. */
-let cleaningSessionComplete = false;
+/** Hold after a full clean before re-dirtying / next pass (visible parked drone). */
+const CYCLE_HOLD_S = 2.8;
 
 export function DroneCleaningHeroAnimation() {
   const uid = useId().replace(/:/g, "");
@@ -144,7 +144,6 @@ export function DroneCleaningHeroAnimation() {
     cloudTlRef.current?.kill();
     const cloudTl = gsap.timeline({ repeat: -1 });
     cloudTlRef.current = cloudTl;
-    // Wider loop period — fewer clouds, more horizontal spacing
     if (cloudFar) {
       gsap.set(cloudFar, { x: 0 });
       cloudTl.to(cloudFar, { x: -1200, duration: 140, ease: "none" }, 0);
@@ -165,8 +164,14 @@ export function DroneCleaningHeroAnimation() {
     );
     const blinkTweens: gsap.core.Tween[] = [];
     const delayedCalls: gsap.core.Tween[] = [];
+    let cancelled = false;
 
-    const startPermanentBlink = (w: Win, i: number) => {
+    const killBlinks = () => {
+      blinkTweens.splice(0).forEach((t) => t.kill());
+      delayedCalls.splice(0).forEach((t) => t.kill());
+    };
+
+    const startWindowBlink = (w: Win, i: number) => {
       const shine = shines[i];
       const sparkleGroup = sparkles[i];
       const dur = 2.2 + seeded(w.id, 5) * 1.6;
@@ -206,36 +211,38 @@ export function DroneCleaningHeroAnimation() {
       }
     };
 
+    const setAllDirty = () => {
+      dirtyMasks.forEach((m, i) => {
+        if (!m) return;
+        const w = route[i];
+        gsap.set(m, { attr: { x: w.x, width: w.w } });
+      });
+      sparkles.forEach((s) => {
+        if (!s) return;
+        gsap.set(s, { opacity: 0 });
+        s.querySelectorAll<SVGGElement>("[data-spark]").forEach((dot) => {
+          gsap.set(dot, { opacity: 0, scale: 0.7, transformOrigin: "50% 50%" });
+        });
+      });
+      shines.forEach((s) => {
+        if (s) gsap.set(s, { opacity: 0.4 });
+      });
+      gsap.set(beams, { opacity: 0 });
+    };
+
     const clearAllDirt = () => {
       dirtyMasks.forEach((m, i) => {
         if (!m) return;
         const w = route[i];
         gsap.set(m, { attr: { x: w.x + w.w, width: 0 } });
       });
-      gsap.set(drone, { opacity: 0 });
       gsap.set(beams, { opacity: 0 });
     };
 
-    dirtyMasks.forEach((m, i) => {
-      if (!m) return;
-      const w = route[i];
-      gsap.set(m, { attr: { x: w.x, width: w.w } });
-    });
-    sparkles.forEach((s) => {
-      if (!s) return;
-      gsap.set(s, { opacity: 0 });
-      s.querySelectorAll<SVGGElement>("[data-spark]").forEach((dot) => {
-        gsap.set(dot, { opacity: 0, scale: 0.7, transformOrigin: "50% 50%" });
-      });
-    });
-    shines.forEach((s) => {
-      if (s) gsap.set(s, { opacity: 0.4 });
-    });
-    gsap.set(beams, { opacity: 0 });
-
-    // Reduced motion: cleaned + steady gleams (no flight, no blink loops)
+    // Reduced motion: static cleaned facade (no flight / no loops)
     if (reduce) {
       clearAllDirt();
+      gsap.set(drone, { opacity: 0 });
       shines.forEach((s) => {
         if (s) gsap.set(s, { opacity: 0.75 });
       });
@@ -255,125 +262,126 @@ export function DroneCleaningHeroAnimation() {
       };
     }
 
-    // Remount after one-shot finished (Strict Mode / HMR): stay clean, resume blink
-    if (cleaningSessionComplete) {
-      clearAllDirt();
-      route.forEach((w, i) => startPermanentBlink(w, i));
-      return () => {
-        blinkTweens.forEach((t) => t.kill());
-        cloudTl.kill();
-        cloudTlRef.current = null;
-      };
-    }
-
     const hover = (w: Win) => ({
       x: w.cx + DRONE_OFFSET_X,
       y: w.cy + DRONE_OFFSET_Y,
     });
 
     const start = { x: 160, y: 140 };
-    const exit = { x: VIEW_W + 110, y: 90 };
+    const park = {
+      x: TOWER.x + TOWER.w * 0.22,
+      y: TOWER.y - 28,
+    };
 
-    gsap.set(drone, { x: start.x, y: start.y, opacity: 0, rotate: 0 });
+    const runCycle = () => {
+      if (cancelled) return;
 
-    mainTlRef.current?.kill();
-    const tl = gsap.timeline({
-      defaults: { ease: "power2.inOut" },
-      onComplete: () => {
-        cleaningSessionComplete = true;
-      },
-    });
-    mainTlRef.current = tl;
+      killBlinks();
+      mainTlRef.current?.kill();
 
-    tl.to(drone, { opacity: 1, duration: 0.4, ease: "power1.out" })
-      .to(drone, {
-        x: hover(route[0]).x,
-        y: hover(route[0]).y,
-        duration: 1.45,
-        ease: "power3.inOut",
-      })
-      .to(drone, { y: "+=2", duration: 0.4, ease: "sine.inOut" })
-      .to(drone, { y: "-=2", duration: 0.4, ease: "sine.inOut" });
+      setAllDirty();
+      gsap.set(drone, { x: start.x, y: start.y, opacity: 0, rotate: 0 });
 
-    route.forEach((w, i) => {
-      const pos = hover(w);
-      const mask = dirtyMasks[i];
-      const travel = i === 0 ? 0.14 : 0.36 + seeded(w.id, 1) * 0.1;
-      const cleanDur = 0.5 + seeded(w.id, 2) * 0.1;
-      const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.2;
-
-      if (i > 0) {
-        const prev = route[i - 1];
-        const bank = Math.max(-3.5, Math.min(3.5, (pos.y - hover(prev).y) * 0.06));
-        tl.to(
-          drone,
-          {
-            x: pos.x,
-            y: pos.y,
-            rotate: bank,
-            duration: travel,
-            ease: "power2.inOut",
-          },
-          ">+0.03",
-        );
-        tl.to(drone, { rotate: 0, duration: 0.22, ease: "sine.out" }, ">-0.14");
-      }
-
-      tl.to(beams, { opacity: 1, duration: 0.14, ease: "power1.out" }, ">-0.04");
-      tl.to(drone, { y: pos.y + 1.2, duration: 0.16, ease: "sine.inOut" }, "<");
-
-      if (mask) {
-        tl.to(
-          mask,
-          {
-            attr: { x: w.x + w.w, width: 0 },
-            duration: cleanDur,
-            ease: "power1.inOut",
-          },
-          "<0.1",
-        );
-      }
-
-      // Permanent blink after this window finishes cleaning
-      tl.call(
-        () => {
+      const tl = gsap.timeline({
+        defaults: { ease: "power2.inOut" },
+        onComplete: () => {
+          if (cancelled) return;
+          // Brief hold with drone still visible + window blinks, then next pass
           delayedCalls.push(
-            gsap.delayedCall(sparkleDelay, () => startPermanentBlink(w, i)),
+            gsap.delayedCall(CYCLE_HOLD_S, () => {
+              if (!cancelled) runCycle();
+            }),
           );
         },
-        undefined,
-        ">-0.02",
-      );
+      });
+      mainTlRef.current = tl;
 
-      if (i < route.length - 1) {
-        tl.to(beams, { opacity: 0.35, duration: 0.1 }, ">-0.04");
-      }
-    });
+      tl.to(drone, { opacity: 1, duration: 0.4, ease: "power1.out" })
+        .to(drone, {
+          x: hover(route[0]).x,
+          y: hover(route[0]).y,
+          duration: 1.45,
+          ease: "power3.inOut",
+        })
+        .to(drone, { y: "+=2", duration: 0.4, ease: "sine.inOut" })
+        .to(drone, { y: "-=2", duration: 0.4, ease: "sine.inOut" });
 
-    tl.to(beams, { opacity: 0, duration: 0.25, ease: "power1.in" });
-    tl.to(drone, {
-      x: TOWER.x + TOWER.w * 0.25,
-      y: TOWER.y - 36,
-      rotate: -3,
-      duration: 0.95,
-      ease: "power2.inOut",
-    });
-    tl.to(drone, {
-      x: exit.x,
-      y: exit.y,
-      rotate: -5,
-      duration: 1.55,
-      ease: "power3.in",
-    });
-    tl.to(drone, { opacity: 0, duration: 0.18 }, ">-0.14");
+      route.forEach((w, i) => {
+        const pos = hover(w);
+        const mask = dirtyMasks[i];
+        const travel = i === 0 ? 0.14 : 0.36 + seeded(w.id, 1) * 0.1;
+        const cleanDur = 0.5 + seeded(w.id, 2) * 0.1;
+        const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.2;
+
+        if (i > 0) {
+          const prev = route[i - 1];
+          const bank = Math.max(
+            -3.5,
+            Math.min(3.5, (pos.y - hover(prev).y) * 0.06),
+          );
+          tl.to(
+            drone,
+            {
+              x: pos.x,
+              y: pos.y,
+              rotate: bank,
+              duration: travel,
+              ease: "power2.inOut",
+            },
+            ">+0.03",
+          );
+          tl.to(drone, { rotate: 0, duration: 0.22, ease: "sine.out" }, ">-0.14");
+        }
+
+        tl.to(beams, { opacity: 1, duration: 0.14, ease: "power1.out" }, ">-0.04");
+        tl.to(drone, { y: pos.y + 1.2, duration: 0.16, ease: "sine.inOut" }, "<");
+
+        if (mask) {
+          tl.to(
+            mask,
+            {
+              attr: { x: w.x + w.w, width: 0 },
+              duration: cleanDur,
+              ease: "power1.inOut",
+            },
+            "<0.1",
+          );
+        }
+
+        tl.call(
+          () => {
+            delayedCalls.push(
+              gsap.delayedCall(sparkleDelay, () => startWindowBlink(w, i)),
+            );
+          },
+          undefined,
+          ">-0.02",
+        );
+
+        if (i < route.length - 1) {
+          tl.to(beams, { opacity: 0.35, duration: 0.1 }, ">-0.04");
+        }
+      });
+
+      // Park on roof — stay visible (no exit / opacity 0) so the scene never looks broken
+      tl.to(beams, { opacity: 0, duration: 0.25, ease: "power1.in" });
+      tl.to(drone, {
+        x: park.x,
+        y: park.y,
+        rotate: -2,
+        duration: 0.95,
+        ease: "power2.inOut",
+      });
+      tl.to(drone, { y: "+=3", duration: 0.7, ease: "sine.inOut", yoyo: true, repeat: 1 });
+    };
+
+    runCycle();
 
     return () => {
-      // If cleanup runs before finish (Strict Mode), keep partial progress
-      // by marking complete only via onComplete; kill active tweens cleanly.
-      tl.kill();
+      cancelled = true;
+      mainTlRef.current?.kill();
       mainTlRef.current = null;
-      delayedCalls.forEach((t) => t.kill());
-      blinkTweens.forEach((t) => t.kill());
+      killBlinks();
       cloudTl.kill();
       cloudTlRef.current = null;
     };
