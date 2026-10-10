@@ -130,24 +130,20 @@ export function DroneCleaningHeroAnimation() {
     const beams = svg.querySelector<SVGGElement>(`#beams-${uid}`);
     const cloudFar = svg.querySelector<SVGGElement>(`#cloud-far-${uid}`);
     const cloudMid = svg.querySelector<SVGGElement>(`#cloud-mid-${uid}`);
-    const cloudNear = svg.querySelector<SVGGElement>(`#cloud-near-${uid}`);
 
     if (!drone || !beams) return;
 
     cloudTlRef.current?.kill();
     const cloudTl = gsap.timeline({ repeat: -1 });
     cloudTlRef.current = cloudTl;
+    // Wider loop period — fewer clouds, more horizontal spacing
     if (cloudFar) {
       gsap.set(cloudFar, { x: 0 });
-      cloudTl.to(cloudFar, { x: -480, duration: 110, ease: "none" }, 0);
+      cloudTl.to(cloudFar, { x: -960, duration: 120, ease: "none" }, 0);
     }
     if (cloudMid) {
       gsap.set(cloudMid, { x: 0 });
-      cloudTl.to(cloudMid, { x: -560, duration: 72, ease: "none" }, 0);
-    }
-    if (cloudNear) {
-      gsap.set(cloudNear, { x: 0 });
-      cloudTl.to(cloudNear, { x: -680, duration: 48, ease: "none" }, 0);
+      cloudTl.to(cloudMid, { x: -1100, duration: 78, ease: "none" }, 0);
     }
 
     const dirtyMasks = route.map((w) =>
@@ -156,6 +152,45 @@ export function DroneCleaningHeroAnimation() {
     const sparkles = route.map((w) =>
       svg.querySelector<SVGGElement>(`#sparkle-${w.id}-${uid}`),
     );
+    const shines = route.map((w) =>
+      svg.querySelector<SVGGElement>(`#shine-${w.id}-${uid}`),
+    );
+    const blinkTweens: gsap.core.Tween[] = [];
+    const delayedCalls: gsap.core.Tween[] = [];
+
+    const startPermanentBlink = (w: Win, i: number) => {
+      const shine = shines[i];
+      const sparkle = sparkles[i];
+      const dur = 1.8 + seeded(w.id, 5) * 1.4;
+      const delay = seeded(w.id, 6) * 1.1;
+      if (shine) {
+        gsap.set(shine, { opacity: 0.45 });
+        blinkTweens.push(
+          gsap.to(shine, {
+            opacity: 1,
+            duration: dur,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+            delay,
+          }),
+        );
+      }
+      if (sparkle) {
+        gsap.set(sparkle, { opacity: 0.15, scale: 0.7 });
+        blinkTweens.push(
+          gsap.to(sparkle, {
+            opacity: 0.95,
+            scale: 1.05,
+            duration: 1.1 + seeded(w.id, 8) * 0.7,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+            delay: delay + 0.15 + seeded(w.id, 9) * 0.6,
+          }),
+        );
+      }
+    };
 
     dirtyMasks.forEach((m, i) => {
       if (!m) return;
@@ -163,7 +198,10 @@ export function DroneCleaningHeroAnimation() {
       gsap.set(m, { attr: { x: w.x, width: w.w } });
     });
     sparkles.forEach((s) => {
-      if (s) gsap.set(s, { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" });
+      if (s) gsap.set(s, { opacity: 0, scale: 0.5, transformOrigin: "50% 50%" });
+    });
+    shines.forEach((s) => {
+      if (s) gsap.set(s, { opacity: 0.35 });
     });
     gsap.set(beams, { opacity: 0 });
 
@@ -172,6 +210,12 @@ export function DroneCleaningHeroAnimation() {
         if (!m) return;
         const w = route[i];
         gsap.set(m, { attr: { x: w.x + w.w, width: 0 } });
+      });
+      shines.forEach((s) => {
+        if (s) gsap.set(s, { opacity: 0.85 });
+      });
+      sparkles.forEach((s) => {
+        if (s) gsap.set(s, { opacity: 0.55, scale: 1 });
       });
       gsap.set(drone, { opacity: 0 });
       gsap.set(beams, { opacity: 0 });
@@ -245,29 +289,16 @@ export function DroneCleaningHeroAnimation() {
         );
       }
 
-      if (sparkle) {
-        tl.call(
-          () => {
-            gsap
-              .timeline()
-              .to(sparkle, {
-                opacity: 1,
-                scale: 1,
-                duration: 0.22,
-                delay: sparkleDelay,
-                ease: "power2.out",
-              })
-              .to(sparkle, {
-                opacity: 0,
-                scale: 1.08,
-                duration: 0.45,
-                ease: "power1.in",
-              });
-          },
-          undefined,
-          ">-0.02",
-        );
-      }
+      // Permanent blink after this window finishes cleaning
+      tl.call(
+        () => {
+          delayedCalls.push(
+            gsap.delayedCall(sparkleDelay, () => startPermanentBlink(w, i)),
+          );
+        },
+        undefined,
+        ">-0.02",
+      );
 
       if (i < route.length - 1) {
         tl.to(beams, { opacity: 0.35, duration: 0.1 }, ">-0.04");
@@ -294,6 +325,8 @@ export function DroneCleaningHeroAnimation() {
     return () => {
       tl.kill();
       mainTlRef.current = null;
+      delayedCalls.forEach((t) => t.kill());
+      blinkTweens.forEach((t) => t.kill());
       cloudTl.kill();
       cloudTlRef.current = null;
     };
@@ -331,30 +364,23 @@ export function DroneCleaningHeroAnimation() {
         {/* Flat sun disc */}
         <circle cx="175" cy="78" r="34" fill="#F2D06B" />
 
-        {/* Geometric white-transparent clouds — low sky band, varied shapes */}
-        <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.38">
-          <GeoCloud x={20} y={155} scale={1} variant="puff" />
-          <GeoCloud x={220} y={138} scale={0.8} variant="step" />
-          <GeoCloud x={400} y={168} scale={0.9} variant="ridge" />
-          <GeoCloud x={20 + 480} y={155} scale={1} variant="block" />
-          <GeoCloud x={220 + 480} y={138} scale={0.8} variant="plateau" />
-          <GeoCloud x={400 + 480} y={168} scale={0.9} variant="wisp" />
+        {/* Fewer flat-bottom cumulus clouds (ref sheet), spread horizontally */}
+        <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.5">
+          <FlatCloud x={40} y={120} scale={1.05} variant="wide" />
+          <FlatCloud x={380} y={95} scale={0.85} variant="peak" />
+          <FlatCloud x={720} y={140} scale={0.7} variant="small" />
+          {/* Seamless loop duplicates */}
+          <FlatCloud x={40 + 960} y={120} scale={1.05} variant="wide" />
+          <FlatCloud x={380 + 960} y={95} scale={0.85} variant="peak" />
+          <FlatCloud x={720 + 960} y={140} scale={0.7} variant="small" />
         </g>
-        <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.48">
-          <GeoCloud x={70} y={215} scale={1.05} variant="terrace" />
-          <GeoCloud x={300} y={198} scale={0.75} variant="small" />
-          <GeoCloud x={470} y={232} scale={0.85} variant="ridge" />
-          <GeoCloud x={70 + 560} y={215} scale={1.05} variant="puff" />
-          <GeoCloud x={300 + 560} y={198} scale={0.75} variant="step" />
-          <GeoCloud x={470 + 560} y={232} scale={0.85} variant="block" />
-        </g>
-        <g id={`cloud-near-${uid}`} fill="#ffffff" opacity="0.55">
-          <GeoCloud x={40} y={268} scale={0.65} variant="small" />
-          <GeoCloud x={240} y={255} scale={0.85} variant="plateau" />
-          <GeoCloud x={420} y={288} scale={0.7} variant="wisp" />
-          <GeoCloud x={40 + 680} y={268} scale={0.65} variant="terrace" />
-          <GeoCloud x={240 + 680} y={255} scale={0.85} variant="puff" />
-          <GeoCloud x={420 + 680} y={288} scale={0.7} variant="step" />
+        <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.58">
+          <FlatCloud x={160} y={200} scale={0.9} variant="long" />
+          <FlatCloud x={520} y={175} scale={1} variant="puff" />
+          <FlatCloud x={880} y={210} scale={0.75} variant="asymmetric" />
+          <FlatCloud x={160 + 1100} y={200} scale={0.9} variant="long" />
+          <FlatCloud x={520 + 1100} y={175} scale={1} variant="puff" />
+          <FlatCloud x={880 + 1100} y={210} scale={0.75} variant="asymmetric" />
         </g>
 
         {/* Distant flat skyline silhouettes */}
@@ -456,23 +482,24 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
       <clipPath id={`win-clip-${w.id}-${uid}`}>
         <rect x={w.x} y={w.y} width={w.w} height={w.h} />
       </clipPath>
-      <g clipPath={`url(#win-clip-${w.id}-${uid})`}>
+      {/* Shine gleams — permanently blink after clean */}
+      <g id={`shine-${w.id}-${uid}`} clipPath={`url(#win-clip-${w.id}-${uid})`}>
         <rect
           x={w.x + w.w * 0.08}
           y={w.y - w.h}
           width={w.w * 0.12}
           height={w.h * 2.6}
           fill={GLASS_GLEAM}
-          opacity="0.85"
+          opacity="0.9"
           transform={`rotate(-38 ${w.cx} ${w.cy})`}
         />
         <rect
           x={w.x + w.w * 0.32}
           y={w.y - w.h}
-          width={w.w * 0.06}
+          width={w.w * 0.07}
           height={w.h * 2.6}
           fill={GLASS_GLEAM_BRIGHT}
-          opacity="0.95"
+          opacity="1"
           transform={`rotate(-38 ${w.cx} ${w.cy})`}
         />
         <rect
@@ -481,8 +508,17 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
           width={w.w * 0.16}
           height={w.h * 2.6}
           fill={GLASS_GLEAM}
-          opacity="0.7"
+          opacity="0.8"
           transform={`rotate(-38 ${w.cx} ${w.cy})`}
+        />
+        {/* Soft white wash for a clearer “blink” */}
+        <rect
+          x={w.x}
+          y={w.y}
+          width={w.w}
+          height={w.h}
+          fill="#ffffff"
+          opacity="0.12"
         />
       </g>
 
@@ -558,20 +594,19 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
 }
 
 type CloudVariant =
-  | "puff"
-  | "wisp"
   | "small"
-  | "step"
-  | "ridge"
-  | "block"
-  | "plateau"
-  | "terrace";
+  | "puff"
+  | "peak"
+  | "wide"
+  | "long"
+  | "asymmetric";
 
 /**
- * Geometric clouds — multiple flat-vector silhouettes.
- * Single white fill; transparency set by parent group.
+ * Flat-bottom cumulus clouds from the reference sheet:
+ * perfectly flat base + overlapping circular bumps on top.
+ * Single white fill; opacity set by parent.
  */
-function GeoCloud({
+function FlatCloud({
   x,
   y,
   scale = 1,
@@ -584,80 +619,73 @@ function GeoCloud({
 }) {
   const t = `translate(${x} ${y}) scale(${scale})`;
 
-  if (variant === "wisp") {
-    return (
-      <g transform={t}>
-        <rect x="0" y="10" width="120" height="12" rx="6" />
-        <rect x="40" y="4" width="55" height="10" rx="5" />
-      </g>
-    );
-  }
   if (variant === "small") {
     return (
       <g transform={t}>
-        <rect x="10" y="22" width="70" height="16" rx="2" />
-        <circle cx="22" cy="20" r="14" />
-        <circle cx="44" cy="14" r="18" />
-        <circle cx="68" cy="20" r="13" />
+        <rect x="8" y="28" width="72" height="14" />
+        <circle cx="24" cy="26" r="16" />
+        <circle cx="46" cy="20" r="20" />
+        <circle cx="70" cy="26" r="14" />
       </g>
     );
   }
-  if (variant === "step") {
+  if (variant === "long") {
     return (
       <g transform={t}>
-        <rect x="0" y="28" width="48" height="22" rx="1" />
-        <rect x="40" y="14" width="56" height="36" rx="1" />
-        <rect x="88" y="22" width="42" height="28" rx="1" />
+        <rect x="4" y="32" width="170" height="14" />
+        <circle cx="22" cy="30" r="14" />
+        <circle cx="48" cy="24" r="18" />
+        <circle cx="80" cy="22" r="20" />
+        <circle cx="114" cy="24" r="18" />
+        <circle cx="146" cy="28" r="16" />
+        <circle cx="168" cy="32" r="12" />
       </g>
     );
   }
-  if (variant === "ridge") {
+  if (variant === "peak") {
     return (
       <g transform={t}>
-        <path d="M0 40 L28 12 L56 40 L84 8 L112 40 L140 18 L168 40 Z" />
-        <rect x="0" y="36" width="168" height="14" rx="1" />
+        <rect x="6" y="40" width="130" height="14" />
+        <circle cx="28" cy="36" r="16" />
+        <circle cx="56" cy="22" r="24" />
+        <circle cx="88" cy="14" r="28" />
+        <circle cx="118" cy="26" r="20" />
       </g>
     );
   }
-  if (variant === "block") {
+  if (variant === "wide") {
     return (
       <g transform={t}>
-        <rect x="4" y="18" width="36" height="30" rx="2" />
-        <rect x="32" y="8" width="52" height="40" rx="2" />
-        <rect x="76" y="16" width="40" height="32" rx="2" />
-        <rect x="108" y="24" width="28" height="24" rx="2" />
+        <rect x="0" y="42" width="200" height="16" />
+        <circle cx="24" cy="40" r="18" />
+        <circle cx="56" cy="28" r="24" />
+        <circle cx="96" cy="18" r="30" />
+        <circle cx="136" cy="26" r="24" />
+        <circle cx="170" cy="36" r="18" />
+        <circle cx="192" cy="42" r="12" />
       </g>
     );
   }
-  if (variant === "plateau") {
+  if (variant === "asymmetric") {
     return (
       <g transform={t}>
-        <rect x="8" y="20" width="150" height="28" rx="3" />
-        <rect x="36" y="6" width="90" height="20" rx="3" />
+        <rect x="4" y="36" width="150" height="14" />
+        <circle cx="30" cy="22" r="26" />
+        <circle cx="62" cy="16" r="28" />
+        <circle cx="98" cy="28" r="18" />
+        <circle cx="128" cy="34" r="14" />
+        <circle cx="148" cy="36" r="10" />
       </g>
     );
   }
-  if (variant === "terrace") {
-    return (
-      <g transform={t}>
-        <rect x="0" y="34" width="160" height="16" rx="1" />
-        <rect x="18" y="20" width="50" height="18" rx="1" />
-        <rect x="78" y="12" width="44" height="26" rx="1" />
-        <rect x="118" y="24" width="32" height="14" rx="1" />
-        <circle cx="48" cy="18" r="12" />
-        <circle cx="100" cy="10" r="14" />
-      </g>
-    );
-  }
-  /* puff — classic flat base + overlapping circles */
+  /* puff — medium balanced bumps */
   return (
     <g transform={t}>
-      <rect x="8" y="36" width="150" height="20" rx="2" />
-      <circle cx="28" cy="30" r="20" />
-      <circle cx="58" cy="18" r="26" />
-      <circle cx="92" cy="14" r="28" />
-      <circle cx="124" cy="22" r="22" />
-      <circle cx="148" cy="32" r="16" />
+      <rect x="6" y="38" width="140" height="14" />
+      <circle cx="28" cy="34" r="18" />
+      <circle cx="58" cy="22" r="24" />
+      <circle cx="94" cy="20" r="26" />
+      <circle cx="128" cy="30" r="18" />
     </g>
   );
 }
