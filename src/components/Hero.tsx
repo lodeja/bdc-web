@@ -7,7 +7,7 @@ export function Hero() {
       className="relative -mt-[var(--header-height)] flex min-h-[100dvh] flex-col justify-end overflow-hidden bdc-hero-atmosphere pt-[var(--header-height)]"
       aria-labelledby="hero-heading"
     >
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[100dvh] max-h-full overflow-hidden">
         <DroneCleaningHeroAnimation />
         <div
           className="absolute inset-0 bg-gradient-to-r from-bdc-navy-deep/90 via-bdc-navy-deep/35 to-transparent sm:via-bdc-navy-deep/12 sm:to-transparent"

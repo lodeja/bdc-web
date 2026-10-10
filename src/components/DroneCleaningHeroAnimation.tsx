@@ -122,9 +122,12 @@ const INTRO_DELAY_S = 1.0;
  */
 let cleaningSessionComplete = false;
 
-/** Ground-line placements (SVG user units). */
-const OPERATOR_STAND = { x: 470, y: 618 };
-const VAN_PARK = { x: 300, y: 628 };
+/**
+ * Ground placements (SVG user units) — kept high enough that with
+ * xMaxYMax + 100dvh hero crop, crew stays in the visible band left of the tower.
+ */
+const OPERATOR_STAND = { x: 500, y: 560 };
+const VAN_PARK = { x: 310, y: 568 };
 /** Van art faces right — exit off the right edge after boarding. */
 const VAN_EXIT_X = VIEW_W + 220;
 
@@ -835,8 +838,9 @@ function FlatDroneOperator() {
   const HELMET = "#F2F4F6";
   const HELMET_ACCENT = "#00C2E8";
 
+  // Slightly larger so the figure reads at hero scale
   return (
-    <g>
+    <g transform="scale(1.35)">
       {/* Boots */}
       <rect x="-11" y="82" width="9" height="8" rx="1.5" fill={NAVY} />
       <rect x="2" y="82" width="9" height="8" rx="1.5" fill={NAVY} />
@@ -885,7 +889,7 @@ function FlatWorkVan() {
   const RIM = "#5A6578";
 
   return (
-    <g>
+    <g transform="scale(1.15)">
       {/* Shadow */}
       <ellipse cx="70" cy="78" rx="78" ry="6" fill="#0E1624" opacity="0.18" />
       {/* Cargo box */}
