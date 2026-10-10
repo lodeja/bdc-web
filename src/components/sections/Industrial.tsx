@@ -25,7 +25,7 @@ export function Industrial() {
     <SectionShell
       id="industriele-reiniging"
       title="Industriële reiniging"
-      lead="Voor sites waar hoogte, bereikbaarheid of stilstand zwaar wegen, biedt BDC drone-ondersteunde reiniging als aanvulling op klassieke methodes — niet als wondermiddel."
+      lead="Voor sites waar hoogte, bereikbaarheid of stilstand zwaar wegen, biedt JDC drone-ondersteunde reiniging als aanvulling op klassieke methodes — niet als wondermiddel."
       tone="navy"
     >
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">

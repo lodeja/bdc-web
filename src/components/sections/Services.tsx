@@ -30,7 +30,7 @@ export function Services() {
     <SectionShell
       id="diensten"
       title="Diensten voor gebouw en omgeving"
-      lead="BDC combineert drone-technologie met een doordachte werkwijze voor daken, gevels en zonnepanelen — afgestemd op het type oppervlak en de bereikbaarheid."
+      lead="JDC combineert drone-technologie met een doordachte werkwijze voor daken, gevels en zonnepanelen — afgestemd op het type oppervlak en de bereikbaarheid."
       tone="fog"
     >
       <ul className="grid gap-6 md:grid-cols-3">

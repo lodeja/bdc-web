@@ -29,7 +29,7 @@ export function Hero() {
               priority
             />
             <p className="mt-3 text-sm font-medium tracking-[0.18em] text-bdc-cyan uppercase sm:text-base">
-              Belgian Drone Cleaning
+              Janssens Drone Cleaning
             </p>
           </div>
 
@@ -41,7 +41,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-lg text-pretty text-base leading-relaxed text-white/75 sm:mt-6 sm:text-lg">
-            BDC reinigt daken, gevels, zonnepanelen en geschikte industriële
+            JDC reinigt daken, gevels, zonnepanelen en geschikte industriële
             oppervlakken met professionele drone-technologie — precies, veilig
             en zonder zware steigers.
           </p>

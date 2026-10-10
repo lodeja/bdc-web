@@ -1,37 +1,27 @@
-# Belgian Drone Cleaning (BDC)
+# Janssens Drone Cleaning (JDC)
 
 Premium NL-BE marketing site for professional drone cleaning.
+
+Live (GitHub Pages): https://lodeja.github.io/bdc-web/
 
 ## Stack
 
 - Next.js App Router + React + TypeScript
 - Tailwind CSS v4
-- Motion (`motion`)
+- GSAP + Motion
 - Lucide icons
 
-## Design skills used
-
-Installed under `.agents/skills/` / `.cursor/skills/`:
-
-- `design-taste-frontend` (Taste Skill)
-- `high-end-visual-design` / `premium` (Awesome Design)
-- `web-design-guidelines` (Vercel)
-- `image-to-code`
-- `playwright-cli`
-
-## Develop
+## Scripts
 
 ```bash
-npm install
 npm run dev
+npm run build
+GITHUB_PAGES=true npm run build   # static export with /bdc-web basePath
+./scripts/deploy-gh-pages.sh      # force-push out/ → gh-pages
 ```
 
-```bash
-npm run build && npm run start
-npm run lint
-```
+## Brand
 
-## Phase status
+Logo SVGs in `/public/brand/`: `jdc-mark.svg`, `jdc-mono.svg`, `jdc-wordmark.svg`, `favicon.svg`.
 
-Phase 1: brand, logo, sticky nav, hero + drone cleaning animation, section anchors.
-Phase 2–3 content intentionally deferred.
+Contact placeholders: `src/lib/contact.ts`.

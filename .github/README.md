@@ -1,1 +1,1 @@
-GitHub Actions / Pages config for BDC.
+GitHub Actions / Pages config for JDC (Janssens Drone Cleaning).

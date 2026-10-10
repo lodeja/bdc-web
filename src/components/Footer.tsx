@@ -23,7 +23,7 @@ export function Footer() {
             <Logo className="h-9 w-auto" variant="mono" idSuffix="ftr" />
           </a>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/55">
-            Belgian Drone Cleaning — professionele drone-reiniging voor daken,
+            Janssens Drone Cleaning — professionele drone-reiniging voor daken,
             gevels, zonnepanelen en geschikte industriële oppervlakken.
           </p>
         </div>
@@ -69,7 +69,7 @@ export function Footer() {
 
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <p>© 2026 BDC — Belgian Drone Cleaning</p>
+          <p>© 2026 JDC — Janssens Drone Cleaning</p>
           <p>{/* TODO: privacyverklaring-link */}Alle rechten voorbehouden</p>
         </div>
       </div>

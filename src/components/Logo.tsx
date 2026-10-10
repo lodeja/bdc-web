@@ -7,32 +7,30 @@ type LogoProps = {
   variant?: "mark" | "mono";
   title?: string;
   priority?: boolean;
-  /** Kept for call-site compatibility (SVG era); unused with raster mark */
+  /** Kept for call-site compatibility */
   idSuffix?: string;
 };
 
 /**
- * User-supplied BDC mark, improved: transparent crop, navy/white variants,
- * cyan spray accent. Drone fused into the letterforms while cleaning.
+ * JDC mark: bold JDC letterforms with cleaning drone fused into the D crown.
+ * SVG variants in /public/brand/ (mark, mono, wordmark, favicon).
  */
 export function Logo({
   className = "h-10 w-auto",
   variant = "mark",
-  title = "Belgian Drone Cleaning",
+  title = "Janssens Drone Cleaning",
   priority = false,
 }: LogoProps) {
   const src = withBasePath(
-    variant === "mono"
-      ? "/brand/bdc-logo-white-cyan.png"
-      : "/brand/bdc-logo.png",
+    variant === "mono" ? "/brand/jdc-mono.svg" : "/brand/jdc-mark.svg",
   );
 
   return (
     <Image
       src={src}
       alt={title}
-      width={994}
-      height={499}
+      width={320}
+      height={180}
       className={className}
       priority={priority}
       unoptimized

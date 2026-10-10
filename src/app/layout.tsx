@@ -15,12 +15,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Belgian Drone Cleaning (BDC) | Professionele drone-reiniging",
-    template: "%s | BDC",
+    default: "Janssens Drone Cleaning (JDC) | Professionele drone-reiniging",
+    template: "%s | JDC",
   },
   description:
-    "BDC reinigt daken, gevels, zonnepanelen en geschikte industriële oppervlakken met professionele drone-technologie in België.",
-  applicationName: "Belgian Drone Cleaning",
+    "JDC reinigt daken, gevels, zonnepanelen en geschikte industriële oppervlakken met professionele drone-technologie in België.",
+  applicationName: "Janssens Drone Cleaning",
   keywords: [
     "drone reiniging",
     "gevelreiniging",
@@ -28,14 +28,15 @@ export const metadata: Metadata = {
     "zonnepanelen reinigen",
     "industriële reiniging",
     "Belgium",
-    "BDC",
+    "JDC",
+    "Janssens Drone Cleaning",
   ],
-  authors: [{ name: "Belgian Drone Cleaning" }],
+  authors: [{ name: "Janssens Drone Cleaning" }],
   openGraph: {
     type: "website",
     locale: "nl_BE",
-    siteName: "Belgian Drone Cleaning",
-    title: "Belgian Drone Cleaning (BDC)",
+    siteName: "Janssens Drone Cleaning",
+    title: "Janssens Drone Cleaning (JDC)",
     description:
       "Professionele drone-reiniging voor daken, gevels, zonnepanelen en industriële oppervlakken.",
   },

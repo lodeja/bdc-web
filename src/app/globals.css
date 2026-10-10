@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-/* BDC design tokens — deep navy, anthracite, electric cyan */
+/* JDC design tokens — deep navy, anthracite, electric cyan
+   (CSS custom property prefix remains --bdc-* for stability) */
 :root {
   --bdc-navy: #0b1f3a;
   --bdc-navy-deep: #071525;

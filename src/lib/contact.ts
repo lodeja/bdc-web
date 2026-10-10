@@ -16,7 +16,7 @@ export const CONTACT: {
   /** TODO: click-to-call number in +32 format */
   phone: "",
   /** TODO: registered company name if different from brand */
-  legalName: "Belgian Drone Cleaning (BDC)",
+  legalName: "Janssens Drone Cleaning (JDC)",
   /** TODO: BTW / enterprise number */
   vat: "",
   /** TODO: street + number */

@@ -246,7 +246,7 @@ export function QuoteForm() {
               aria-invalid={Boolean(errors.consent)}
             />
             <span>
-              Ik ga akkoord dat BDC mij contacteert over deze offerteaanvraag. *
+              Ik ga akkoord dat JDC mij contacteert over deze offerteaanvraag. *
             </span>
           </label>
           {errors.consent ? (

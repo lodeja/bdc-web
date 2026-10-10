@@ -1,13 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="BDC">
-  <rect width="32" height="32" rx="7" fill="#0B1F3A"/>
-  <!-- Compact D-drone: letter mass + rotor discs -->
-  <path fill="#F4F7FB" fill-rule="evenodd" d="M7 8h7c6.2 0 10.5 3.8 10.5 8.5S20.2 25 14 25H7V8zm5.5 3.8v9.4H14c3.4 0 5.7-2 5.7-4.7s-2.3-4.7-5.7-4.7h-1.5z"/>
-  <circle cx="11" cy="8.2" r="3.2" fill="#F4F7FB"/>
-  <circle cx="23" cy="8.2" r="3.2" fill="#F4F7FB"/>
-  <circle cx="11" cy="8.2" r="1.9" fill="#00C2E8"/>
-  <circle cx="23" cy="8.2" r="1.9" fill="#00C2E8"/>
-  <circle cx="11" cy="8.2" r=".7" fill="#071525"/>
-  <circle cx="23" cy="8.2" r=".7" fill="#071525"/>
-  <rect x="8.4" y="13.5" width="3.4" height="5.2" rx="1" fill="#071525"/>
-  <rect x="9" y="15" width="2.2" height="1.8" rx=".5" fill="#00C2E8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="JDC">
+  <!-- Compact JDC favicon: D with fused drone + cyan accent -->
+  <rect width="32" height="32" rx="6" fill="#071525"/>
+  <g transform="translate(1.5,2) scale(0.09)">
+    <g fill="#FFFFFF">
+      <path d="M72 52h36v88c0 22-14 36-38 36-16 0-28-6-34-16l22-14c2 4 6 6 12 6 8 0 12-4 12-14V52z"/>
+      <path fill-rule="evenodd" d="M120 52h44c50 0 86 34 86 74s-36 74-86 74h-44V52zm38 28v92h10c30 0 52-22 52-46s-22-46-52-46h-10z"/>
+      <path d="M302 78c-6-16-24-28-50-28-42 0-72 32-72 76s30 76 72 76c26 0 44-12 50-28l-32-12c-4 6-10 12-20 12-18 0-32-16-32-48s14-48 32-48c10 0 16 4 20 12l32-12z"/>
+    </g>
+    <g fill="#FFFFFF">
+      <ellipse cx="164" cy="36" rx="17" ry="9"/>
+      <rect x="152" y="30" width="24" height="11" rx="3.5"/>
+      <path d="M138 32 L126 20 M190 32 L202 20 M140 42 L128 54 M188 42 L200 54" stroke="#FFFFFF" stroke-width="3.8" stroke-linecap="round" fill="none"/>
+      <ellipse cx="124" cy="18" rx="13" ry="2.8"/>
+      <ellipse cx="204" cy="18" rx="13" ry="2.8"/>
+      <path d="M140 54 H156 M172 54 H188" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round"/>
+    </g>
+    <circle cx="164" cy="52" r="3" fill="#00C2E8"/>
+  </g>
 </svg>
