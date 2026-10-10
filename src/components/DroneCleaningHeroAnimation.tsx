@@ -139,7 +139,7 @@ export function DroneCleaningHeroAnimation() {
     return lerp(a.cy - 28, b.cy - 28, t);
   });
 
-  // Nose toward glass (+X); bank with travel direction along the façade
+  // Nose into glass (+X). Small pitch only — keep boom aimed at the façade.
   const droneRotate = useTransform(progress, (p) => {
     const f = Math.min(TOTAL - 1.001, p * TOTAL);
     const i0 = Math.floor(f);
@@ -147,10 +147,16 @@ export function DroneCleaningHeroAnimation() {
     const a = windows[i0];
     const b = windows[i1];
     const dy = b.cy - a.cy;
-    const dx = b.cx - a.cx;
-    // Base attitude: slight nose-into-façade; pitch with vertical travel
-    const bank = Math.max(-18, Math.min(18, dy * 0.35 + dx * 0.08));
-    return 8 + bank;
+    // Descending bay → slight nose-down; climbing to next column → nose-up
+    return Math.max(-6, Math.min(14, dy > 0 ? 10 : dy < 0 ? -4 : 6));
+  });
+
+  // Closer columns read larger; far bays recede with the perspective slab
+  const droneScale = useTransform(progress, (p) => {
+    const f = Math.min(TOTAL - 1.001, p * TOTAL);
+    const i0 = Math.floor(f);
+    const col = windows[i0]?.col ?? 0;
+    return 1.08 - col * 0.06;
   });
 
   const activeIndex = Math.min(TOTAL - 1, cleaned);
@@ -326,7 +332,7 @@ export function DroneCleaningHeroAnimation() {
               <stop offset="100%" stopColor="#00c2e8" stopOpacity="0.2" />
             </linearGradient>
           </defs>
-          <motion.g style={{ x: droneX, y: droneY }}>
+          <motion.g style={{ x: droneX, y: droneY, scale: droneScale }}>
             <motion.g
               style={{
                 rotate: droneRotate,
@@ -346,24 +352,25 @@ export function DroneCleaningHeroAnimation() {
                   animate={{ opacity: [0.55, 1, 0.55] }}
                   transition={{ duration: 0.35, repeat: Infinity }}
                 >
+                  {/* Spray jet into the glass (right / +X) */}
                   <ellipse
-                    cx="86"
+                    cx="96"
                     cy="30"
-                    rx="58"
-                    ry="34"
+                    rx="52"
+                    ry="22"
                     fill={`url(#liveSpray-${uid})`}
                   />
                   {[0, 1, 2, 3, 4, 5].map((i) => (
                     <motion.line
                       key={i}
-                      x1="52"
-                      y1={18 + i * 4.5}
-                      x2="108"
-                      y2={14 + i * 5.5}
+                      x1="72"
+                      y1={24 + i * 2.2}
+                      x2="118"
+                      y2={22 + i * 2.6}
                       stroke="#e8fbff"
-                      strokeWidth="1.4"
+                      strokeWidth="1.5"
                       strokeLinecap="round"
-                      animate={{ opacity: [0.2, 1, 0.2] }}
+                      animate={{ opacity: [0.25, 1, 0.25] }}
                       transition={{
                         duration: 0.26,
                         repeat: Infinity,
