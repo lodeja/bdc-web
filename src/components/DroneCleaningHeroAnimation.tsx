@@ -331,30 +331,30 @@ export function DroneCleaningHeroAnimation() {
         {/* Flat sun disc */}
         <circle cx="175" cy="78" r="34" fill="#F2D06B" />
 
-        {/* Geometric white-transparent clouds — lowered, varied shapes */}
+        {/* Geometric white-transparent clouds — low sky band, varied shapes */}
         <g id={`cloud-far-${uid}`} fill="#ffffff" opacity="0.38">
-          <GeoCloud x={40} y={118} scale={1} variant="puff" />
-          <GeoCloud x={260} y={98} scale={0.8} variant="step" />
-          <GeoCloud x={460} y={132} scale={0.9} variant="ridge" />
-          <GeoCloud x={40 + 480} y={118} scale={1} variant="block" />
-          <GeoCloud x={260 + 480} y={98} scale={0.8} variant="plateau" />
-          <GeoCloud x={460 + 480} y={132} scale={0.9} variant="wisp" />
+          <GeoCloud x={20} y={155} scale={1} variant="puff" />
+          <GeoCloud x={220} y={138} scale={0.8} variant="step" />
+          <GeoCloud x={400} y={168} scale={0.9} variant="ridge" />
+          <GeoCloud x={20 + 480} y={155} scale={1} variant="block" />
+          <GeoCloud x={220 + 480} y={138} scale={0.8} variant="plateau" />
+          <GeoCloud x={400 + 480} y={168} scale={0.9} variant="wisp" />
         </g>
         <g id={`cloud-mid-${uid}`} fill="#ffffff" opacity="0.48">
-          <GeoCloud x={90} y={178} scale={1.05} variant="terrace" />
-          <GeoCloud x={360} y={158} scale={0.75} variant="small" />
-          <GeoCloud x={560} y={190} scale={0.85} variant="ridge" />
-          <GeoCloud x={90 + 560} y={178} scale={1.05} variant="puff" />
-          <GeoCloud x={360 + 560} y={158} scale={0.75} variant="step" />
-          <GeoCloud x={560 + 560} y={190} scale={0.85} variant="block" />
+          <GeoCloud x={70} y={215} scale={1.05} variant="terrace" />
+          <GeoCloud x={300} y={198} scale={0.75} variant="small" />
+          <GeoCloud x={470} y={232} scale={0.85} variant="ridge" />
+          <GeoCloud x={70 + 560} y={215} scale={1.05} variant="puff" />
+          <GeoCloud x={300 + 560} y={198} scale={0.75} variant="step" />
+          <GeoCloud x={470 + 560} y={232} scale={0.85} variant="block" />
         </g>
         <g id={`cloud-near-${uid}`} fill="#ffffff" opacity="0.55">
-          <GeoCloud x={50} y={228} scale={0.65} variant="small" />
-          <GeoCloud x={280} y={210} scale={0.9} variant="plateau" />
-          <GeoCloud x={500} y={242} scale={0.7} variant="wisp" />
-          <GeoCloud x={50 + 680} y={228} scale={0.65} variant="terrace" />
-          <GeoCloud x={280 + 680} y={210} scale={0.9} variant="puff" />
-          <GeoCloud x={500 + 680} y={242} scale={0.7} variant="step" />
+          <GeoCloud x={40} y={268} scale={0.65} variant="small" />
+          <GeoCloud x={240} y={255} scale={0.85} variant="plateau" />
+          <GeoCloud x={420} y={288} scale={0.7} variant="wisp" />
+          <GeoCloud x={40 + 680} y={268} scale={0.65} variant="terrace" />
+          <GeoCloud x={240 + 680} y={255} scale={0.85} variant="puff" />
+          <GeoCloud x={420 + 680} y={288} scale={0.7} variant="step" />
         </g>
 
         {/* Distant flat skyline silhouettes */}
@@ -497,51 +497,35 @@ function FlatWindow({ w, uid }: { w: Win; uid: string }) {
         />
       </clipPath>
       <g clipPath={`url(#dirt-clip-${w.id}-${uid})`}>
-        {/* Soft translucent film — glass still reads through */}
+        {/* Very light warm haze — glass + gleams stay visible */}
         <rect
           x={w.x}
           y={w.y}
           width={w.w}
           height={w.h}
-          fill="#C9B89A"
-          opacity="0.32"
+          fill="#D2C4A8"
+          opacity="0.2"
         />
-        <rect
-          x={w.x}
-          y={w.y}
-          width={w.w}
-          height={w.h}
-          fill="#A89070"
-          opacity="0.14"
-        />
-        {/* Light vertical streaks */}
-        {[0, 1, 2, 3].map((i) => (
+        {/* Thin soft streaks */}
+        {[0, 1, 2].map((i) => (
           <rect
             key={`st-${i}`}
-            x={w.x + 4 + i * (w.w / 3.8) + s * 3}
-            y={w.y + 2}
-            width={1.2 + (i % 2) * 0.6}
-            height={w.h - 4}
-            fill="#8A7358"
-            opacity={0.12 + seeded(w.id, i + 4) * 0.12}
+            x={w.x + 6 + i * (w.w / 3.2) + s * 2.5}
+            y={w.y + 3}
+            width={1}
+            height={w.h - 6}
+            fill="#9A8468"
+            opacity={0.1 + seeded(w.id, i + 4) * 0.1}
           />
         ))}
-        {/* Soft haze patches — very light */}
+        {/* Faint haze patch */}
         <ellipse
-          cx={w.x + w.w * (0.3 + s * 0.12)}
-          cy={w.y + w.h * 0.35}
-          rx={5 + s * 2}
-          ry={3.5 + s}
-          fill="#B5A078"
-          opacity="0.18"
-        />
-        <ellipse
-          cx={w.x + w.w * 0.66}
-          cy={w.y + w.h * (0.62 + s * 0.1)}
-          rx={6}
-          ry={3}
-          fill="#A8926E"
-          opacity="0.14"
+          cx={w.x + w.w * (0.35 + s * 0.1)}
+          cy={w.y + w.h * 0.4}
+          rx={6 + s * 2}
+          ry={4}
+          fill="#C4B090"
+          opacity="0.12"
         />
       </g>
 
