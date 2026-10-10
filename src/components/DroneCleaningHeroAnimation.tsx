@@ -7,7 +7,7 @@ import {
   useTransform,
   animate,
 } from "motion/react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 /** One-shot window cleaning — never resets to dirty. */
 const COLS = 5;
@@ -15,6 +15,9 @@ const ROWS = 7;
 const TOTAL = COLS * ROWS;
 /** Seconds to clean all windows (single pass, no loop) */
 const CLEAN_SECONDS = 24;
+
+/** Survives React Strict Mode remounts in the same page session */
+let sessionCleanComplete = false;
 
 const BUILDING = {
   originX: 420,
@@ -73,30 +76,45 @@ export function DroneCleaningHeroAnimation() {
   const reduceMotion = useReducedMotion();
   const uid = useId().replace(/:/g, "");
   const windows = useMemo(() => buildWindows(), []);
-  const progress = useMotionValue(0);
-  const [done, setDone] = useState(false);
-  const [cleaned, setCleaned] = useState(reduceMotion ? TOTAL : 0);
+  const progress = useMotionValue(sessionCleanComplete || reduceMotion ? 1 : 0);
+  const [done, setDone] = useState(
+    () => Boolean(sessionCleanComplete || reduceMotion),
+  );
+  const [cleaned, setCleaned] = useState(() =>
+    sessionCleanComplete || reduceMotion ? TOTAL : 0,
+  );
+  const maxCleaned = useRef(cleaned);
 
   useEffect(() => {
-    if (reduceMotion) {
+    if (reduceMotion || sessionCleanComplete) {
       progress.set(1);
       setDone(true);
       setCleaned(TOTAL);
+      maxCleaned.current = TOTAL;
       return;
     }
+    progress.set(0);
     const controls = animate(progress, 1, {
       duration: CLEAN_SECONDS,
       ease: "linear",
-      onComplete: () => setDone(true),
+      onComplete: () => {
+        sessionCleanComplete = true;
+        setDone(true);
+        setCleaned(TOTAL);
+        maxCleaned.current = TOTAL;
+      },
     });
     return () => controls.stop();
   }, [progress, reduceMotion]);
 
   useEffect(() => {
     return progress.on("change", (p) => {
-      // Window becomes clean once the drone has finished its dwell on it
+      // Monotonic: windows only get cleaner, never dirtier
       const idx = Math.min(TOTAL, Math.floor(p * TOTAL + 0.92));
-      setCleaned(idx);
+      if (idx > maxCleaned.current) {
+        maxCleaned.current = idx;
+        setCleaned(idx);
+      }
     });
   }, [progress]);
 
