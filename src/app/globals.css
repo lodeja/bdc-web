@@ -123,8 +123,65 @@ body {
   animation: bdcFadeUp 0.45s var(--ease-premium) both;
 }
 
+@keyframes bdcCleanWipe {
+  0%,
+  16% {
+    clip-path: inset(0 100% 0 0);
+  }
+  58%,
+  78% {
+    clip-path: inset(0 0% 0 0);
+  }
+  100% {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@keyframes bdcWipeEdge {
+  0%,
+  16% {
+    left: 41.6%;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  58% {
+    left: 83.2%;
+    opacity: 1;
+  }
+  78% {
+    left: 83.2%;
+    opacity: 0.2;
+  }
+  100% {
+    left: 41.6%;
+    opacity: 0;
+  }
+}
+
+.bdc-clean-wipe {
+  animation: bdcCleanWipe 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: clip-path;
+}
+
+.bdc-wipe-edge {
+  pointer-events: none;
+  position: absolute;
+  top: 9.5%;
+  bottom: 12%;
+  width: 3px;
+  border-radius: 999px;
+  background: #00c2e8;
+  box-shadow: 0 0 18px 4px rgba(0, 194, 232, 0.65);
+  animation: bdcWipeEdge 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: left, opacity;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .bdc-fade-up {
+  .bdc-fade-up,
+  .bdc-clean-wipe,
+  .bdc-wipe-edge {
     animation: none;
   }
 }
