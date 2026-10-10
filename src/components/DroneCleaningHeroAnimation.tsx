@@ -113,8 +113,20 @@ function seeded(id: string, salt = 0): number {
 const DRONE_OFFSET_X = -70;
 const DRONE_OFFSET_Y = -2;
 
-/** Hold after a full clean before re-dirtying / next pass (visible parked drone). */
-const CYCLE_HOLD_S = 2.8;
+/** Beat before drone launch (operator already on site). */
+const INTRO_DELAY_S = 1.0;
+
+/**
+ * Survives Strict Mode remount — one-shot must not re-dirty after finish.
+ * Full page refresh clears the module and restarts the story.
+ */
+let cleaningSessionComplete = false;
+
+/** Ground-line placements (SVG user units). */
+const OPERATOR_STAND = { x: 470, y: 618 };
+const VAN_PARK = { x: 300, y: 628 };
+/** Van art faces right — exit off the right edge after boarding. */
+const VAN_EXIT_X = VIEW_W + 220;
 
 export function DroneCleaningHeroAnimation() {
   const uid = useId().replace(/:/g, "");
@@ -136,10 +148,12 @@ export function DroneCleaningHeroAnimation() {
 
     const drone = svg.querySelector<SVGGElement>(`#drone-${uid}`);
     const beams = svg.querySelector<SVGGElement>(`#beams-${uid}`);
+    const operator = svg.querySelector<SVGGElement>(`#operator-${uid}`);
+    const van = svg.querySelector<SVGGElement>(`#van-${uid}`);
     const cloudFar = svg.querySelector<SVGGElement>(`#cloud-far-${uid}`);
     const cloudMid = svg.querySelector<SVGGElement>(`#cloud-mid-${uid}`);
 
-    if (!drone || !beams) return;
+    if (!drone || !beams || !operator || !van) return;
 
     cloudTlRef.current?.kill();
     const cloudTl = gsap.timeline({ repeat: -1 });
@@ -164,12 +178,6 @@ export function DroneCleaningHeroAnimation() {
     );
     const blinkTweens: gsap.core.Tween[] = [];
     const delayedCalls: gsap.core.Tween[] = [];
-    let cancelled = false;
-
-    const killBlinks = () => {
-      blinkTweens.splice(0).forEach((t) => t.kill());
-      delayedCalls.splice(0).forEach((t) => t.kill());
-    };
 
     const startWindowBlink = (w: Win, i: number) => {
       const shine = shines[i];
@@ -211,25 +219,6 @@ export function DroneCleaningHeroAnimation() {
       }
     };
 
-    const setAllDirty = () => {
-      dirtyMasks.forEach((m, i) => {
-        if (!m) return;
-        const w = route[i];
-        gsap.set(m, { attr: { x: w.x, width: w.w } });
-      });
-      sparkles.forEach((s) => {
-        if (!s) return;
-        gsap.set(s, { opacity: 0 });
-        s.querySelectorAll<SVGGElement>("[data-spark]").forEach((dot) => {
-          gsap.set(dot, { opacity: 0, scale: 0.7, transformOrigin: "50% 50%" });
-        });
-      });
-      shines.forEach((s) => {
-        if (s) gsap.set(s, { opacity: 0.4 });
-      });
-      gsap.set(beams, { opacity: 0 });
-    };
-
     const clearAllDirt = () => {
       dirtyMasks.forEach((m, i) => {
         if (!m) return;
@@ -239,10 +228,12 @@ export function DroneCleaningHeroAnimation() {
       gsap.set(beams, { opacity: 0 });
     };
 
-    // Reduced motion: static cleaned facade (no flight / no loops)
-    if (reduce) {
+    const showEndFrame = () => {
       clearAllDirt();
       gsap.set(drone, { opacity: 0 });
+      gsap.set(beams, { opacity: 0 });
+      gsap.set(operator, { opacity: 0, x: OPERATOR_STAND.x, y: OPERATOR_STAND.y });
+      gsap.set(van, { opacity: 0, x: VAN_EXIT_X, y: VAN_PARK.y });
       shines.forEach((s) => {
         if (s) gsap.set(s, { opacity: 0.75 });
       });
@@ -256,132 +247,208 @@ export function DroneCleaningHeroAnimation() {
           });
         });
       });
+    };
+
+    // Reduced motion: static finished job (clean facade, crew gone) — no drive-away
+    if (reduce) {
+      showEndFrame();
       return () => {
         cloudTl.kill();
         cloudTlRef.current = null;
       };
     }
 
+    // Remount after one-shot finished (Strict Mode): hold end frame, soft blinks
+    if (cleaningSessionComplete) {
+      showEndFrame();
+      route.forEach((w, i) => startWindowBlink(w, i));
+      return () => {
+        blinkTweens.forEach((t) => t.kill());
+        delayedCalls.forEach((t) => t.kill());
+        cloudTl.kill();
+        cloudTlRef.current = null;
+      };
+    }
+
+    dirtyMasks.forEach((m, i) => {
+      if (!m) return;
+      const w = route[i];
+      gsap.set(m, { attr: { x: w.x, width: w.w } });
+    });
+    sparkles.forEach((s) => {
+      if (!s) return;
+      gsap.set(s, { opacity: 0 });
+      s.querySelectorAll<SVGGElement>("[data-spark]").forEach((dot) => {
+        gsap.set(dot, { opacity: 0, scale: 0.7, transformOrigin: "50% 50%" });
+      });
+    });
+    shines.forEach((s) => {
+      if (s) gsap.set(s, { opacity: 0.4 });
+    });
+    gsap.set(beams, { opacity: 0 });
+
     const hover = (w: Win) => ({
       x: w.cx + DRONE_OFFSET_X,
       y: w.cy + DRONE_OFFSET_Y,
     });
 
-    const start = { x: 160, y: 140 };
-    const park = {
-      x: TOWER.x + TOWER.w * 0.22,
-      y: TOWER.y - 28,
-    };
+    const droneStart = { x: 200, y: 200 };
+    const droneExit = { x: VIEW_W + 120, y: 80 };
 
-    const runCycle = () => {
-      if (cancelled) return;
+    gsap.set(drone, {
+      x: droneStart.x,
+      y: droneStart.y,
+      opacity: 0,
+      rotate: 0,
+    });
+    gsap.set(operator, {
+      x: OPERATOR_STAND.x,
+      y: OPERATOR_STAND.y,
+      opacity: 1,
+      rotate: 0,
+    });
+    gsap.set(van, { x: VAN_PARK.x, y: VAN_PARK.y, opacity: 1 });
 
-      killBlinks();
-      mainTlRef.current?.kill();
+    mainTlRef.current?.kill();
+    const tl = gsap.timeline({
+      defaults: { ease: "power2.inOut" },
+      onComplete: () => {
+        cleaningSessionComplete = true;
+      },
+    });
+    mainTlRef.current = tl;
 
-      setAllDirty();
-      gsap.set(drone, { x: start.x, y: start.y, opacity: 0, rotate: 0 });
+    // Beat 1 — site ready: operator + van hold ~1s before launch
+    tl.to(operator, { y: "-=2", duration: 0.5, ease: "sine.inOut", yoyo: true, repeat: 1 }, 0);
+    tl.to({}, { duration: INTRO_DELAY_S });
 
-      const tl = gsap.timeline({
-        defaults: { ease: "power2.inOut" },
-        onComplete: () => {
-          if (cancelled) return;
-          // Brief hold with drone still visible + window blinks, then next pass
+    // Beat 2 — drone launch + approach
+    tl.to(drone, { opacity: 1, duration: 0.4, ease: "power1.out" });
+    tl.to(drone, {
+      x: hover(route[0]).x,
+      y: hover(route[0]).y,
+      duration: 1.45,
+      ease: "power3.inOut",
+    });
+    tl.to(drone, { y: "+=2", duration: 0.35, ease: "sine.inOut" });
+    tl.to(drone, { y: "-=2", duration: 0.35, ease: "sine.inOut" });
+
+    // Beat 3 — window-by-window clean (operator watches)
+    route.forEach((w, i) => {
+      const pos = hover(w);
+      const mask = dirtyMasks[i];
+      const travel = i === 0 ? 0.14 : 0.36 + seeded(w.id, 1) * 0.1;
+      const cleanDur = 0.5 + seeded(w.id, 2) * 0.1;
+      const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.2;
+
+      if (i > 0) {
+        const prev = route[i - 1];
+        const bank = Math.max(
+          -3.5,
+          Math.min(3.5, (pos.y - hover(prev).y) * 0.06),
+        );
+        tl.to(
+          drone,
+          {
+            x: pos.x,
+            y: pos.y,
+            rotate: bank,
+            duration: travel,
+            ease: "power2.inOut",
+          },
+          ">+0.03",
+        );
+        tl.to(drone, { rotate: 0, duration: 0.22, ease: "sine.out" }, ">-0.14");
+      }
+
+      // Occasional operator glance / controller nudge while cleaning
+      if (i === 4 || i === 12) {
+        tl.to(
+          operator,
+          { rotate: i === 4 ? -3 : 2, duration: 0.35, ease: "sine.inOut" },
+          "<",
+        );
+        tl.to(operator, { rotate: 0, duration: 0.4, ease: "sine.out" }, ">-0.05");
+      }
+
+      tl.to(beams, { opacity: 1, duration: 0.14, ease: "power1.out" }, ">-0.04");
+      tl.to(drone, { y: pos.y + 1.2, duration: 0.16, ease: "sine.inOut" }, "<");
+
+      if (mask) {
+        tl.to(
+          mask,
+          {
+            attr: { x: w.x + w.w, width: 0 },
+            duration: cleanDur,
+            ease: "power1.inOut",
+          },
+          "<0.1",
+        );
+      }
+
+      tl.call(
+        () => {
           delayedCalls.push(
-            gsap.delayedCall(CYCLE_HOLD_S, () => {
-              if (!cancelled) runCycle();
-            }),
+            gsap.delayedCall(sparkleDelay, () => startWindowBlink(w, i)),
           );
         },
-      });
-      mainTlRef.current = tl;
+        undefined,
+        ">-0.02",
+      );
 
-      tl.to(drone, { opacity: 1, duration: 0.4, ease: "power1.out" })
-        .to(drone, {
-          x: hover(route[0]).x,
-          y: hover(route[0]).y,
-          duration: 1.45,
-          ease: "power3.inOut",
-        })
-        .to(drone, { y: "+=2", duration: 0.4, ease: "sine.inOut" })
-        .to(drone, { y: "-=2", duration: 0.4, ease: "sine.inOut" });
+      if (i < route.length - 1) {
+        tl.to(beams, { opacity: 0.35, duration: 0.1 }, ">-0.04");
+      }
+    });
 
-      route.forEach((w, i) => {
-        const pos = hover(w);
-        const mask = dirtyMasks[i];
-        const travel = i === 0 ? 0.14 : 0.36 + seeded(w.id, 1) * 0.1;
-        const cleanDur = 0.5 + seeded(w.id, 2) * 0.1;
-        const sparkleDelay = 0.08 + seeded(w.id, 3) * 0.2;
+    // Beat 4 — drone packs up / exits sky
+    tl.to(beams, { opacity: 0, duration: 0.25, ease: "power1.in" });
+    tl.to(drone, {
+      x: TOWER.x + TOWER.w * 0.2,
+      y: TOWER.y - 40,
+      rotate: -4,
+      duration: 0.85,
+      ease: "power2.inOut",
+    });
+    tl.to(drone, {
+      x: droneExit.x,
+      y: droneExit.y,
+      rotate: -6,
+      duration: 1.4,
+      ease: "power3.in",
+    });
+    tl.to(drone, { opacity: 0, duration: 0.2 }, ">-0.2");
 
-        if (i > 0) {
-          const prev = route[i - 1];
-          const bank = Math.max(
-            -3.5,
-            Math.min(3.5, (pos.y - hover(prev).y) * 0.06),
-          );
-          tl.to(
-            drone,
-            {
-              x: pos.x,
-              y: pos.y,
-              rotate: bank,
-              duration: travel,
-              ease: "power2.inOut",
-            },
-            ">+0.03",
-          );
-          tl.to(drone, { rotate: 0, duration: 0.22, ease: "sine.out" }, ">-0.14");
-        }
-
-        tl.to(beams, { opacity: 1, duration: 0.14, ease: "power1.out" }, ">-0.04");
-        tl.to(drone, { y: pos.y + 1.2, duration: 0.16, ease: "sine.inOut" }, "<");
-
-        if (mask) {
-          tl.to(
-            mask,
-            {
-              attr: { x: w.x + w.w, width: 0 },
-              duration: cleanDur,
-              ease: "power1.inOut",
-            },
-            "<0.1",
-          );
-        }
-
-        tl.call(
-          () => {
-            delayedCalls.push(
-              gsap.delayedCall(sparkleDelay, () => startWindowBlink(w, i)),
-            );
-          },
-          undefined,
-          ">-0.02",
-        );
-
-        if (i < route.length - 1) {
-          tl.to(beams, { opacity: 0.35, duration: 0.1 }, ">-0.04");
-        }
-      });
-
-      // Park on roof — stay visible (no exit / opacity 0) so the scene never looks broken
-      tl.to(beams, { opacity: 0, duration: 0.25, ease: "power1.in" });
-      tl.to(drone, {
-        x: park.x,
-        y: park.y,
-        rotate: -2,
-        duration: 0.95,
-        ease: "power2.inOut",
-      });
-      tl.to(drone, { y: "+=3", duration: 0.7, ease: "sine.inOut", yoyo: true, repeat: 1 });
-    };
-
-    runCycle();
+    // Beat 5 — operator walks to van, boards, drives off (right)
+    tl.to(operator, {
+      x: VAN_PARK.x + 100,
+      duration: 0.9,
+      ease: "power1.inOut",
+    });
+    tl.to(
+      operator,
+      {
+        y: OPERATOR_STAND.y - 3,
+        duration: 0.18,
+        yoyo: true,
+        repeat: 3,
+        ease: "sine.inOut",
+      },
+      "<",
+    );
+    tl.to(operator, { opacity: 0, duration: 0.25, ease: "power1.in" });
+    tl.to(van, {
+      x: VAN_EXIT_X,
+      duration: 1.55,
+      ease: "power2.in",
+    });
+    tl.to(van, { opacity: 0, duration: 0.2 }, ">-0.25");
 
     return () => {
-      cancelled = true;
-      mainTlRef.current?.kill();
+      tl.kill();
       mainTlRef.current = null;
-      killBlinks();
+      delayedCalls.forEach((t) => t.kill());
+      blinkTweens.forEach((t) => t.kill());
       cloudTl.kill();
       cloudTlRef.current = null;
     };
@@ -392,7 +459,7 @@ export function DroneCleaningHeroAnimation() {
       ref={rootRef}
       className="relative h-full w-full overflow-hidden"
       role="img"
-      aria-label="Animatie van een reinigingsdrone die raam per raam een torengevel schoonmaakt"
+      aria-label="Animatie: drone-operator bij een bestelwagen stuurt een reinigingsdrone die een torengevel schoonmaakt, daarna rijdt de wagen weg"
     >
       <svg
         ref={svgRef}
@@ -467,6 +534,16 @@ export function DroneCleaningHeroAnimation() {
           {windows.map((w) => (
             <FlatWindow key={w.id} w={w} uid={uid} />
           ))}
+        </g>
+
+        {/* Work van (parked, later exits left) — behind operator */}
+        <g id={`van-${uid}`}>
+          <FlatWorkVan />
+        </g>
+
+        {/* Drone operator — helmet + hi-vis, watches facade */}
+        <g id={`operator-${uid}`}>
+          <FlatDroneOperator />
         </g>
 
         {/* Gray icon drone — ¾ side view, nose toward facade */}
@@ -741,6 +818,103 @@ function FlatCloud({
       {bumps.map((b, i) => (
         <circle key={i} cx={b.x} cy={baseline - b.r} r={b.r} />
       ))}
+    </g>
+  );
+}
+
+/**
+ * Flat-vector drone operator: white helmet + neon hi-vis vest,
+ * holding a small remote. Drawn at local origin (feet ≈ y=90).
+ */
+function FlatDroneOperator() {
+  const NAVY = "#1E2228";
+  const SKIN = "#D4A574";
+  const VEST = "#D4E800";
+  const VEST_DARK = "#B8C900";
+  const STRIPE = "#ffffff";
+  const HELMET = "#F2F4F6";
+  const HELMET_ACCENT = "#00C2E8";
+
+  return (
+    <g>
+      {/* Boots */}
+      <rect x="-11" y="82" width="9" height="8" rx="1.5" fill={NAVY} />
+      <rect x="2" y="82" width="9" height="8" rx="1.5" fill={NAVY} />
+      {/* Legs */}
+      <rect x="-9" y="52" width="8" height="32" rx="2" fill="#2A3340" />
+      <rect x="1" y="52" width="8" height="32" rx="2" fill="#2A3340" />
+      {/* Torso under vest */}
+      <rect x="-12" y="28" width="24" height="28" rx="3" fill="#343C48" />
+      {/* Hi-vis vest */}
+      <path
+        d="M-13 28 L-11 22 L-4 26 L0 22 L4 26 L11 22 L13 28 L12 54 L-12 54 Z"
+        fill={VEST}
+      />
+      <path d="M-13 28 L-4 34 L0 30 L4 34 L13 28 L12 38 L-12 38 Z" fill={VEST_DARK} />
+      {/* Reflective strips */}
+      <rect x="-11" y="40" width="22" height="3" fill={STRIPE} opacity="0.9" />
+      <rect x="-11" y="47" width="22" height="2.5" fill={STRIPE} opacity="0.75" />
+      {/* Arms + remote */}
+      <rect x="-20" y="30" width="8" height="18" rx="2" fill="#343C48" />
+      <rect x="12" y="30" width="8" height="14" rx="2" fill="#343C48" />
+      <rect x="14" y="42" width="12" height="8" rx="1.5" fill="#1E2228" />
+      <rect x="16" y="44" width="8" height="3" rx="0.5" fill="#00C2E8" />
+      {/* Neck + head */}
+      <rect x="-3" y="18" width="6" height="8" rx="1" fill={SKIN} />
+      <circle cx="0" cy="12" r="9" fill={SKIN} />
+      {/* Helmet */}
+      <path
+        d="M-11 12 Q-11 2 0 1 Q11 2 11 12 L9 16 L-9 16 Z"
+        fill={HELMET}
+      />
+      <rect x="-10" y="12" width="20" height="3" fill={HELMET_ACCENT} />
+      <ellipse cx="0" cy="6" rx="5" ry="2.5" fill="#ffffff" opacity="0.35" />
+    </g>
+  );
+}
+
+/**
+ * Flat side-view work van (nose left). Local origin ≈ rear bumper / wheel line.
+ */
+function FlatWorkVan() {
+  const BODY = "#1C222C";
+  const CAB = "#143356";
+  const ACCENT = "#00C2E8";
+  const GLASS = "#7EB8E0";
+  const WHEEL = "#1E2228";
+  const RIM = "#5A6578";
+
+  return (
+    <g>
+      {/* Shadow */}
+      <ellipse cx="70" cy="78" rx="78" ry="6" fill="#0E1624" opacity="0.18" />
+      {/* Cargo box */}
+      <rect x="8" y="18" width="118" height="52" rx="4" fill={BODY} />
+      {/* Cab */}
+      <path d="M126 34 L158 34 L168 52 L168 70 L126 70 Z" fill={CAB} />
+      {/* Windshield */}
+      <path d="M132 38 L154 38 L160 50 L132 50 Z" fill={GLASS} />
+      {/* Cyan stripe + JDC mark block */}
+      <rect x="8" y="38" width="118" height="6" fill={ACCENT} />
+      <rect x="28" y="28" width="36" height="14" rx="2" fill="#0B1F3A" />
+      <text
+        x="46"
+        y="38"
+        textAnchor="middle"
+        fill={ACCENT}
+        fontSize="9"
+        fontFamily="system-ui, sans-serif"
+        fontWeight="700"
+      >
+        JDC
+      </text>
+      {/* Wheels */}
+      <circle cx="36" cy="72" r="12" fill={WHEEL} />
+      <circle cx="36" cy="72" r="5" fill={RIM} />
+      <circle cx="148" cy="72" r="12" fill={WHEEL} />
+      <circle cx="148" cy="72" r="5" fill={RIM} />
+      {/* Light */}
+      <rect x="164" y="48" width="6" height="8" rx="1" fill="#F2D06B" />
     </g>
   );
 }
