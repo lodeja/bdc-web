@@ -368,12 +368,9 @@ function WorkVan({ variant }: { variant: string }) {
   const story = variant === "desktop" ? desktopStory : mobileStory;
   const scale = story.van.length / 408;
   const logo = withBasePath("/brand/jdc-van-logo.webp");
-  const skirt = {
-    x: (story.van.frontAxle + story.van.wheelR + 2) / scale,
-    y: 72,
-    w: (story.van.rearAxle - story.van.frontAxle - story.van.wheelR * 2 - 4) / scale,
-    h: (story.van.wheelR * 1.7) / scale,
-  };
+  // One rocker from the nose to the tail. Stay inside the 121-tall pitch box
+  // so the 22% 100% squat origin, and the planted wheels, do not move.
+  const sillArt = Math.min(120, (story.door.y + story.door.h) / scale).toFixed(2);
   return (
     <g>
       <ellipse cx={story.van.length * 0.48} cy={118 * scale} rx={story.van.length * 0.42} ry={6 * scale} fill="#071525" opacity="0.18" />
@@ -382,7 +379,7 @@ function WorkVan({ variant }: { variant: string }) {
           <g>
             <rect width="408" height="121" fill="transparent" />
             <path
-              d="M8 86 L8 58 C8 50 14 42 26 34 L52 16 C64 8 80 4 98 4 L392 4 Q402 4 402 14 L402 86 Z"
+              d={`M8 ${sillArt} L8 58 C8 50 14 42 26 34 L52 16 C64 8 80 4 98 4 L392 4 Q402 4 402 14 L402 ${sillArt} Z`}
               fill="#121418"
             />
             <path d="M98 6 H392" stroke="#2A2E34" strokeWidth="3" />
@@ -394,7 +391,6 @@ function WorkVan({ variant }: { variant: string }) {
             <ellipse cx="10" cy="70" rx="5" ry="6" fill="#C5D0D6" />
             <rect x="390" y="62" width="8" height="12" rx="1" fill="#3A2A28" />
             <image href={logo} x="196" y="16" width="108" height="70" preserveAspectRatio="xMidYMid meet" />
-            <rect x={skirt.x} y={skirt.y} width={skirt.w} height={skirt.h} fill="#121418" />
           </g>
         </g>
       </g>

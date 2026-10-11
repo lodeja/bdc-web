@@ -188,12 +188,16 @@ test("pitch, head, wheels and the walk change without hiding the operator", asyn
   expect(spread(frames.map((frame) => frame.leg))).toBeGreaterThan(12);
   expect(spread(frames.map((frame) => frame.x))).toBeGreaterThan(24);
 
+  let hidden = false;
   for (const frame of frames) {
+    if (frame.opacity < 0.05) {
+      hidden = true;
+      continue;
+    }
+    expect(hidden).toBe(false);
     expect(frame.opacity).toBeGreaterThan(0.92);
   }
-  for (let i = 1; i < frames.length; i++) {
-    expect(Math.abs(frames[i].opacity - frames[i - 1].opacity)).toBeLessThan(0.08);
-  }
+  expect(hidden).toBe(true);
 });
 
 test("the operator walks in the open doorway and the door shuts across frames", async ({ page }) => {
@@ -214,7 +218,7 @@ test("the operator walks in the open doorway and the door shuts across frames", 
       const parts = match[1].split(",").map((part) => Number(part.trim()));
       return (Math.atan2(parts[1] ?? 0, parts[0] ?? 1) * 180) / Math.PI;
     };
-    const rows: { ratio: number; ang: number; valve: number }[] = [];
+    const rows: { ratio: number; ang: number; valve: number; opacity: number; walked: number; doorX: number }[] = [];
     for (let ms = 0; ms <= 12_000; ms += 50) {
       for (const anim of document.getAnimations()) {
         anim.pause();
@@ -225,13 +229,23 @@ test("the operator walks in the open doorway and the door shuts across frames", 
       const wheel = root.querySelector('[data-hero="wheel"]')?.getBoundingClientRect();
       const valve = root.querySelector('[data-hero="valve"]')?.getBoundingClientRect();
       if (!vest || !door || !wheel || !valve) continue;
+      const operator = root.querySelector('[data-hero="operator"]')!;
       const leg = getComputedStyle(root.querySelector('[data-hero="leg"]')!).transform;
+      const readX = (transform: string) => {
+        const match = transform.match(/matrix\(([^)]+)\)/);
+        return match ? Number(match[1].split(",")[4]) : 0;
+      };
+      const opStyle = getComputedStyle(operator);
+      const doorStyle = getComputedStyle(root.querySelector('[data-hero="door"]')!);
       rows.push({
         ratio:
           Math.max(0, Math.min(vest.right, door.right) - Math.max(vest.left, door.left)) /
           Math.max(1, vest.width),
         ang: angle(leg),
         valve: Math.atan2(valve.y + valve.height / 2 - (wheel.y + wheel.height / 2), valve.x + valve.width / 2 - (wheel.x + wheel.width / 2)),
+        opacity: Number(opStyle.opacity),
+        walked: Math.abs(readX(opStyle.transform)),
+        doorX: readX(doorStyle.transform),
       });
     }
     return rows;
@@ -243,6 +257,9 @@ test("the operator walks in the open doorway and the door shuts across frames", 
   expect(rows.filter((row) => row.ratio > 0.22 && row.ratio < 0.82).length).toBeGreaterThan(1);
   const valveSpread = spread(rows.map((row) => row.valve));
   expect(valveSpread).toBeGreaterThan(0.6);
+  const boarded = rows.filter((row) => row.walked > 40 && Math.abs(row.doorX) < 1);
+  expect(boarded.length).toBeGreaterThan(6);
+  expect(boarded.slice(2).every((row) => row.opacity < 0.05)).toBe(true);
 });
 
 test("the driving van is clipped to the figure", async ({ page }) => {

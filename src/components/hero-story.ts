@@ -315,9 +315,10 @@ function buildStory(g: Geom): HeroStory {
     w: doorW,
     h: g.van.axleY + 10,
   };
+  const roof = 4 * (g.van.length / 408);
   const cargo = {
     x: g.van.x + door.x + door.w * 0.5,
-    y: g.van.y + g.van.axleY * 0.42,
+    y: g.van.y + roof - 2.2,
   };
   // Boots rise onto the sill. Negative Y is up. The door then slides shut over him.
   const sink = -8;
@@ -513,6 +514,11 @@ function buildStory(g: Geom): HeroStory {
     `${shutPct}{transform:translateX(0px);animation-timing-function:linear}`,
     `${boardPct},100%{transform:translateX(0px)}`,
   ].join("");
+  const hideAt = pct(Math.min(duration, shut + 0.02));
+  const hideKf = [
+    `0%,${shutPct}{opacity:1;animation-timing-function:step-end}`,
+    `${hideAt},100%{opacity:0}`,
+  ].join("");
   const pitchIn = pct(boardEnd + g.drive * 0.16);
   const pitchMid = pct(boardEnd + g.drive * 0.42);
 
@@ -527,8 +533,9 @@ function buildStory(g: Geom): HeroStory {
 @keyframes jdc-ha-bob-${v}{0%,100%{transform:translateY(0px)}50%{transform:translateY(${num(-g.bob)}px)}}
 .jdc-ha-look-${v}{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(${num(landLook)}deg);animation:jdc-ha-look-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-look-${v}{${lookKf}}
-.jdc-ha-walk-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);opacity:1;animation:jdc-ha-walk-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+.jdc-ha-walk-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);opacity:1;animation-name:jdc-ha-walk-${v},jdc-ha-hide-${v};animation-duration:${duration}s,${duration}s;animation-timing-function:linear,linear;animation-fill-mode:both,both;animation-delay:${HERO_DELAY_S}s,${HERO_DELAY_S}s}
 @keyframes jdc-ha-walk-${v}{${walkKf}}
+@keyframes jdc-ha-hide-${v}{${hideKf}}
 .jdc-ha-rise-${v}{transform-box:view-box;transform-origin:0 0;transform:translateY(0px);animation:jdc-ha-rise-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-rise-${v}{${riseKf}}
 .jdc-ha-lean-${v}{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(0deg);animation:jdc-ha-lean-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
