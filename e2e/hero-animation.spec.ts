@@ -46,7 +46,7 @@ test("reduced motion fades the dirt and keeps the crew still", async ({ page }) 
         drone: rect('[data-hero="drone"]'),
         operator: rect('[data-hero="operator"]'),
         van: rect('[data-hero="van"]'),
-        clouds: getComputedStyle(stage.querySelector('[data-hero="clouds"]')!).animationName,
+        clouds: getComputedStyle(document.querySelector('[data-hero="clouds"]')!).animationName,
       };
     };
     return { at0: read(0), at2000: read(2000), at5000: read(5000) };
@@ -184,6 +184,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     const tower = rect('[data-hero="tower"]');
     const ground = rect('[data-hero="ground"]');
     const operatorStart = rect('[data-hero="operator"]');
+    const upper = stage.querySelector(".jdc-op-upper")!.getBoundingClientRect();
     const logo = rect('[data-hero="logo"]');
     const vanParked = rect('[data-hero="van"]');
     const doorParked = rect('[data-hero="door"]');
@@ -233,6 +234,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       stageH: stageStart.height,
       operatorTop: operatorStart.y,
       operatorBottom: operatorStart.b,
+      waist: upper.bottom - stageStart.top,
       logoWide: logo.w >= (stageStart.width > 700 ? 40 : 22),
       logoOnPanel: logo.x >= doorParked.r - 2 && logo.r <= vanParked.r + 1,
       besideRatio: operatorBeside.h / vanBeside.h,
@@ -266,8 +268,9 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
   if ((story?.stageW ?? 0) > 700) {
     expect(story?.cropped).toBe(true);
   } else {
-    expect(story?.operatorTop ?? -1).toBeGreaterThanOrEqual(-1);
-    expect(story?.operatorBottom ?? 9999).toBeLessThanOrEqual((story?.stageH ?? 0) + 1);
+    expect(story?.operatorTop ?? 0).toBeGreaterThan((story?.stageH ?? 1) * 0.4);
+    expect(story?.operatorBottom ?? 0).toBeGreaterThan((story?.stageH ?? 0) + 4);
+    expect(story?.waist ?? 0).toBeGreaterThan((story?.stageH ?? 0) - 2);
   }
   expect(story?.logoWide).toBe(true);
   expect(story?.logoOnPanel).toBe(true);
@@ -283,7 +286,7 @@ test("clouds loop without a seam and the glint returns to clear", async ({ page 
       (node) => node.getBoundingClientRect().width > 0,
     );
     if (!stage) return null;
-    const clouds = stage.querySelector('[data-hero="clouds"]') as HTMLElement | null;
+    const clouds = document.querySelector('[data-hero="clouds"]') as HTMLElement | null;
     const glint = stage.querySelector('[data-hero="glint"]') as HTMLElement | null;
     if (!clouds || !glint) return null;
     const cloudAnim = clouds.getAnimations()[0];
@@ -297,11 +300,12 @@ test("clouds loop without a seam and the glint returns to clear", async ({ page 
     const first = clouds.querySelector(".cloud-set")!;
     const second = clouds.querySelectorAll(".cloud-set")[1]!;
     cloudAnim.pause();
+    const dur = Number(cloudAnim.effect?.getComputedTiming().duration ?? 0);
     cloudAnim.currentTime = 0;
     const atStart = first.getBoundingClientRect();
-    cloudAnim.currentTime = 10_000;
+    cloudAnim.currentTime = dur / 2;
     const atMid = first.getBoundingClientRect();
-    cloudAnim.currentTime = 19_990;
+    cloudAnim.currentTime = Math.max(0, dur - 12);
     const atLoop = second.getBoundingClientRect();
     const glintOpacity = (ms: number) => {
       glintAnim.pause();
