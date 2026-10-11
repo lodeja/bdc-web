@@ -8,12 +8,12 @@ import {
 } from "./hero-story";
 
 const LABEL =
-  "Een operator met witte helm en signalisatievest laat een reinigingsdrone in één baan langs de gevel vliegen. Die baan gaat van vuil naar schoon. Daarna rijdt de zwarte JDC-bestelwagen weg.";
+  "Een operator met witte helm en signalisatievest kijkt omhoog terwijl een reinigingsdrone de gevel baan voor baan schoonmaakt. Daarna stapt de operator in en rijdt de zwarte JDC-bestelwagen weg.";
 
 /**
  * Signature hero, drawn in the first HTML response.
- * CSS plays one cleaning pass. The un-animated frame is the reduced-motion still:
- * that lane already clean, drone with the operator, van on site.
+ * CSS plays the one-shot. The un-animated frame is the reduced-motion still:
+ * clean facade, drone with the operator, van on site.
  */
 export function DroneCleaningHeroAnimation() {
   return (
@@ -58,7 +58,11 @@ function Scene({ story, className }: { story: HeroStory; className: string }) {
         </g>
         <Operator story={story} />
         <g data-hero="drone" className={`jdc-ha-play jdc-ha-drone-${v}`}>
-          <CleaningDrone variant={v} />
+          <g className={`jdc-ha-play jdc-ha-tilt-${v}`}>
+            <g className={`jdc-ha-play jdc-ha-bob-${v}`}>
+              <CleaningDrone variant={v} />
+            </g>
+          </g>
         </g>
       </svg>
     </div>
@@ -106,112 +110,72 @@ function Cloud({ x, y, s }: { x: number; y: number; s: number }) {
 
 function Tower({ story }: { story: HeroStory }) {
   const t = story.tower;
-  const right = t.x + t.w;
-  const side = `M${right} ${t.y + 18} L${right + t.side} ${t.y + 46} L${right + t.side} ${story.viewH} L${right} ${story.viewH} Z`;
   return (
     <g>
-      <path d={side} fill="#8E97A3" />
-      <rect x={right + 10} y={t.y + 90} width={t.side * 0.55} height={t.h * 0.55} fill="#7E8794" opacity="0.45" />
       <rect x={t.x} y={t.y} width={t.w} height={t.h} fill="#D5DBE2" />
-      <rect x={t.x - 8} y={t.y} width={t.w + 16} height="12" fill="#B7BEC8" />
-      <rect x={t.x} y={t.y} width={t.w} height="12" fill="#C8CED6" />
+      <rect x={t.x + t.w - 8} y={t.y} width="8" height={t.h} fill="#B7BEC8" />
+      <rect x={t.x - 6} y={t.y} width={t.w + 12} height="10" fill="#C5CCD4" />
+      <rect x={t.x} y={t.y} width={t.w} height="10" fill="#EEF1F4" />
       {story.windows.map((w) => (
         <Pane key={w.id} w={w} story={story} />
       ))}
-      <rect
-        x={t.x}
-        y={t.y + t.h - t.padBottom + 8}
-        width={t.w}
-        height="10"
-        fill="#C5CBD3"
-      />
+      <rect x={t.x} y={t.y + t.h - t.padBottom + 6} width={t.w} height="8" fill="#C5CBD3" />
     </g>
   );
 }
 
 function Pane({ w, story }: { w: Win; story: HeroStory }) {
   const v = story.variant;
-  const delay = story.wipeDelay.get(w.id);
-  const lane = delay !== undefined;
-  const inset = 0;
+  const delay = story.wipeDelay.get(w.id) ?? 1;
+  const origin = story.wipeOrigin.get(w.id) ?? "right";
+  const glintAt = story.glintDelay.get(w.id) ?? 1;
+  const edge = Math.max(2.5, w.w * 0.035);
+  const edgeX = origin === "right" ? w.x : w.x + w.w - edge;
   return (
     <g>
       <rect x={w.x} y={w.y} width={w.w} height={w.h} fill={`url(#${v}-glass)`} />
-      <g clipPath={`url(#${w.id}-clip)`}>
+      <g
+        clipPath={`url(#${w.id}-clip)`}
+        className={`jdc-ha-play jdc-ha-glint-${v}`}
+        style={{ ["--glint-delay" as string]: `${glintAt}s` }}
+      >
         <rect
-          x={w.x + w.w * 0.62}
+          x={w.x + w.w * 0.58}
           y={w.y - w.h}
-          width={Math.max(3, w.w * 0.045)}
+          width={Math.max(3, w.w * 0.05)}
           height={w.h * 3}
           fill="#ffffff"
-          opacity={lane ? 0.7 : 0.28}
           transform={`rotate(-28 ${w.cx} ${w.cy})`}
         />
         <rect
-          x={w.x + w.w * 0.74}
+          x={w.x + w.w * 0.72}
           y={w.y - w.h}
-          width={Math.max(6, w.w * 0.08)}
+          width={Math.max(5, w.w * 0.09)}
           height={w.h * 3}
           fill="#E7F8FF"
-          opacity={lane ? 0.42 : 0.12}
+          opacity="0.55"
           transform={`rotate(-28 ${w.cx} ${w.cy})`}
         />
       </g>
       <clipPath id={`${w.id}-clip`}>
         <rect x={w.x} y={w.y} width={w.w} height={w.h} />
       </clipPath>
-      {lane ? (
       <g
         data-hero="dirt"
         className={`jdc-ha-play jdc-ha-dirt-${v}`}
         style={{
           ["--wipe-delay" as string]: `${delay}s`,
           ["--wipe-dur" as string]: `${story.wipeDur}s`,
+          ["--wipe-origin" as string]: origin,
         }}
       >
-        <rect x={w.x} y={w.y} width={w.w} height={w.h} fill="#C4B193" opacity="0.9" />
-        <rect x={w.x} y={w.y} width={w.w} height={w.h * 0.22} fill="#A48B68" opacity="0.35" />
-        <rect
-          x={w.x + w.w * 0.28}
-          y={w.y + 4}
-          width="1.4"
-          height={w.h - 8}
-          fill="#8C7352"
-          opacity="0.28"
-        />
-        <rect
-          x={w.x + w.w * 0.62}
-          y={w.y + 8}
-          width="1.1"
-          height={w.h * 0.7}
-          fill="#8C7352"
-          opacity="0.2"
-        />
-        <rect x={w.x} y={w.y} width={Math.max(3, w.w * 0.035)} height={w.h} fill="#F4FDFF" />
-        <rect
-          x={w.x + Math.max(3, w.w * 0.035)}
-          y={w.y}
-          width="2"
-          height={w.h}
-          fill="#67E0F6"
-          opacity="0.9"
-        />
+        <rect x={w.x} y={w.y} width={w.w} height={w.h} fill="#C4B193" opacity="0.92" />
+        <rect x={w.x} y={w.y} width={w.w} height={w.h * 0.2} fill="#A48B68" opacity="0.4" />
+        <rect x={w.x + w.w * 0.3} y={w.y + 4} width="1.3" height={w.h - 8} fill="#8C7352" opacity="0.28" />
+        <rect x={edgeX} y={w.y} width={edge} height={w.h} fill="#F4FDFF" />
+        <rect x={origin === "right" ? edgeX + edge : edgeX - 2} y={w.y} width="2" height={w.h} fill="#67E0F6" opacity="0.9" />
       </g>
-      ) : (
-        <g data-hero="context">
-          <rect x={w.x} y={w.y} width={w.w} height={w.h} fill="#C4B193" opacity="0.58" />
-          <rect x={w.x} y={w.y} width={w.w} height={w.h * 0.2} fill="#8C7352" opacity="0.28" />
-        </g>
-      )}
-      <rect
-        x={w.x + inset}
-        y={w.y + inset}
-        width={w.w - inset * 2}
-        height={w.h - inset * 2}
-        fill="none"
-        stroke="#1C2128"
-        strokeWidth="3.25"
-      />
+      <rect x={w.x} y={w.y} width={w.w} height={w.h} fill="none" stroke="#1C2128" strokeWidth="3" />
     </g>
   );
 }
@@ -219,26 +183,31 @@ function Pane({ w, story }: { w: Win; story: HeroStory }) {
 function Operator({ story }: { story: HeroStory }) {
   const { x, y } = story.operator;
   const v = story.variant;
-  const s = v === "desktop" ? 1.48 : 1.28;
+  const s = story.figure;
   return (
-    <g data-hero="operator">
-      <ellipse cx={x} cy={y - 1} rx={38 * s} ry={6} fill="#071525" opacity="0.16" />
+    <g data-hero="operator" className={`jdc-ha-play jdc-ha-board-${v}`}>
+      <ellipse cx={x} cy={y - 1} rx={22 * s} ry={4.5} fill="#071525" opacity="0.16" />
       <g transform={`translate(${x} ${y}) scale(${s})`}>
-        <path d="M-22 2 L-17 -38 L17 -40 L22 2 Z" fill="#243044" />
-        <path d="M-19 0 L-15 -44 L15 -46 L19 0 Z" fill="#E4F018" />
-        <path d="M-15 -44 L15 -46 L12 -26 L-12 -24 Z" fill="#C5D20F" />
-        <rect x="-15" y="-32" width="30" height="4" fill="#ffffff" />
-        <rect x="-14" y="-18" width="28" height="3.2" fill="#ffffff" opacity="0.95" />
-        <rect x="-9" y="-12" width="18" height="9" rx="1.5" fill="#14181E" />
-        <rect x="-6" y="-9.4" width="12" height="2.8" rx="0.5" fill="#00C2E8" />
+        <path d="M-7 0 L-9 -34 L-2 -36 L-1 -6 Z" fill="#1A2230" />
+        <path d="M1 -2 L3 -38 L11 -36 L8 -2 Z" fill="#243044" />
+        <path d="M-8 -34 L-4 -74 L10 -76 L12 -36 Z" fill="#E4F018" />
+        <path d="M-4 -74 L8 -76 L6 -58 L-2 -56 Z" fill="#C5D20F" />
+        <rect x="-5" y="-66" width="14" height="3.2" fill="#ffffff" />
+        <rect x="-6" y="-50" width="16" height="3" fill="#ffffff" />
+        <path d="M8 -62 L22 -50 L20 -45 L8 -54 Z" fill="#D6E210" />
+        <rect x="18" y="-52" width="13" height="7" rx="1.4" fill="#14181E" />
+        <rect x="20" y="-49.6" width="8" height="2.2" rx="0.4" fill="#00C2E8" />
+        <path d="M-2 -70 L-8 -58 L-4 -56 L1 -68 Z" fill="#C5D20F" />
       </g>
-      <g data-hero="look" className={`jdc-ha-play jdc-ha-look-${v}`}>
-        <g transform={`scale(${s})`}>
-          <ellipse cx="0" cy="4" rx="8" ry="3.6" fill="#243044" />
-          <path d="M-16 6 Q-17 -16 0 -24 Q17 -16 16 6 Z" fill="#F7F8FA" />
-          <path d="M-10 -7 Q0 -18 10 -6" fill="none" stroke="#FFFFFF" strokeWidth="2" opacity="0.85" />
-          <ellipse cx="0" cy="6" rx="20" ry="5" fill="#F3F5F7" />
-          <ellipse cx="0" cy="5" rx="13" ry="2.3" fill="#FFFFFF" opacity="0.7" />
+      <g transform={`translate(${story.neck.x} ${story.neck.y})`}>
+        <g className={`jdc-ha-play jdc-ha-look-${v}`}>
+          <g transform={`scale(${s})`}>
+            <rect x="-14" y="-30" width="28" height="30" fill="none" />
+            <path d="M-1 0 C-2 -6 -1 -16 4 -22 C12 -28 18 -20 16 -8 C14 -2 8 1 2 0 Z" fill="#C9845A" />
+            <path d="M-2 2 C-6 -8 -2 -22 6 -28 C16 -32 22 -18 18 -4 C20 2 10 6 2 3 Z" fill="#F4F7FB" />
+            <path d="M4 -6 L20 -12 L18 -7 L6 -3 Z" fill="#E6EAEF" />
+            <path d="M8 -16 L16 -18" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" />
+          </g>
         </g>
       </g>
     </g>
@@ -247,56 +216,68 @@ function Operator({ story }: { story: HeroStory }) {
 
 function CleaningDrone({ variant }: { variant: string }) {
   const hubs = [
-    { x: -46, y: -24, s: 0.78 },
-    { x: 18, y: -28, s: 0.72 },
-    { x: -40, y: 20, s: 1 },
-    { x: 28, y: 16, s: 0.96 },
+    { x: -24, y: -14, s: 0.82 },
+    { x: 16, y: -16, s: 0.74 },
+    { x: -18, y: 12, s: 1 },
+    { x: 20, y: 10, s: 0.92 },
   ];
   return (
     <g>
-      <ellipse cx="6" cy="42" rx="36" ry="5" fill="#071525" opacity="0.12" />
+      <rect x="-48" y="-36" width="96" height="72" fill="transparent" />
+      <ellipse cx="0" cy="22" rx="18" ry="3" fill="#071525" opacity="0.14" />
       {hubs.slice(0, 2).map((h) => (
-        <Rotor key={`${h.x}-${h.y}`} {...h} far />
+        <Rotor key={`${h.x}-${h.y}`} variant={variant} {...h} far />
       ))}
-      <path d="M-6 -4 L-46 -24" stroke="#5C656F" strokeWidth="3" strokeLinecap="round" />
-      <path d="M8 -6 L18 -28" stroke="#5C656F" strokeWidth="3" strokeLinecap="round" />
-      <path d="M-34 -6 L40 -12 L52 -2 L46 12 L-30 10 Z" fill="#3A424C" />
-      <path d="M-30 -4 L36 -9 L46 -1 L40 8 L-26 7 Z" fill="#4C5662" />
-      <path d="M-22 -8 L34 -12 L44 -4 L-8 -2 Z" fill="#6A7380" opacity="0.9" />
-      <path d="M8 -10 L28 -11 L26 -7 L10 -6 Z" fill="#00C2E8" />
-      <ellipse cx="18" cy="8" rx="5" ry="3.2" fill="#1C2128" />
-      <path d="M44 0 L74 3 L44 8 Z" fill="#2E353E" />
-      <circle cx="70" cy="4" r="3.2" fill="#00C2E8" />
+      <path d="M-4 -2 L-24 -14" stroke="#5C656F" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M6 -3 L16 -16" stroke="#5C656F" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M-22 -2 L22 -6 L30 1 L26 9 L-18 7 Z" fill="#3A424C" />
+      <path d="M-18 0 L18 -4 L24 1 L20 6 L-14 5 Z" fill="#4C5662" />
+      <path d="M-8 -5 L16 -7 L22 -2 L2 0 Z" fill="#00C2E8" />
+      <path d="M22 1 L36 3 L22 7 Z" fill="#2E353E" />
+      <circle cx="34" cy="4" r="2.2" fill="#00C2E8" />
       <g className={`jdc-ha-play jdc-ha-mist-${variant}`}>
-        <ellipse cx="-8" cy="8" rx="22" ry="8" fill="#7EE9FF" opacity="0.42" />
-        <ellipse cx="-40" cy="12" rx="30" ry="10" fill="#C5F6FF" opacity="0.32" />
-        <ellipse cx="-78" cy="14" rx="26" ry="8" fill="#F4FDFF" opacity="0.2" />
-        <ellipse cx="86" cy="4" rx="16" ry="8" fill="#5CE4FF" opacity="0.62" />
-        <ellipse cx="108" cy="10" rx="26" ry="12" fill="#D7F8FF" opacity="0.45" />
-        <ellipse cx="126" cy="18" rx="14" ry="8" fill="#F7FEFF" opacity="0.3" />
+        <ellipse cx="0" cy="12" rx="16" ry="6" fill="#8CEFFF" opacity="0.45" />
+        <ellipse cx="18" cy="13" rx="12" ry="5" fill="#D7F8FF" opacity="0.4" />
+        <ellipse cx="-16" cy="12" rx="11" ry="4.5" fill="#EFFFFF" opacity="0.28" />
+        <ellipse cx="30" cy="15" rx="8" ry="4" fill="#F7FEFF" opacity="0.34" />
       </g>
-      <path d="M-8 10 L-40 20" stroke="#4A535E" strokeWidth="3.4" strokeLinecap="round" />
-      <path d="M10 10 L28 16" stroke="#4A535E" strokeWidth="3.4" strokeLinecap="round" />
+      <path d="M-6 6 L-16 12" stroke="#4A535E" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M8 6 L16 11" stroke="#4A535E" strokeWidth="2.2" strokeLinecap="round" />
       {hubs.slice(2).map((h) => (
-        <Rotor key={`${h.x}-${h.y}`} {...h} />
+        <Rotor key={`${h.x}-${h.y}`} variant={variant} {...h} />
       ))}
-      <path d="M-28 12 L-30 24 M22 12 L24 22" stroke="#2A3038" strokeWidth="2" strokeLinecap="round" />
-      <path d="M-38 24 H-22 M16 22 H30" stroke="#2A3038" strokeWidth="2.4" strokeLinecap="round" />
     </g>
   );
 }
 
-function Rotor({ x, y, s, far }: { x: number; y: number; s: number; far?: boolean }) {
+function Rotor({
+  x,
+  y,
+  s,
+  far,
+  variant,
+}: {
+  x: number;
+  y: number;
+  s: number;
+  far?: boolean;
+  variant: string;
+}) {
   return (
-    <g transform={`translate(${x} ${y}) scale(${s})`} opacity={far ? 0.75 : 1}>
+    <g transform={`translate(${x} ${y}) scale(${s})`} opacity={far ? 0.8 : 1}>
+      <ellipse className={`jdc-ha-play jdc-ha-disc-${variant}`} cx="0" cy="0" rx="16" ry="3.1" fill="#F4F7FB" />
       <g className="jdc-ha-rotor">
         <path
-          d="M0 -2.3 C10 -2.4 18 -1.3 24 0 C18 1.3 10 2.4 0 2.3 C-10 2.4 -18 1.3 -24 0 C-18 -1.3 -10 -2.4 0 -2.3 Z"
+          d="M0 -2.6 C8 -2.5 14 -1.2 18 0 C14 1.2 8 2.5 0 2.6 C-8 2.5 -14 1.2 -18 0 C-14 -1.2 -8 -2.5 0 -2.6 Z"
           fill={far ? "#E6EBEF" : "#F7F9FB"}
         />
+        <path
+          d="M-2.6 0 C-2.5 -8 -1.2 -14 0 -18 C1.2 -14 2.5 -8 2.6 0 C2.5 8 1.2 14 0 18 C-1.2 14 -2.5 8 -2.6 0 Z"
+          fill={far ? "#D5DCE3" : "#E7EDF2"}
+        />
       </g>
-      <circle r="3.3" fill="#1A1E24" />
-      <circle r="1.3" fill="#00C2E8" />
+      <circle r="2.4" fill="#1A1E24" />
+      <circle r="1" fill="#00C2E8" />
     </g>
   );
 }

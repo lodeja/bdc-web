@@ -43,8 +43,13 @@ test("hero animation starts within about two seconds", async ({ page }) => {
 test("cleaning pass changes the facade", async ({ page }) => {
   await page.goto("/");
   const width = page.viewportSize()?.width ?? 1440;
-  const lane = page.locator('[data-hero="dirt"]:visible');
-  await expect(lane).toHaveCount(width < 800 ? 2 : 3);
+  const panes = await page.evaluate(() => {
+    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    return frame?.querySelectorAll('[data-hero="dirt"]').length ?? 0;
+  });
+  expect(panes).toBe(width < 800 ? 6 : 9);
   const dirt = await crew(page, "dirt");
   await expect(dirt).toBeVisible();
   const before = await dirt.evaluate((el) => getComputedStyle(el).transform);
@@ -83,11 +88,30 @@ test("reduced motion shows drone, operator and van", async ({ page }) => {
       (node) => getComputedStyle(node).transform,
     );
   });
-  expect(wiped).toHaveLength(width < 800 ? 2 : 3);
+  expect(wiped).toHaveLength(width < 800 ? 6 : 9);
   for (const transform of wiped) {
     expect(transform.startsWith("matrix(0,")).toBe(true);
   }
-  await expect(page.locator('[data-hero="context"]:visible').first()).toBeVisible();
+});
+
+test("the van drives off after the facade is cleaned", async ({ page }) => {
+  await page.goto("/");
+  const van = page.locator('[data-hero="van"]:visible').first();
+  await expect(van).toBeVisible();
+  const startX = await van.evaluate((node) => {
+    const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
+    return match ? Number(match[1].split(",")[4]) : 0;
+  });
+  await expect
+    .poll(
+      async () =>
+        van.evaluate((node) => {
+          const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
+          return match ? Number(match[1].split(",")[4]) : 0;
+        }),
+      { timeout: 12_000, intervals: [200, 400, 600] },
+    )
+    .toBeLessThan(startX - 120);
 });
 
 test("story replays on reload and keeps playing through history", async ({ page }) => {
