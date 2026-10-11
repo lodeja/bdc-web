@@ -34,10 +34,11 @@ export function Comparison() {
       title="Vier manieren om bij het vlak te komen"
       lead="Een drone is niet op elke opdracht de beste keuze. Soms past een stelling, een hoogtewerker of touwtechniek beter."
       tone="white"
+      revealChildren={false}
     >
       <div className="grid border-t border-jdc-navy/15 md:grid-cols-2 xl:grid-cols-4">
         {METHODS.map((method) => (
-          <article key={method.name} className="border-b border-jdc-navy/15 py-6 md:border-r md:px-5 md:last:border-r-0 xl:border-b-0">
+          <article key={method.name} className="jdc-card border-b border-jdc-navy/15 py-6 md:border-r md:px-5 md:last:border-r-0 xl:border-b-0" data-reveal="">
             <h3 className="jdc-display text-3xl text-jdc-navy">{method.name}</h3>
             <dl className="mt-4 grid gap-4">
               <div>

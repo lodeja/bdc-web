@@ -48,10 +48,11 @@ export function FAQ() {
       title="Vragen die we vaak krijgen"
       lead="Korte antwoorden, in gewone taal."
       tone="fog"
+      revealChildren={false}
     >
       <div className="mx-auto max-w-3xl divide-y divide-jdc-navy/10 border-y border-jdc-navy/10">
         {FAQS.map((item) => (
-          <article key={item.q} className="py-5">
+          <article key={item.q} className="jdc-card py-5" data-reveal="">
             <h3 className="text-lg font-semibold text-jdc-navy">{item.q}</h3>
             <p className="mt-2 text-sm leading-relaxed text-jdc-slate sm:text-base">{item.a}</p>
             {item.more ? (

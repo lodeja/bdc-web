@@ -55,6 +55,7 @@ export function Process() {
       title="Zo werken we"
       lead="Van het plaatsbezoek tot het opleverrapport."
       tone="navy"
+      revealChildren={false}
     >
       <div className="relative mx-auto max-w-3xl">
         <div
@@ -62,10 +63,12 @@ export function Process() {
           aria-hidden
         />
         <ol>
-          {STEPS.map((step) => (
+          {STEPS.map((step, index) => (
             <li
               key={step.n}
-              className="relative grid grid-cols-[3.25rem_minmax(0,1fr)] gap-4 border-b border-white/15 py-5 last:border-b-0"
+              className="jdc-step relative grid grid-cols-[3.25rem_minmax(0,1fr)] gap-4 border-b border-white/15 py-5 last:border-b-0"
+              data-reveal=""
+              data-step={index}
             >
               <span className="jdc-mono relative text-sm text-jdc-cyan" aria-hidden>
                 <span className="absolute top-1.5 -left-[3px] h-1.5 w-1.5 rounded-full bg-jdc-cyan" />

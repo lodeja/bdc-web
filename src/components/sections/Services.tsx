@@ -10,12 +10,13 @@ export function Services() {
       title="Vijf diensten"
       lead="Eerst kijken, dan vliegen. Per dienst leest u hoe we werken en wanneer we liever geen drone inzetten."
       tone="fog"
+      revealChildren={false}
     >
       <ul className="grid gap-px border border-jdc-navy/15 bg-jdc-navy/15 sm:grid-cols-2">
         {services.map((service, index) => {
           const wide = service.id === "industrie";
           return (
-            <li key={service.id} className={`bg-white ${wide ? "sm:col-span-2" : ""}`}>
+            <li key={service.id} className={`jdc-card bg-white ${wide ? "sm:col-span-2" : ""}`} data-reveal="">
               <div className={wide ? "sm:grid sm:grid-cols-2 sm:items-center" : ""}>
                 <figure className={`m-0 border-b border-jdc-navy/10 ${wide ? "sm:border-r sm:border-b-0" : ""}`}>
                   <div className="flex items-baseline justify-between px-4 pt-3">

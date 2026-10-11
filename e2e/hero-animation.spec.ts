@@ -29,6 +29,8 @@ test("reduced motion fades the dirt and keeps the crew still", async ({ page }) 
     if (!stage) return null;
     const read = (ms: number) => {
       for (const anim of document.getAnimations()) {
+        const duration = anim.effect?.getComputedTiming().duration;
+        if (typeof duration !== "number") continue;
         anim.pause();
         anim.currentTime = ms;
       }
@@ -47,6 +49,7 @@ test("reduced motion fades the dirt and keeps the crew still", async ({ page }) 
         operator: rect('[data-hero="operator"]'),
         van: rect('[data-hero="van"]'),
         clouds: getComputedStyle(document.querySelector('[data-hero="clouds"]')!).animationName,
+        glint: getComputedStyle(document.querySelector('[data-hero="glint"]')!).animationName,
       };
     };
     return { at0: read(0), at2000: read(2000), at5000: read(5000) };
@@ -57,6 +60,7 @@ test("reduced motion fades the dirt and keeps the crew still", async ({ page }) 
   expect(sample?.at2000.dirt.every((opacity) => opacity < 0.85 && opacity > 0.2)).toBe(true);
   expect(sample?.at5000.dirt.every((opacity) => opacity < 0.05)).toBe(true);
   expect(sample?.at0.clouds).toBe("none");
+  expect(sample?.at0.glint).toBe("none");
   for (const name of ["drone", "operator", "van"] as const) {
     const before = sample!.at0[name]!;
     const after = sample!.at5000[name]!;
@@ -66,26 +70,10 @@ test("reduced motion fades the dirt and keeps the crew still", async ({ page }) 
   }
 });
 
-test("pause control is keyboard operable and labelled in Dutch", async ({ page }) => {
+test("the hero has no pause control", async ({ page }) => {
   await page.goto("/");
-  const toggle = page.locator("#jdc-hero-pause");
-  await expect(toggle).toHaveAccessibleName("Animatie pauzeren");
-  await expect(page.locator("label[for='jdc-hero-pause']")).toBeVisible();
-  const outside = await toggle.evaluate((node) => node.closest('[aria-hidden="true"]') === null);
-  expect(outside).toBe(true);
-  await page.getByRole("link", { name: "Ontdek onze diensten" }).focus();
-  await page.keyboard.press("Tab");
-  await expect(toggle).toBeFocused();
-  await page.keyboard.press("Space");
-  await expect(toggle).toBeChecked();
-  await expect(toggle).toHaveAccessibleName("Animatie afspelen");
-  const paused = await page.locator('[data-hero="clouds"]:visible').evaluate((node) => {
-    return getComputedStyle(node).animationPlayState;
-  });
-  expect(paused).toBe("paused");
-  await page.keyboard.press("Space");
-  await expect(toggle).not.toBeChecked();
-  await expect(toggle).toHaveAccessibleName("Animatie pauzeren");
+  await expect(page.locator("#jdc-hero-pause")).toHaveCount(0);
+  await expect(page.getByText("Animatie pauzeren")).toHaveCount(0);
 });
 
 test("the drone cleans every lane, boards the operator, and the van leaves", async ({ page }) => {
@@ -97,6 +85,8 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     if (!stage) return null;
     const seek = (ms: number) => {
       for (const anim of document.getAnimations()) {
+        const duration = anim.effect?.getComputedTiming().duration;
+        if (typeof duration !== "number") continue;
         anim.pause();
         anim.currentTime = ms;
       }
@@ -229,7 +219,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       face: face !== null,
       baseGap: Math.abs(tower.b - ground.y),
       towerTaller: tower.h > vanBeside.h * 4,
-      cropped: operatorStart.b > stageStart.height + stageStart.height * 0.2 && operatorStart.y < stageStart.height * 0.5,
+      cropped: operatorStart.b > stageStart.height * 1.12 && operatorStart.y > stageStart.height * 0.35,
       stageW: stageStart.width,
       stageH: stageStart.height,
       operatorTop: operatorStart.y,
@@ -267,6 +257,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
   expect(story?.towerTaller).toBe(true);
   if ((story?.stageW ?? 0) > 700) {
     expect(story?.cropped).toBe(true);
+    expect(story?.waist ?? 0).toBeGreaterThan((story?.stageH ?? 0) - 2);
   } else {
     expect(story?.operatorTop ?? 0).toBeGreaterThan((story?.stageH ?? 1) * 0.4);
     expect(story?.operatorBottom ?? 0).toBeGreaterThan((story?.stageH ?? 0) + 4);
@@ -354,13 +345,6 @@ test("mobile keeps the scene clear of the headline and the buttons", async ({ pa
     expect(target.y, name).toBeGreaterThanOrEqual(-2);
     expect(target.y + target.height, name).toBeLessThanOrEqual((viewport?.height ?? 844) - 40);
   }
-  const pause = page.locator("label[for='jdc-hero-pause']");
-  const pauseBox = await pause.boundingBox();
-  const band = await page.locator("#jdc-hero").boundingBox();
-  expect(pauseBox).not.toBeNull();
-  expect(band).not.toBeNull();
-  expect((pauseBox?.x ?? 0) + (pauseBox?.width ?? 0)).toBeGreaterThan((band?.x ?? 0) + (band?.width ?? 0) * 0.6);
-  expect((pauseBox?.y ?? 0) + (pauseBox?.height ?? 0)).toBeLessThanOrEqual((band?.y ?? 0) + (band?.height ?? 0) + 1);
 });
 
 test("story replays on reload and keeps playing through history", async ({ page }) => {
@@ -395,7 +379,7 @@ test("crew is in the first HTML response without javascript", async ({ browser }
   for (const name of ["drone", "operator", "van"]) {
     await expect(page.locator(`[data-hero="${name}"]:visible`).first()).toBeVisible();
   }
-  await expect(page.getByText("Animatie pauzeren")).toBeVisible();
+  await expect(page.getByText("Animatie pauzeren")).toHaveCount(0);
   await context.close();
 });
 
@@ -413,87 +397,17 @@ test("homepage scripts and styles stay on the same origin", async ({ page }, tes
   }
 });
 
-test("hero cut-outs show the scene through transparent pixels", async ({ page, browserName }) => {
+test("hero is inline vector art and the turn stays a cut", async ({ page }) => {
   await page.goto("/");
-  const layers = [
-    { name: "operator-upper", at: 400 },
-    { name: "operator-walk", at: 9300 },
-    { name: "drone", at: 400 },
-    { name: "van-body", at: 400 },
-    { name: "van-wheel-front", at: 400 },
-    { name: "van-wheel-rear", at: 400 },
-    { name: "van-door", at: 400 },
-  ];
-  const sharp = (await import("sharp")).default;
-  const read = async (x: number, y: number) => {
-    const png = await page.screenshot({ type: "png", clip: { x: Math.max(0, x), y: Math.max(0, y), width: 8, height: 8 } });
-    const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    const cx = Math.floor(info.width / 2);
-    const cy = Math.floor(info.height / 2);
-    const i = (cy * info.width + cx) * info.channels;
-    return [data[i], data[i + 1], data[i + 2]] as const;
-  };
-  for (const layer of layers) {
-    const spot = await page.evaluate((layer) => {
-      for (const anim of document.getAnimations()) {
-        anim.pause();
-        anim.currentTime = layer.at;
-      }
-      const stage = [...document.querySelectorAll(".stage")].find((node) => node.getBoundingClientRect().width > 0);
-      if (!stage) return null;
-      const img = [...stage.querySelectorAll("img")].find((node) => (node.currentSrc || node.src).includes(layer.name));
-      if (!img) return null;
-      img.scrollIntoView({ block: "center", inline: "nearest" });
-      const box = img.getBoundingClientRect();
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return null;
-      ctx.drawImage(img, 0, 0);
-      const px = ctx.getImageData(2, 2, 1, 1).data;
-      const upper = stage.querySelector(".jdc-op-upper");
-      const walk = stage.querySelector(".jdc-op-walk");
-      const pose =
-        layer.name.startsWith("operator")
-          ? {
-              upper: Number(getComputedStyle(upper!).opacity),
-              walk: Number(getComputedStyle(walk!).opacity),
-              upperScale: new DOMMatrix(getComputedStyle(upper!).transform).a,
-              walkScale: getComputedStyle(walk!).transform === "none" ? 1 : new DOMMatrix(getComputedStyle(walk!).transform).a,
-            }
-          : null;
-      const vx = box.x + (4 / img.naturalWidth) * box.width;
-      const vy = box.y + (4 / img.naturalHeight) * box.height;
-      return {
-        src: img.currentSrc,
-        x: vx,
-        y: vy,
-        w: box.width,
-        h: box.height,
-        alpha: px[3],
-        rgb: [px[0], px[1], px[2]],
-        pose,
-      };
-    }, layer);
-    expect(spot, layer.name).not.toBeNull();
-    expect(spot!.w).toBeGreaterThan(8);
-    expect(spot!.h).toBeGreaterThan(8);
-    if (browserName === "chromium") expect(spot!.src).toContain(".avif");
-    if (layer.name === "van-door") {
-      expect(spot!.alpha).toBeGreaterThan(200);
-      expect(Math.max(...spot!.rgb)).toBeGreaterThan(20);
-      continue;
-    }
-    expect(spot!.alpha, `${layer.name} decoded alpha`).toBeLessThan(16);
-    const shown = await read(spot!.x - 4, spot!.y - 4);
-    // A missing alpha plane paints this corner black. The scene behind is sky, glass or ground.
-    expect(Math.max(...shown), `${layer.name} corner ${shown.join(",")}`).toBeGreaterThan(12);
-  }
+  const hero = page.locator("#jdc-hero");
+  await expect(hero.locator("svg").first()).toBeVisible();
+  await expect(hero.locator("img, picture")).toHaveCount(0);
   const pose = await page.evaluate(() => {
     const stage = [...document.querySelectorAll(".stage")].find((node) => node.getBoundingClientRect().width > 0)!;
     const at = (ms: number) => {
       for (const anim of document.getAnimations()) {
+        const duration = anim.effect?.getComputedTiming().duration;
+        if (typeof duration !== "number") continue;
         anim.pause();
         anim.currentTime = ms;
       }

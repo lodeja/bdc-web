@@ -7,6 +7,8 @@ type SectionShellProps = {
   children: ReactNode;
   tone?: "fog" | "white" | "navy";
   className?: string;
+  /** When the section's own cards animate, the wrapper stays still. */
+  revealChildren?: boolean;
 };
 
 export function SectionShell({
@@ -16,6 +18,7 @@ export function SectionShell({
   children,
   tone = "fog",
   className = "",
+  revealChildren = true,
 }: SectionShellProps) {
   const toneClass =
     tone === "navy"
@@ -31,7 +34,7 @@ export function SectionShell({
       aria-labelledby={`${id}-heading`}
     >
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-        <div className="max-w-2xl">
+        <div className="jdc-reveal max-w-2xl" data-reveal="">
           <h2
             id={`${id}-heading`}
             className={`jdc-display text-balance text-4xl sm:text-5xl ${
@@ -50,7 +53,9 @@ export function SectionShell({
             </p>
           ) : null}
         </div>
-        <div className="mt-12 sm:mt-14">{children}</div>
+        <div className={`mt-12 sm:mt-14 ${revealChildren ? "jdc-reveal" : ""}`} {...(revealChildren ? { "data-reveal": "" } : {})}>
+          {children}
+        </div>
       </div>
     </section>
   );
