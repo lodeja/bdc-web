@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Big_Shoulders, Schibsted_Grotesk } from "next/font/google";
 import { business } from "@/config/business";
 import { REVEAL_RUNTIME } from "@/components/scroll-reveal";
@@ -74,7 +74,13 @@ export const metadata: Metadata = {
       { url: withBasePath("/brand/favicon.png"), type: "image/png", sizes: "512x512" },
       { url: withBasePath("/brand/favicon-32.png"), type: "image/png", sizes: "32x32" },
     ],
+    apple: [{ url: withBasePath("/brand/favicon.png"), sizes: "512x512" }],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#071525",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

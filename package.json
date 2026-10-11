@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/defer-hydration.mjs",
-    "build:pages": "GITHUB_PAGES=true next build && node scripts/defer-hydration.mjs",
+    "build": "next build && node scripts/defer-hydration.mjs && node scripts/og-png.mjs",
+    "build:pages": "GITHUB_PAGES=true next build && node scripts/defer-hydration.mjs && node scripts/og-png.mjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
