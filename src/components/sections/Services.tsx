@@ -13,7 +13,7 @@ export function Services() {
     >
       <div className="relative">
         <div
-          className="absolute top-3 bottom-3 left-[7px] w-px bg-jdc-navy/20"
+          className="absolute top-3 bottom-3 left-[7px] w-px bg-jdc-navy/55"
           aria-hidden="true"
         />
         <ol>
