@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build static export and force-push to gh-pages (GitHub Pages).
-# Requires git auth to github.com/lodeja/<REPO_SLUG> (PAT with repo scope is enough).
-# The slug is the REPO_SLUG constant in src/config/repo.ts.
+# Remote: https://github.com/lodeja/<REPO_SLUG>.git (src/config/repo.ts).
+# Run only after the GitHub repository has been renamed to REPO_SLUG.
+# Order: merge the site pull request, rename the repo, then deploy.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

@@ -1,5 +1,8 @@
 const chromeFlags = "--no-sandbox --disable-dev-shm-usage --headless=new";
 
+// Local static export (empty basePath). The public Pages path is REPO_SLUG
+// in src/config/repo.ts.
+
 /** @type {import('@lhci/cli').LhciConfig} */
 module.exports = {
   ci: {

@@ -2,7 +2,9 @@
 
 Premium NL-BE marketing site for professional drone cleaning.
 
-Live (GitHub Pages): `https://lodeja.github.io/<REPO_SLUG>/`. The slug is `REPO_SLUG` in `src/config/repo.ts`. Change that constant to `jdc-web` when the GitHub repository is renamed.
+Public Pages URL: https://lodeja.github.io/jdc-web/ (`REPO_SLUG` in `src/config/repo.ts`).
+
+Do not deploy before the GitHub repository is renamed to `jdc-web`. Order: merge this pull request, rename the repository, then run `scripts/deploy-gh-pages.sh`. The current Pages site stays up until that deploy.
 
 ## Stack
 
@@ -30,7 +32,7 @@ Do not run `scripts/deploy-gh-pages.sh` from CI. It force-pushes `out/` to `gh-p
 
 Logo WebPs in `/public/brand/` (transparent): `jdc-mono.webp`, `jdc-wordmark.webp`, `jdc-van-logo.webp`, plus `favicon.png`. Source PNGs and style references live in `/design/brand/` and are not deployed.
 
-The public brand is Janssens Drone Cleaning (JDC). The Pages base path is `REPO_SLUG` in `src/config/repo.ts`. Change that constant to `jdc-web` when the GitHub repository is renamed.
+The public brand is Janssens Drone Cleaning (JDC). The Pages base path is `REPO_SLUG` in `src/config/repo.ts`.
 
 Confirmed services live in `src/config/services.ts`: dakreiniging, gevelreiniging, ramen- en glasreiniging, zonnepanelen reinigen, industriële reiniging. The home page reads that list. `slug` is reserved for later per-service pages; those routes are not built yet.
 

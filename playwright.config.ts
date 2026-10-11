@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+/**
+ * Local static export: empty basePath, so tests use the site root.
+ * The public Pages path is REPO_SLUG in src/config/repo.ts.
+ */
 const port = Number(process.env.PORT || 4173);
 
 export default defineConfig({
