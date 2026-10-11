@@ -514,10 +514,9 @@ function buildStory(g: Geom): HeroStory {
     `${shutPct}{transform:translateX(0px);animation-timing-function:linear}`,
     `${boardPct},100%{transform:translateX(0px)}`,
   ].join("");
-  const hideAt = pct(Math.min(duration, shut + 0.02));
   const hideKf = [
-    `0%,${shutPct}{opacity:1;animation-timing-function:step-end}`,
-    `${hideAt},100%{opacity:0}`,
+    `0%,${pct(Math.max(0, shut - 0.04))}{opacity:1;animation-timing-function:step-end}`,
+    `${shutPct},100%{opacity:0}`,
   ].join("");
   const pitchIn = pct(boardEnd + g.drive * 0.16);
   const pitchMid = pct(boardEnd + g.drive * 0.42);
