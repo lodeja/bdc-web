@@ -19,11 +19,11 @@ const FAQS = [
   },
   {
     q: "Hoe snel krijg ik een offerte?",
-    a: "Dat verschilt per opdracht. Stuur gerust een paar foto's mee, dan kunnen we gerichter antwoorden.",
+    a: "Dat verschilt per opdracht. Een plaatsbezoek maakt de offerte juister. Stuur gerust al een paar foto's mee.",
   },
   {
     q: "Gebruiken jullie een reinigingsmiddel?",
-    a: "We beginnen zo zacht mogelijk. Een middel gebruiken we alleen als het nodig is en toegelaten is voor uw materiaal en de omgeving.",
+    a: "We wassen met osmosewater. Dat is gedemineraliseerd water. Een biologisch afbreekbaar middel gebruiken we alleen als het nodig is, en als het past bij uw materiaal.",
   },
 ] as const;
 

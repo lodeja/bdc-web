@@ -3,31 +3,24 @@ import { services, type Service, type ServiceId } from "@/config/services";
 /**
  * Page copy for the five confirmed services. Belgian Dutch (nl-BE), u + we.
  *
+ * The owner confirmed these methods, so the page copy may name them:
+ * plaatsbezoek, testzone, osmosewater, gedemineraliseerd water,
+ * biologisch afbreekbaar middel, opleverrapport.
+ *
  * Owner to confirm before any of these appear in visible copy.
  * `methodNotes` stays null until then, and the page hides a null note.
- * - osmosewater
- * - gedemineraliseerd water
- * - biologisch afbreekbaar middel
  * - hydrofuge
  * - impregneren
  * - softwash
- * - testzone
- * - plaatsbezoek
- * - opleverrapport
  * - voor- en nabeelden
  *
- * Do not add prices, yields, client names, or certificates.
+ * Do not add prices, yields, client names, certificates, permits, or numbers.
  */
 
 export const methodNotes: Record<string, string | null> = {
-  purifiedWater: null,
-  biodegradableAgent: null,
   hydrofuge: null,
   impregnate: null,
   softwash: null,
-  testPatch: null,
-  siteVisit: null,
-  handoverReport: null,
   beforeAfterPhotos: null,
 };
 
@@ -60,9 +53,9 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Dakreiniging met een drone betekent: we ontmossen het dak vanop afstand, met zo weinig mogelijk dakbetreding.",
     howTitle: "Zo pakken we uw dak aan",
     how: [
-      "De drone vliegt boven uw dak en wast van daaruit. Zo hoeft er bijna niemand over uw pannen of leien te lopen.",
-      "Soms moet iemand even op het dak om iets klaar te zetten. Dat bekijken we per woning.",
-      "We halen mos, algen en groene aanslag weg waar de dakbedekking dat verdraagt. Dit is een wasbeurt, geen herstelling.",
+      "De drone vliegt boven uw dak en wast met osmosewater. Zo hoeft er bijna niemand over uw pannen of leien te lopen.",
+      "Mos en groene aanslag halen we weg waar de dakbedekking dat verdraagt. Volstaat water alleen niet, dan gebruiken we een biologisch afbreekbaar middel.",
+      "Bij twijfel over de pannen of leien starten we met een kleine testzone. Dit is een wasbeurt, geen herstelling.",
     ],
     limits: [
       "Is de dakbedekking te kwetsbaar voor water, dan wassen we niet.",
@@ -71,7 +64,7 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Een te smalle binnenplaats of obstakels rond het huis kunnen een vlucht in de weg zitten.",
     ],
     approach:
-      "U stuurt foto's van het dak en de omgeving. We zeggen of een drone past, en u krijgt een vrijblijvende offerte. Daarna plannen we de reinigingsbeurt.",
+      "Tijdens het plaatsbezoek kijken we of een drone past. U krijgt een vrijblijvende offerte. Na de werken volgt een opleverrapport.",
     faqs: [
       {
         q: "Blijft mijn dak daarna mosvrij?",
@@ -96,9 +89,9 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Gevelreiniging met een drone betekent: we wassen groene aanslag en atmosferische vervuiling van de gevel, vanop de grond.",
     howTitle: "Zo pakken we uw gevel aan",
     how: [
-      "De drone wast uw gevel vanop afstand. Ook op hoogtes waar een stelling veel plaats en opbouwtijd vraagt.",
-      "Groene aanslag, atmosferische vervuiling en een grijze sluier kunnen wijken als de afwerking dat verdraagt.",
-      "Een VME of syndicus kan de gevel van het appartementsgebouw laten wassen. Kleurverschil of oude schade blijft staan wanneer die niet in de wasbeurt zit.",
+      "De drone wast uw gevel vanop afstand, met osmosewater. Ook waar een stelling veel plaats en opbouwtijd vraagt.",
+      "Groene aanslag en de grijze sluier kunnen wijken als de afwerking dat verdraagt. Een biologisch afbreekbaar middel gebruiken we pas als water niet volstaat.",
+      "Is de afwerking delicaat, dan starten we met een testzone. Een VME of syndicus kan zo een appartementsgebouw laten wassen.",
     ],
     limits: [
       "Een beschermde gevel of een delicate afwerking wassen we pas als het materiaal duidelijk is.",
@@ -107,7 +100,7 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Een smalle straat of een kleine binnenplaats kan de vlucht in de weg zitten.",
     ],
     approach:
-      "Foto's van de gevel en de straat volstaan om te starten. In de vrijblijvende offerte staat wat we wassen en wat we laten staan.",
+      "Op het plaatsbezoek zien we de gevel en de straat. De vrijblijvende offerte zegt wat we wassen. Na de werken krijgt u een opleverrapport.",
     faqs: [
       {
         q: "Heb ik dan geen stelling meer nodig?",
@@ -129,21 +122,21 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Buitenglas, omlijstingen en dorpels op hoogte, zonder hoogtewerker voor de deur. Streeploos is het doel. Zon en wind spelen mee bij het drogen.",
     headline: "Ramen en glaspartijen weer helder, ook op hoogte",
     definition:
-      "Ramen wassen met een drone betekent: we reinigen het buitenglas, de omlijstingen en de dorpels die we van buitenaf bereiken.",
+      "Ramen wassen met een drone betekent: we reinigen het buitenglas, de omlijstingen en de dorpels met osmosewater.",
     howTitle: "Zo wassen we uw ramen",
     how: [
       "De drone bereikt ramen en glaspartijen die anders een hoogtewerker of stelling vragen.",
-      "We wassen het buitenoppervlak, de omlijstingen en de dorpels. Binnenglas en kapotte dichtingen vallen erbuiten.",
-      "Streeploos is het doel. Zon, wind en het glas zelf bepalen mee hoe het opdroogt.",
+      "We wassen het buitenglas, de omlijstingen en de dorpels met osmosewater. Dat is gedemineraliseerd water, zonder kalk.",
+      "Streeploos is het doel. Zon en wind bepalen mee hoe het glas opdroogt. Binnenglas valt erbuiten.",
     ],
     limits: [
-      "Beschadigd, gebarsten of onbekend gecoat glas wassen we pas als dat duidelijk is.",
+      "Beschadigd of gebarsten glas wassen we niet. Onbekend gecoat glas pas na een kleine testzone.",
       "Bij te veel wind plannen we de passage langs het glas op een andere dag.",
       "Diepe dagkanten, luifels of begroeiing kunnen een zone onbereikbaar maken.",
       "Interieurglas wassen we niet met de drone.",
     ],
     approach:
-      "Stuur foto's van de glaspartijen en de gevel. We zeggen welke ramen we bereiken, en u krijgt een vrijblijvende offerte.",
+      "Na het plaatsbezoek zeggen we welke ramen we bereiken. U krijgt een vrijblijvende offerte. Het opleverrapport volgt na de wasbeurt.",
     faqs: [
       {
         q: "Worden de ramen streeploos?",
@@ -168,9 +161,10 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Zonnepanelen reinigen met een drone betekent: we wassen stof, stuifmeel en groene aanslag van de panelen, zonder erover te lopen.",
     howTitle: "Zo wassen we uw panelen",
     how: [
-      "Stof, stuifmeel en groene aanslag leggen een sluier op het paneel. Een wasbeurt haalt dat oppervlakkige vuil weg.",
-      "Hoeveel meer uw panelen daarna opbrengen, kunnen we niet op voorhand zeggen. Dat verschilt per vuilgraad, helling en weer. Een cijfer verzinnen we niet.",
-      "De fabrikant kan een methode uitsluiten. Geeft u die voorschriften door, dan volgen we die. We kennen ze niet op voorhand.",
+      "Stof, stuifmeel en groene aanslag leggen een sluier op het paneel.",
+      "We wassen de panelen met osmosewater, zonder erover te lopen.",
+      "Hoeveel meer de panelen daarna opbrengen, kunnen we niet op voorhand zeggen. Een cijfer verzinnen we niet.",
+      "Een biologisch afbreekbaar middel gebruiken we alleen als de fabrikant dat toelaat.",
     ],
     limits: [
       "Beschadigde of losse panelen wassen we niet wanneer dat het risico vergroot.",
@@ -179,7 +173,7 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Een product gebruiken we alleen wanneer dat voor het paneel toegelaten is en nodig blijkt.",
     ],
     approach:
-      "Foto's van de panelen en het dak volstaan voor een eerste kijk. U krijgt daarna een vrijblijvende offerte, zonder een verzonnen opbrengstcijfer.",
+      "Het plaatsbezoek toont hoe de panelen liggen. U krijgt een vrijblijvende offerte, zonder een verzonnen cijfer. Daarna volgt een opleverrapport.",
     faqs: [
       {
         q: "Hoeveel meer opbrengst levert een wasbeurt op?",
@@ -204,18 +198,19 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Industriële reiniging met een drone betekent: we wassen wanden, tanks of een loods waar een stelling zwaar ingrijpt, als uw site een vlucht toelaat.",
     howTitle: "Zo pakken we een bedrijfssite aan",
     how: [
-      "Op een bedrijfssite wegen hoogte, bereikbaarheid en stilstand vaak zwaarder dan bij een woning.",
-      "Een drone kan sommige wanden, tanks of een loods bereiken zonder een volledige stelling. Dat kan een loods van een KMO zijn, of een grotere site.",
-      "Welk vlak we wassen, spreken we af per site. We kijken naar materiaal, temperatuur, obstakels en of een vlucht het proces stoort.",
+      "Op een bedrijfssite wegen hoogte en bereikbaarheid vaak zwaarder dan bij een woning.",
+      "Een drone kan wanden, tanks of een loods bereiken zonder een volledige stelling. Dat kan een KMO zijn, of een grotere site.",
+      "We wassen met osmosewater waar het materiaal dat verdraagt. Een onbekende coating starten we met een testzone.",
+      "Een biologisch afbreekbaar middel gebruiken we alleen als uw site dat toelaat.",
     ],
     limits: [
       "Zones met explosiegevaar, hete vlakken of een lopend proces dat geen vlucht toelaat, vallen buiten een gewone opdracht.",
       "Chemische resten, een onbekende coating of een installatie onder druk vragen eerst meer info. Zonder die info starten we niet.",
       "Een drone is niet vanzelf veiliger dan een stelling of hoogtewerker. We kiezen wat bij uw site past.",
-      "Bezorg ons vooraf de veiligheidsregels van uw site. We starten pas als de toelatingen rond zijn.",
+      "Bezorg ons vooraf de veiligheidsregels van uw site. We starten pas als die afspraken rond zijn.",
     ],
     approach:
-      "U beschrijft de site en stuurt foto's mee. We zeggen of een drone past, en u krijgt een vrijblijvende offerte. Een vaste stilstandduur spreken we niet af.",
+      "Tijdens het plaatsbezoek volgen we de regels van uw site. U krijgt een vrijblijvende offerte, en na de werken een opleverrapport. Een vaste stilstandsduur spreken we niet af.",
     faqs: [
       {
         q: "Kunnen jullie elke tank of loods wassen?",

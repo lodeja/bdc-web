@@ -4,12 +4,12 @@ const STEPS = [
   {
     n: "01",
     title: "Aanvraag",
-    text: "Vertel ons wat er gereinigd moet worden en waar. Stuur gerust een paar foto's mee, dan zien we meteen wat mogelijk is.",
+    text: "Vertel ons wat er proper moet, en waar. Stuur gerust een paar foto's mee.",
   },
   {
     n: "02",
-    title: "Uw foto's",
-    text: "We kijken naar bereikbaarheid, materiaal en het weer. Past een drone niet, dan zeggen we dat.",
+    title: "Plaatsbezoek",
+    text: "We komen ter plaatse kijken. Past een drone niet, dan zeggen we dat.",
   },
   {
     n: "03",
@@ -19,7 +19,7 @@ const STEPS = [
   {
     n: "04",
     title: "Uitvoering",
-    text: "Op de afgesproken dag voeren we de werken uit.",
+    text: "Op de afgesproken dag wassen we met osmosewater. Daarna krijgt u een opleverrapport.",
   },
 ] as const;
 
@@ -28,7 +28,7 @@ export function Process() {
     <SectionShell
       id="werkwijze"
       title="Zo werken we"
-      lead="Vier stappen, van uw foto's tot de reinigingsbeurt."
+      lead="Vier stappen, van het plaatsbezoek tot het opleverrapport."
       tone="fog"
     >
       <ol className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
