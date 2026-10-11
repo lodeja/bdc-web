@@ -10,12 +10,17 @@ jobs:
       languagetool:
         # Tag 6.6 runs Java 11. The server jar needs 17, so that container
         # exits before the job starts. dockerupdate-2 is the same 6.6 build
-        # on Java 17. Its healthcheck fails while the server is still loading,
-        # so readiness stays in the wait step below.
+        # on Java 17. The image healthcheck gives up before the server has
+        # loaded, so this one waits until /v2/languages answers.
         image: erikvl87/languagetool:6.6-dockerupdate-2
         ports:
           - 8010:8010
-        options: --no-healthcheck
+        options: >-
+          --health-cmd "curl -sf http://127.0.0.1:8010/v2/languages"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 18
+          --health-start-period 40s
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
