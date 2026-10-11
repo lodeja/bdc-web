@@ -1,5 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import {
+  ARRIVE_S,
+  CLEAN_END_S,
+  DRIVE_START_S,
+  FADE_END_S,
+  HERO_DELAY_S,
+  SHUT_END_S,
+  STORY_S,
+} from "../src/components/hero-story";
+
+const wall = (storyS: number) => Math.round((HERO_DELAY_S + storyS) * 1000);
 
 async function box(page: Page, name: string) {
   const el = page.locator(`[data-hero="${name}"]:visible`).first();
@@ -78,7 +89,18 @@ test("the hero has no pause control", async ({ page }) => {
 
 test("the drone cleans every lane, boards the operator, and the van leaves", async ({ page }) => {
   await page.goto("/");
-  const story = await page.evaluate(() => {
+  const clocks = {
+    dirt: wall(CLEAN_END_S + 0.6),
+    leg0: wall(FADE_END_S + 0.3),
+    leg1: wall(ARRIVE_S - 0.15),
+    door0: wall(SHUT_END_S),
+    door1: wall(SHUT_END_S + 0.16),
+    ride0: wall(DRIVE_START_S + 0.2),
+    ride1: wall(STORY_S - 0.12),
+    beside: wall(ARRIVE_S),
+    end: wall(STORY_S) + 400,
+  };
+  const story = await page.evaluate((clocks) => {
     const stage = [...document.querySelectorAll(".stage")].find(
       (node) => node.getBoundingClientRect().width > 0,
     );
@@ -131,16 +153,16 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       seek(ms);
       maxTilt = Math.max(maxTilt, Math.abs(angle('[data-hero="tilt"]')));
     }
-    seek(9600);
+    seek(clocks.dirt);
     const dirtClean = dirtOpacity();
     let legSpread = 0;
-    for (let ms = 9400; ms <= 11400; ms += 60) {
+    for (let ms = clocks.leg0; ms <= clocks.leg1; ms += 60) {
       seek(ms);
       legSpread = Math.max(legSpread, Math.abs(angle('[data-hero="leg"]')));
     }
     let coveredWhileVisible = 0;
     let stuckOut = 0;
-    for (let ms = 12360; ms <= 12520; ms += 40) {
+    for (let ms = clocks.door0; ms <= clocks.door1; ms += 40) {
       seek(ms);
       const door = rect('[data-hero="door"]');
       const op = rect('[data-hero="operator"]');
@@ -158,7 +180,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     const valves: number[] = [];
     const ride: { dx: number; dy: number }[] = [];
     let parked: number | null = null;
-    for (let ms = 12800; ms <= 14500; ms += 80) {
+    for (let ms = clocks.ride0; ms <= clocks.ride1; ms += 80) {
       seek(ms);
       const wheel = rect('[data-hero="wheel"]');
       const valve = rect('[data-hero="valve"]');
@@ -179,11 +201,11 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     const vanParked = rect('[data-hero="van"]');
     const doorParked = rect('[data-hero="door"]');
     const stageStart = stage.getBoundingClientRect();
-    seek(11580);
+    seek(clocks.beside);
     const operatorBeside = rect('[data-hero="operator"]');
     const vanBeside = rect('[data-hero="van"]');
     const groundBeside = rect('[data-hero="ground"]');
-    seek(14600);
+    seek(clocks.end);
     const stageBox = stage.getBoundingClientRect();
     const vanEnd = rect('[data-hero="van"]');
     const droneEnd = rect('[data-hero="drone"]');
@@ -230,7 +252,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       besideRatio: operatorBeside.h / vanBeside.h,
       feetGap: Math.abs(operatorBeside.b - groundBeside.y),
     };
-  });
+  }, clocks);
 
   expect(story).not.toBeNull();
   expect(story?.panes).toBe(24);
@@ -272,7 +294,8 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
 
 test("clouds loop without a seam and the glint returns to clear", async ({ page }) => {
   await page.goto("/");
-  const loop = await page.evaluate(() => {
+  const glintAt = wall(STORY_S);
+  const loop = await page.evaluate((glintAt) => {
     const stage = [...document.querySelectorAll(".stage")].find(
       (node) => node.getBoundingClientRect().width > 0,
     );
@@ -306,12 +329,12 @@ test("clouds loop without a seam and the glint returns to clear", async ({ page 
     return {
       moved: Math.abs(atMid.x - atStart.x),
       seam: Math.abs(atLoop.x - atStart.x) + Math.abs(atLoop.y - atStart.y),
-      glintStart: glintOpacity(14_200),
-      glintMid: glintOpacity(14_200 + 4_200),
-      glintEnd: glintOpacity(14_200 + 8_500),
+      glintStart: glintOpacity(glintAt),
+      glintMid: glintOpacity(glintAt + 4_200),
+      glintEnd: glintOpacity(glintAt + 8_500),
       unused: place(cloudAnim, 0, first).width,
     };
-  });
+  }, glintAt);
   expect(loop).not.toBeNull();
   expect(loop?.moved ?? 0).toBeGreaterThan(20);
   expect(loop?.seam ?? 99).toBeLessThan(2);
@@ -402,7 +425,7 @@ test("hero is inline vector art and the turn stays a cut", async ({ page }) => {
   const hero = page.locator("#jdc-hero");
   await expect(hero.locator("svg").first()).toBeVisible();
   await expect(hero.locator("img, picture")).toHaveCount(0);
-  const pose = await page.evaluate(() => {
+  const pose = await page.evaluate(({ before, after }) => {
     const stage = [...document.querySelectorAll(".stage")].find((node) => node.getBoundingClientRect().width > 0)!;
     const at = (ms: number) => {
       for (const anim of document.getAnimations()) {
@@ -424,14 +447,14 @@ test("hero is inline vector art and the turn stays a cut", async ({ page }) => {
         walkScale: matrix(walk),
       };
     };
-    return { at9000: at(9000), at9100: at(9100) };
-  });
-  expect(pose.at9000.upper).toBeGreaterThan(0.9);
-  expect(pose.at9000.walk).toBeLessThan(0.05);
-  expect(pose.at9000.upperScale).toBeGreaterThan(0.55);
-  expect(pose.at9100.walk).toBeGreaterThan(0.9);
-  expect(pose.at9100.upper).toBeLessThan(0.05);
-  expect(pose.at9100.walkScale).toBeGreaterThan(0.85);
+    return { before: at(before), after: at(after) };
+  }, { before: wall(CLEAN_END_S + 0.05), after: wall(CLEAN_END_S + 0.14) });
+  expect(pose.before.upper).toBeGreaterThan(0.9);
+  expect(pose.before.walk).toBeLessThan(0.05);
+  expect(pose.before.upperScale).toBeGreaterThan(0.55);
+  expect(pose.after.walk).toBeGreaterThan(0.9);
+  expect(pose.after.upper).toBeLessThan(0.05);
+  expect(pose.after.walkScale).toBeGreaterThan(0.85);
 });
 
 test("homepage has no axe violations", async ({ page }, testInfo) => {

@@ -6,7 +6,8 @@ import {
   type HeroSpec,
   type Lane,
 } from "./hero-story";
-import { droneArt, logoArt, upperArt, vanArt, walkArt, type Art } from "./hero-art";
+import { droneArt, logoArt, upperArt, walkArt, type Art } from "./hero-art";
+import { VAN_DOOR, VAN_VIEW, VAN_WHEEL, VanShape, vanLogoBox, wheelBox } from "./van-flat";
 
 const LABEL =
   "Illustratie. Een operator, van achteren gezien, met witte helm en fluovest, stuurt vanaf de voorgrond een drone. De drone maakt de vuile gevel ruit per ruit schoon. Daarna draait de operator zich om, loopt naar de zwarte bestelwagen, stapt via het bestuurdersportier in en rijdt weg.";
@@ -30,8 +31,8 @@ export function DroneCleaningHeroAnimation() {
           <Scene spec={mobileSpec} />
           <Scene spec={desktopSpec} />
           <svg className="jdc-sprite" aria-hidden="true">
-            <symbol id="jdc-van" viewBox={vanArt.vb}>
-              <Paths art={vanArt} />
+            <symbol id="jdc-van" viewBox={`0 0 ${VAN_VIEW.w} ${VAN_VIEW.h}`}>
+              <VanShape />
             </symbol>
             <symbol id="jdc-logo" viewBox={logoArt.vb}>
               <Paths art={logoArt} fill="#f4f7fb" />
@@ -92,10 +93,10 @@ function Scene({ spec }: { spec: HeroSpec }) {
           data-hero="door"
           style={{ left: `${spec.door.x}%`, top: `${spec.door.y}%`, width: `${spec.door.w}%`, height: `${spec.door.h}%` }}
         >
-          <svg viewBox="0 0 80 150" className="jdc-trace" preserveAspectRatio="none">
-            <rect width="80" height="150" fill="#141416" />
-            <rect x="8" y="10" width="64" height="48" fill="#9aabB8" />
-            <rect x="64" y="78" width="6" height="18" fill="#d5d8dc" />
+          <svg viewBox={`0 0 ${VAN_DOOR.w} ${VAN_DOOR.h}`} className="jdc-trace" preserveAspectRatio="none">
+            <rect width={VAN_DOOR.w} height={VAN_DOOR.h} fill="#141416" />
+            <rect x="14" y="16" width={VAN_DOOR.w - 28} height="72" fill="#8fb4c6" />
+            <rect x={VAN_DOOR.w - 22} y="124" width="8" height="28" fill="#d5d8dc" />
           </svg>
         </div>
       </div>
@@ -299,29 +300,44 @@ function Van({ spec }: { spec: HeroSpec }) {
       <div className="van-art" data-hero="van" style={{ width: `${spec.van.w}%`, height: `${spec.van.h}%` }}>
         <div className="van-shadow" />
         <div className="van-body jdc-anim jdc-story van-squat" data-hero="squat">
-          <svg viewBox={vanArt.vb} className="jdc-trace" preserveAspectRatio="none">
-            <use href="#jdc-van" width="1154" height="516" />
+          <svg viewBox={`0 0 ${VAN_VIEW.w} ${VAN_VIEW.h}`} className="jdc-trace" preserveAspectRatio="none">
+            <use href="#jdc-van" width={VAN_VIEW.w} height={VAN_VIEW.h} />
           </svg>
-          <svg viewBox={logoArt.vb} className="van-logo" data-hero="logo">
+          <svg
+            viewBox={logoArt.vb}
+            className="van-logo"
+            data-hero="logo"
+            style={{
+              left: `${vanLogoBox.left}%`,
+              top: `${vanLogoBox.top}%`,
+              width: `${vanLogoBox.width}%`,
+              height: `${vanLogoBox.height}%`,
+            }}
+          >
             <use href="#jdc-logo" width="560" height="362" />
           </svg>
-          <Wheel front />
-          <Wheel />
+          <Wheel cx={VAN_WHEEL.front} front />
+          <Wheel cx={VAN_WHEEL.rear} />
         </div>
       </div>
     </div>
   );
 }
 
-function Wheel({ front }: { front?: boolean }) {
+function Wheel({ cx, front }: { cx: number; front?: boolean }) {
+  const box = wheelBox(cx);
   return (
-    <div className={`wheel ${front ? "wheel-front" : "wheel-rear"}`}>
+    <div
+      className="wheel"
+      style={{ left: `${box.left}%`, top: `${box.top}%`, width: `${box.width}%`, height: `${box.height}%` }}
+    >
       <svg viewBox="0 0 100 100" className="wheel-svg">
         <g className="wheel-spin jdc-anim jdc-story" data-hero="wheel">
           <circle cx="50" cy="50" r="48" fill="#101114" />
-          <circle cx="50" cy="50" r="30" fill="#2a2c30" />
-          <circle cx="50" cy="50" r="12" fill="#9aa3ab" />
-          <circle cx="50" cy="50" r="5" fill="#d5d8dc" />
+          <circle cx="50" cy="50" r="31" fill="#2c3036" />
+          <circle cx="50" cy="50" r="20" fill="#101114" />
+          <circle cx="50" cy="50" r="9" fill="#c5ccd2" />
+          <circle cx="50" cy="50" r="4" fill="#f4f7fb" />
           {front ? <circle data-hero="valve" cx="50" cy="16" r="6" fill="#e7ebef" /> : null}
         </g>
       </svg>
