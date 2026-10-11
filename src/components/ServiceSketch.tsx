@@ -8,7 +8,7 @@ export function ServiceSketch({ id }: { id: ServiceId }) {
   return (
     <svg
       viewBox="0 0 480 220"
-      className="h-auto w-full"
+      className="jdc-plate h-auto w-full"
       fill="none"
       role="img"
       aria-hidden="true"

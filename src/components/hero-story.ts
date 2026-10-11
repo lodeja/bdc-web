@@ -1,15 +1,15 @@
 /**
  * One-shot hero, drawn in the first HTML response.
- * Motion is CSS on HTML boxes (not SVG transforms) so it starts without
- * hydration and stays compatible with WebKit. The permanent cloud drift and
- * glass glint are separate loops. prefers-reduced-motion keeps a short fade
- * from dirty to clean and leaves the crew in place.
+ * The scene is inline SVG. Stage travel stays on HTML boxes so percentages
+ * match the stage in WebKit. Wheels, rotors and the helmet use SVG group
+ * transforms with transform-box: fill-box. prefers-reduced-motion keeps a
+ * short fade from dirty to clean and leaves the crew in place.
  */
 
 export const HERO_DELAY_S = 1;
 export const STORY_S = 13.2;
 export const SOFT_S = 3.4;
-export const CLOUD_S = 20;
+export const CLOUD_S = 36;
 
 export type Box = { x: number; y: number; w: number; h: number };
 
@@ -57,20 +57,21 @@ type Geom = {
  * The facade photo is the scale. One window band is a 3.2 m storey.
  * Sprinter height 2.8 m, drone span 1.3 m, person 1.8 m.
  * Building bottom is the ground line. Van travel clears the rear bumper.
- * The operator box is the full walking figure; at rest the waist sits on the frame.
+ * The operator box is the full walking figure. On both layouts the waist
+ * of the foreground crop sits below the stage edge.
  */
 const desktopGeom: Geom = {
   variant: "desktop",
   aspectW: 12,
   aspectH: 5,
   building: { x: 40, y: 17, w: 56.82, h: 75 },
-  van: { x: 1.2, y: 80.7, w: 11.19, h: 11.3 },
-  door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
-  operator: { x: 70.5, y: 11, w: 23.8, h: 150 },
-  drone: { w: 3.29, h: 2.73 },
+  van: { x: 33, y: 80.7, w: 11.19, h: 11.3 },
+  door: { ox: 0.3, oy: 0.22, w: 0.11, h: 0.5 },
+  operator: { x: 62, y: 54, w: 12.5, h: 70 },
+  drone: { w: 3.05, h: 3.46 },
   start: { x: 26, y: 76 },
   ground: 92,
-  travel: -18,
+  travel: -50,
 };
 
 const mobileGeom: Geom = {
@@ -78,13 +79,13 @@ const mobileGeom: Geom = {
   aspectW: 8,
   aspectH: 9,
   building: { x: -17.5, y: 22, w: 135, h: 66 },
-  van: { x: 1.2, y: 79.33, w: 23.21, h: 8.67 },
-  door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
-  operator: { x: 58, y: 46, w: 17.95, h: 42 },
-  drone: { w: 6.81, h: 2.1 },
+  van: { x: 14, y: 79.33, w: 23.21, h: 8.67 },
+  door: { ox: 0.3, oy: 0.22, w: 0.11, h: 0.5 },
+  operator: { x: 64, y: 75, w: 20.2, h: 42 },
+  drone: { w: 6.2, h: 2.6 },
   start: { x: 12, y: 60 },
   ground: 88,
-  travel: -36,
+  travel: -46,
 };
 
 const COLS = 6;
@@ -106,7 +107,7 @@ function pct(n: number) {
   return `${num(n)}%`;
 }
 
-type Beat = { t: number; x: number; y: number; rot: number; ease: string };
+type Beat = { t: number; x: number; y: number; rot: number; ease: string; ax: number; ay: number };
 
 const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
 const EASE_LANE = "cubic-bezier(0.33, 0, 0.2, 1)";
@@ -130,19 +131,36 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     const cols = row % 2 === 0 ? [...Array(COLS).keys()] : [...Array(COLS).keys()].reverse();
     for (const col of cols) order.push({ row, col });
   }
-  const droneAt = (row: number, col: number) => ({
-    x: g.building.x + g.building.w * ((col + 0.5) / COLS) - dw / 2,
-    y: g.building.y + g.building.h * BANDS[row].fly - dh / 2,
-  });
-
-  const push = (t: number, x: number, y: number, rot: number, ease: string) => {
-    beats.push({ t, x, y, rot: clamp(rot, -10, 10), ease });
+  const LANCE_X = 0.58;
+  const LANCE_Y = 0.94;
+  const paneCenter = (row: number, col: number) => {
+    const band = BANDS[row];
+    return {
+      x: g.building.x + g.building.w * ((col + 0.5) / COLS),
+      y: g.building.y + g.building.h * ((band.y0 + band.y1) / 2),
+    };
+  };
+  const droneAt = (row: number, col: number) => {
+    const pane = paneCenter(row, col);
+    const band = BANDS[row];
+    const lift = Math.min(g.building.h * (band.y1 - band.y0) * 0.42, dh * 3.4);
+    const lanceY = pane.y - lift;
+    return {
+      x: pane.x - dw * LANCE_X,
+      y: lanceY - dh * LANCE_Y,
+      ax: pane.x,
+      ay: pane.y,
+    };
   };
 
-  push(0, g.start.x, g.start.y, 0, EASE_OUT);
-  push(0.14, g.start.x, g.start.y - 1.2, -8, EASE_OUT);
+  const push = (t: number, x: number, y: number, rot: number, ease: string, ax: number, ay: number) => {
+    beats.push({ t, x, y, rot: clamp(rot, -10, 10), ease, ax, ay });
+  };
+
   const firstPane = droneAt(order[0].row, order[0].col);
-  push(RISE_END, firstPane.x, firstPane.y, 8, EASE_OUT);
+  push(0, g.start.x, g.start.y, 0, EASE_OUT, firstPane.ax, firstPane.ay);
+  push(0.14, g.start.x, g.start.y - 1.2, -8, EASE_OUT, firstPane.ax, firstPane.ay);
+  push(RISE_END, firstPane.x, firstPane.y, 8, EASE_OUT, firstPane.ax, firstPane.ay);
 
   for (let i = 0; i < order.length; i++) {
     const { row, col } = order[i];
@@ -150,14 +168,14 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     const here = droneAt(row, col);
     const tilt = row % 2 === 0 ? 8 : -8;
     const band = BANDS[row];
-    push(at, here.x, here.y, tilt * 0.4, "linear");
+    push(at, here.x, here.y, tilt * 0.4, "linear", here.ax, here.ay);
     if (i < order.length - 1) {
-      push(at + HOVER * 0.4, here.x, here.y, tilt, EASE_LANE);
-      push(at + HOVER, here.x, here.y, tilt, EASE_LANE);
+      push(at + HOVER * 0.4, here.x, here.y, tilt, EASE_LANE, here.ax, here.ay);
+      push(at + HOVER, here.x, here.y, tilt, EASE_LANE, here.ax, here.ay);
       const next = droneAt(order[i + 1].row, order[i + 1].col);
-      push(at + STEP, next.x, next.y, tilt * 0.45, EASE_DROP);
+      push(at + STEP, next.x, next.y, tilt * 0.45, EASE_DROP, next.ax, next.ay);
     } else {
-      push(at + FADE * 0.72, here.x, here.y, 0, EASE_OUT);
+      push(at + FADE * 0.72, here.x, here.y, 0, EASE_OUT, here.ax, here.ay);
     }
     lanes.push({
       id: `${g.variant}-pane-${row}-${col}`,
@@ -190,14 +208,15 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     x: g.van.x + g.van.w * 0.48 - dw / 2,
     y: g.van.y - dh * 0.62,
   };
-  push(returnEnd, roof.x, roof.y, 0, EASE_OUT);
-  push(driveStart, roof.x, roof.y, 0, "linear");
+  const parked = paneCenter(order[order.length - 1].row, order[order.length - 1].col);
+  push(returnEnd, roof.x, roof.y, 0, EASE_OUT, parked.x, parked.y);
+  push(driveStart, roof.x, roof.y, 0, "linear", parked.x, parked.y);
 
   const driveMarks = [0, 0.14, 0.32, 0.52, 0.72, 0.88, 1];
   const driveEase = (u: number) => Math.pow(u, 1.65);
   for (const mark of driveMarks) {
     if (mark === 0) continue;
-    push(driveStart + (STORY_S - driveStart) * mark, roof.x + g.travel * driveEase(mark), roof.y, 0, "linear");
+    push(driveStart + (STORY_S - driveStart) * mark, roof.x + g.travel * driveEase(mark), roof.y, 0, "linear", parked.x, parked.y);
   }
 
   const hover = droneAt(1, 2);
@@ -265,6 +284,11 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const headY = g.operator.y + g.operator.h * 0.1;
   const lookAt = (x: number, y: number) => {
     const rise = headY - (y + dh * 0.3);
+    if (g.variant === "mobile") {
+      // The phone figure stands low, so aim relative to the opening hover.
+      const rest = headY - (g.start.y + dh * 0.3);
+      return clamp(-(rise - rest) * 0.42, -14, 14);
+    }
     return clamp(-rise * 0.35, -8, 8);
   };
   const pOf = (t: number) => num((t / STORY_S) * 100);
@@ -368,10 +392,6 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     ].join("");
   const squatIn = pOf(driveStart + (STORY_S - driveStart) * 0.16);
   const squatMid = pOf(driveStart + (STORY_S - driveStart) * 0.42);
-  const mistIn = pOf(RISE_END * 0.55);
-  const mistFull = pOf(RISE_END);
-  const mistOut = pOf(cleanEnd);
-  const mistGone = pOf(Math.min(STORY_S, cleanEnd + 0.45));
   // Match the walker's helmet with one uniform scale. scaleX would draw a stripe.
   const upperHelmet = 0.111;
   const upperShoulder = 0.407;
@@ -379,10 +399,10 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const walkShoulder = 0.238;
   const alignH = (walkShoulder - walkHelmet) / (upperShoulder - upperHelmet);
   const alignTop = walkHelmet - upperHelmet * alignH;
-  const restH = v === "mobile" ? 0.53 : 0.72;
+  const restH = 0.72;
   const alignScale = alignH / restH;
   const boxAspect = (g.operator.w * (g.aspectW / g.aspectH)) / g.operator.h;
-  const restW = (restH * (687 / 900)) / boxAspect;
+  const restW = (restH * (591 / 670)) / boxAspect;
   const helmetShift = (0.459 - ((1 - restW) / 2 + 0.45 * restW)) / restW;
   const restTf = "translateX(-50%)";
   const alignTf = `translate(${num(-50 + helmetShift * 100)}%,${num((alignTop / restH) * 100)}%) scale(${num(alignScale)})`;
@@ -397,6 +417,28 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     }),
     `${pOf(arrive)}%,100%{transform:translate(0%,0%) rotate(0deg)}`,
   ].join("");
+
+  const sprayOf = (b: Beat) => {
+    const dx = (b.ax - (b.x + dw * 0.5)) * g.aspectW;
+    const dy = (b.ay - (b.y + dh * 0.9)) * g.aspectH;
+    const dist = Math.hypot(dx, dy);
+    const scale = Math.max(0.35, dist / (dw * g.aspectW));
+    const world = (Math.atan2(dy, dx) * 180) / Math.PI;
+    let opacity = 0;
+    if (b.t >= cleanEnd + 0.45) opacity = 0;
+    else if (b.t >= cleanEnd) opacity = 1 - (b.t - cleanEnd) / 0.45;
+    else if (b.t >= RISE_END) opacity = 1;
+    else if (b.t >= RISE_END * 0.55) opacity = (b.t - RISE_END * 0.55) / (RISE_END * 0.45);
+    return { rot: world - b.rot, scale, opacity };
+  };
+  const sprayKf = droneBeats
+    .map((b, i) => {
+      const aim = sprayOf(b);
+      const ease = droneBeats[i + 1]?.ease ?? "linear";
+      return `${pOf(b.t)}%{transform:rotate(${num(aim.rot)}deg) scaleX(${num(aim.scale)});opacity:${num(aim.opacity)};animation-timing-function:${ease}}`;
+    })
+    .join("");
+  const cone = (Math.min(g.building.w / COLS, g.building.h * 0.18) / dh) * 100;
 
   const css = `
 .stage-${v} .drone-move{transform:translate(${pct(g.start.x)},${pct(g.start.y)});animation:jdc-drone-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
@@ -413,7 +455,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
 @keyframes jdc-turn-${v}{${turnKf}}
 .stage-${v} .op-arms{transform:rotate(-8deg);transform-origin:58% 18%;animation:jdc-arms-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-arms-${v}{${armKf}}
-.stage-${v} .op-look{transform:rotate(${num(lookAt(g.start.x, g.start.y))}deg);transform-origin:50% 100%;animation:jdc-look-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+.stage-${v} .op-look{transform:rotate(${num(lookAt(g.start.x, g.start.y))}deg);transform-origin:50% 21%;animation:jdc-look-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-look-${v}{${lookKf}}
 .stage-${v} .leg-a{animation:jdc-leg-a-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
 .stage-${v} .leg-b{animation:jdc-leg-b-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
@@ -429,8 +471,8 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
 @keyframes jdc-door-move-${v}{${doorShiftKf}}
 .stage-${v} .door-panel{transform:scaleX(1);transform-origin:0% 50%;animation:jdc-door-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-door-${v}{${doorKf}}
-.stage-${v} .mist{opacity:0;animation:jdc-mist-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-mist-${v}{0%,${mistIn}%{opacity:0}${mistFull}%{opacity:1}${mistOut}%{opacity:1}${mistGone}%,100%{opacity:0}}
+.stage-${v} .mist{height:${num(cone)}%;top:calc(90% - ${num(cone / 2)}%);opacity:0;transform-origin:0% 50%;animation:jdc-mist-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-mist-${v}{${sprayKf}}
 .stage-${v} .jdc-op-photo{animation:jdc-upper-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-upper-${v}{${upperKf}}
 .stage-${v} .jdc-op-walk{opacity:0;animation:jdc-walkin-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
@@ -484,11 +526,11 @@ export const heroMotionCss = `
 @media (max-width: 1023px) and (max-height: 760px){
   .jdc-hero-lead p{display:none}
 }
-.jdc-hero-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:linear-gradient(180deg,#7ea4bf 0%,#a9c6d6 28%,#d5e6ef 62%,#e7eef2 100%)}
+.jdc-hero-stage{position:absolute;inset:0;z-index:1;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent}
 @media (max-width: 1023px){
   .jdc-hero-stage{align-items:flex-end}
 }
-.stage{position:relative;overflow:hidden;flex:none}
+.stage{position:relative;z-index:2;overflow:hidden;flex:none}
 .stage-mobile{width:min(100cqw, calc(100cqh * 8 / 9));height:min(100cqh, calc(100cqw * 9 / 8))}
 .stage-desktop{display:none;width:min(100cqw, calc(100cqh * 12 / 5));height:min(100cqh, calc(100cqw * 5 / 12))}
 @media (min-width: 1024px){
@@ -496,11 +538,20 @@ export const heroMotionCss = `
   .stage-desktop{display:block}
 }
 .layer{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none}
-.sky{position:absolute;inset:0;background:linear-gradient(180deg,#7ea4bf 0%,#a9c6d6 28%,#d5e6ef 62%,#e7eef2 100%)}
-.cloud-track{position:absolute;left:0;top:2%;display:flex;width:200%;height:42%;overflow:visible;animation:jdc-clouds ${CLOUD_S}s linear infinite}
+.sky{position:absolute;inset:0;background:transparent}
+.cloud-track{position:absolute;left:0;top:0;z-index:1;display:flex;width:200%;height:calc(100cqh - min(100cqh, 100cqw * 9 / 8) * 0.8);overflow:visible;pointer-events:none;animation:jdc-clouds ${CLOUD_S}s linear infinite}
+@media (min-width: 1024px){
+  .cloud-track{height:calc(100cqh - min(100cqh, 100cqw * 5 / 12) * 0.86)}
+}
 .cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%;overflow:visible}
 @keyframes jdc-clouds{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.jdc-cloud-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0.92;display:block;pointer-events:none}
+.cumulus{position:absolute;width:auto;height:auto;display:block;pointer-events:none}
+.c1{left:2%;top:2%;height:34%}
+.c2{left:26%;top:16%;height:40%}
+.c3{left:48%;top:0%;height:26%}
+.c4{left:64%;top:8%;height:36%}
+.c5{left:82%;top:20%;height:30%}
+.jdc-sky-noise{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0.05;background-size:160px 160px;mix-blend-mode:soft-light}
 .ground{position:absolute;left:0;right:0;bottom:0;background:
   linear-gradient(180deg, #d5dde3 0 2px, #c3ccd4 2px, #b7c1ca 18%, #aeb8c2 100%)}
 .curb{position:absolute;left:0;right:0;height:2px;background:#8b99a4}
@@ -512,7 +563,7 @@ export const heroMotionCss = `
 .jdc-cast{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(90deg, rgba(7,21,37,0.16), rgba(7,21,37,0.02) 75%, transparent)}
 .lane{position:absolute;z-index:3;overflow:hidden}
 .dirt{position:absolute;inset:0;opacity:1;--pane-hole:0%;-webkit-mask-image:radial-gradient(circle at 50% 22%, transparent var(--pane-hole), #000 calc(var(--pane-hole) + 18%));mask-image:radial-gradient(circle at 50% 22%, transparent var(--pane-hole), #000 calc(var(--pane-hole) + 18%));-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation-name:jdc-pane;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
-.jdc-grime{position:absolute;display:block;max-width:none;object-fit:fill;pointer-events:none}
+.jdc-grime{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 .dirt-edge{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(circle at 50% 22%, rgba(255,255,255,0.72), rgba(214,232,228,0.26) 34%, transparent 64%);animation:jdc-edge var(--wipe-dur) ease-out var(--wipe-delay) both}
 @keyframes jdc-edge{0%{opacity:0}24%{opacity:0.9}100%{opacity:0}}
 @keyframes jdc-pane{0%{opacity:1;--pane-hole:0%}100%{opacity:0;--pane-hole:130%}}
@@ -535,38 +586,37 @@ export const heroMotionCss = `
 .rotor-b{right:2%}
 .blade{position:absolute;left:6%;top:46%;width:88%;height:8%;border-radius:999px;background:rgba(255,255,255,0.8);transform-origin:center;animation:jdc-spin 0.18s linear ${spinCount} both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-spin{to{transform:rotate(360deg)}}
-.mist{position:absolute;left:6%;width:88%;top:58%;height:780%;filter:blur(0.3px)}
-.jdc-spray{position:absolute;left:24%;width:52%;top:0;height:82%;background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(214,236,238,0.82) 24%, rgba(176,214,208,0.42) 58%, rgba(214,236,232,0) 100%);clip-path:polygon(40% 0, 60% 0, 100% 100%, 0 100%)}
-.puff{position:absolute;border-radius:50%;background:radial-gradient(circle, rgba(230,248,248,0.95), rgba(214,236,232,0) 68%)}
+.mist{position:absolute;left:50%;top:90%;width:100%;height:40%;transform-origin:0% 50%;pointer-events:none}
+.jdc-spray{position:absolute;inset:0;background:linear-gradient(90deg, rgba(255,255,255,0.96), rgba(220,242,244,0.7) 30%, rgba(190,224,220,0.22) 68%, rgba(214,236,232,0) 100%);clip-path:polygon(0 47%, 0 53%, 100% 100%, 100% 0)}
 .van-art{position:absolute;left:0;top:0}
 .van-shadow{position:absolute;left:4%;right:6%;bottom:-3%;height:12%;border-radius:50%;background:rgba(7,21,37,0.34)}
 .van-body{position:absolute;inset:0}
 .jdc-van-body,.jdc-van-body img,.jdc-door-img,.jdc-door-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
-.van-logo{position:absolute;left:42%;top:30%;width:27%;height:34%;object-fit:contain;object-position:center;opacity:0.92;pointer-events:none;z-index:2;filter:saturate(0.82) contrast(0.96)}
+.van-logo{position:absolute;left:42%;top:28%;width:27%;height:36%;pointer-events:none;z-index:2}
 .wheel{position:absolute;z-index:3}
-.wheel-front{left:10.17%;top:69.67%;width:12.41%;height:29.51%}
-.wheel-rear{left:73.1%;top:69.67%;width:12.41%;height:29.51%}
-.wheel-spin{position:absolute;inset:0}
-.wheel-spin img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.wheel-front{left:13.1%;top:76%;width:10.2%;height:23%}
+.wheel-rear{left:73.8%;top:76%;width:10.2%;height:23%}
+.wheel-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block}
+.wheel-spin{transform-box:fill-box;transform-origin:50% 50%}
 .valve{position:absolute;left:44%;top:6%;width:12%;height:12%;border-radius:50%;background:#d7dde2}
-.door-panel{position:absolute}
+.door-panel{position:absolute;transform-box:fill-box;transform-origin:0% 50%}
 .op-scale{position:absolute;left:0;top:0;transform-origin:50% 100%}
 .op-fade,.op-turn{position:absolute;inset:0}
 .jdc-op-walk{position:absolute;inset:0;opacity:0;transform-origin:50% 24%}
 .jdc-op-bob{position:absolute;inset:0}
 .jdc-op-bob picture,.jdc-op-bob img{width:100%;height:100%;object-fit:fill;display:block}
 .jdc-op-upper{position:absolute;left:50%;top:0;height:72%;transform:translateX(-50%);transform-origin:50% 0}
-.stage-mobile .jdc-op-upper{height:53%}
-.jdc-op-upper picture,.jdc-op-upper img{height:100%;width:auto;max-width:none;aspect-ratio:687 / 900;display:block}
-.op-look{height:100%;transform-origin:50% 100%}
+.stage-mobile .jdc-op-upper{height:72%}
+.jdc-upper-svg{height:100%;width:auto;max-width:none;aspect-ratio:591 / 670;display:block;overflow:visible}
+.op-look{transform-box:fill-box;transform-origin:50% 21%}
+.rotor-disc{position:absolute;z-index:2;width:21.74%;height:29.08%;overflow:hidden;border-radius:50%}
+.rotor-left{left:2.51%;top:1.42%}
+.rotor-right{left:69.4%;top:0.53%}
+.rotor-blade{position:absolute;left:6%;top:45%;width:88%;height:10%;border-radius:999px;background:rgba(255,255,255,0.9);transform-origin:50% 50%;animation:jdc-spin 0.18s linear ${spinCount} both;animation-delay:${HERO_DELAY_S}s}
+.jdc-sprite{position:absolute;width:0;height:0;overflow:hidden}
+.jdc-trace{display:block;width:100%;height:100%;overflow:visible}
 .leg{position:absolute;left:46%;top:72%;width:8%;height:22%;transform-origin:50% 0%;opacity:0}
 .op-shadow{position:absolute;left:18%;right:18%;bottom:-1%;height:3.2%;border-radius:50%;background:rgba(7,21,37,0.28)}
-.jdc-hero-pause{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.jdc-hero-toggle{position:absolute;z-index:8;right:0.55rem;bottom:0.55rem;display:inline-flex;align-items:center;min-height:44px;padding:0.2rem 0.55rem;border:1px solid rgba(11,31,58,0.22);background:rgba(244,247,251,0.88);color:#0b1f3a;font-size:0.72rem;font-weight:600;line-height:1.2;cursor:pointer}
-.jdc-hero-pause:focus-visible ~ .jdc-hero-figure .jdc-hero-toggle{outline:2px solid #0b1f3a;outline-offset:3px}
-.jdc-hero-pause:not(:checked) ~ .jdc-hero-figure .jdc-hero-toggle .is-play{display:none}
-.jdc-hero-pause:checked ~ .jdc-hero-figure .jdc-hero-toggle .is-pause{display:none}
-#jdc-hero-pause:checked ~ .jdc-hero-figure .jdc-anim,
 #jdc-hero[data-hold] .jdc-anim,
 #jdc-hero[data-ambient="off"] .jdc-idle{animation-play-state:paused !important}
 html[data-hero-hold] .jdc-story{animation-delay:-40s !important}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Big_Shoulders, Schibsted_Grotesk } from "next/font/google";
 import { business } from "@/config/business";
+import { REVEAL_RUNTIME } from "@/components/scroll-reveal";
 import { withBasePath } from "@/lib/paths";
 import { absoluteUrl, siteOrigin } from "@/lib/site";
 import "./globals.css";
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Ga naar inhoud
         </a>
         {children}
+        <script dangerouslySetInnerHTML={{ __html: REVEAL_RUNTIME }} />
       </body>
     </html>
   );

@@ -34,12 +34,14 @@ export function Benefits() {
       title="Waarom een drone"
       lead="Een drone is vaak handiger dan een stelling. Soms is het omgekeerd."
       tone="white"
+      revealChildren={false}
     >
       <ol className="grid border-t border-jdc-navy/15 md:grid-cols-2">
         {BENEFITS.map((item, index) => (
           <li
             key={item.title}
-            className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-3 border-b border-jdc-navy/15 py-5 md:border-r md:px-6 md:[&:nth-child(2n)]:border-r-0"
+            className="jdc-card grid grid-cols-[2.75rem_minmax(0,1fr)] gap-3 border-b border-jdc-navy/15 py-5 md:border-r md:px-6 md:[&:nth-child(2n)]:border-r-0"
+            data-reveal=""
           >
             <span className="jdc-mono pt-1 text-xs tracking-[0.14em] text-jdc-cyan-ink" aria-hidden>
               {String(index + 1).padStart(2, "0")}

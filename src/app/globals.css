@@ -193,3 +193,115 @@ body {
     animation: none;
   }
 }
+
+/* Scroll reveals stay visible until a supporting browser opts in. */
+@keyframes jdc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes jdc-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .jdc-reveal,
+    .jdc-card,
+    .jdc-step {
+      animation: jdc-rise linear both;
+      animation-duration: auto;
+      animation-timeline: view();
+      animation-range: entry 0% cover 32%;
+    }
+    .jdc-card:nth-child(2),
+    .jdc-step:nth-child(2) {
+      animation-range: entry 4% cover 36%;
+    }
+    .jdc-card:nth-child(3),
+    .jdc-step:nth-child(3) {
+      animation-range: entry 8% cover 40%;
+    }
+    .jdc-card:nth-child(4),
+    .jdc-step:nth-child(4) {
+      animation-range: entry 12% cover 44%;
+    }
+    .jdc-card:nth-child(5),
+    .jdc-step:nth-child(5) {
+      animation-range: entry 16% cover 48%;
+    }
+    .jdc-card:nth-child(6),
+    .jdc-step:nth-child(6) {
+      animation-range: entry 20% cover 52%;
+    }
+    .jdc-plate [stroke="#0b1f3a"] {
+      stroke-dasharray: 1200;
+      stroke-dashoffset: 1200;
+      animation: jdc-draw linear both;
+      animation-duration: auto;
+      animation-timeline: view();
+      animation-range: entry 6% cover 42%;
+    }
+    .jdc-plate [stroke="#00c2e8"] {
+      stroke-dasharray: 1200;
+      stroke-dashoffset: 1200;
+      animation: jdc-draw linear both;
+      animation-duration: auto;
+      animation-timeline: view();
+      animation-range: entry 18% cover 54%;
+    }
+  }
+}
+
+.jdc-wait {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jdc-wait.jdc-in {
+  opacity: 1;
+  transform: none;
+}
+
+.jdc-draw-wait [stroke="#0b1f3a"],
+.jdc-draw-wait [stroke="#00c2e8"] {
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  transition: stroke-dashoffset 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.jdc-draw-wait.jdc-in [stroke="#00c2e8"] {
+  transition-delay: 180ms;
+}
+
+.jdc-draw-wait.jdc-in [stroke="#0b1f3a"],
+.jdc-draw-wait.jdc-in [stroke="#00c2e8"] {
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jdc-wait,
+  .jdc-wait.jdc-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .jdc-draw-wait [stroke="#0b1f3a"],
+  .jdc-draw-wait [stroke="#00c2e8"],
+  .jdc-draw-wait.jdc-in [stroke="#0b1f3a"],
+  .jdc-draw-wait.jdc-in [stroke="#00c2e8"] {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+}
