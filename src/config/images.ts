@@ -51,7 +51,7 @@ export const images: ImageManifest = {
   beforeAfter: [
     {
       id: "panels",
-      caption: "Illustratie. Geen foto van een uitgevoerd werk.",
+      caption: "Illustratie",
       before: {
         id: "panels-before",
         src: null,

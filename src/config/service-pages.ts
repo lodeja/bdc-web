@@ -158,7 +158,7 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
   zonnepanelen: {
     metaTitle: "Zonnepanelen wassen met een drone",
     metaDescription:
-      "Stof, stuifmeel en groene aanslag van uw zonnepanelen, zonder over de panelen te lopen. Geen verzonnen cijfer over meeropbrengst.",
+      "Stof, stuifmeel en groene aanslag van uw zonnepanelen, zonder over de panelen te lopen.",
     headline: "Zonnepanelen weer vrij van stof en groene aanslag",
     definition:
       "Zonnepanelen reinigen met een drone betekent: we wassen stof, stuifmeel en groene aanslag van de panelen, zonder erover te lopen.",
@@ -167,20 +167,18 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Stof, stuifmeel en groene aanslag leggen een sluier op het paneel.",
       "We wassen de panelen met osmosewater, zonder erover te lopen.",
       "We volgen de reinigingsvoorschriften van de fabrikant van uw panelen.",
-      "Hoeveel meer de panelen daarna opbrengen, kunnen we niet op voorhand zeggen. Een cijfer verzinnen we niet.",
     ],
     limits: [
       "Beschadigde of losse panelen wassen we niet wanneer dat het risico vergroot.",
-      "We publiceren geen cijfer over meeropbrengst en geven geen garantie op de energieopbrengst.",
       "Een opstelling die de drone niet veilig nadert, laten we liggen.",
       "Een product gebruiken we alleen wanneer dat voor het paneel toegelaten is en nodig blijkt.",
     ],
     approach:
-      "Het plaatsbezoek toont hoe de panelen liggen. U krijgt een vrijblijvende offerte, zonder een verzonnen cijfer. Daarna volgt een opleverrapport.",
+      "Het plaatsbezoek toont hoe de panelen liggen. U krijgt een vrijblijvende offerte. Daarna volgt een opleverrapport.",
     faqs: [
       {
         q: "Hoeveel meer opbrengst levert een wasbeurt op?",
-        a: "Dat cijfer geven we niet. Het verschilt per vuil, helling, weer en de staat van de installatie. Een vast percentage zou verzonnen zijn.",
+        a: "De opbrengst hangt af van het vuil, de helling, het weer en de staat van de installatie.",
       },
       {
         q: "Loopt er iemand over de panelen?",
@@ -229,8 +227,8 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       },
     ],
     related: {
-      href: "/#industriele-reiniging",
-      label: "Korte toelichting op de startpagina",
+      href: "/#diensten",
+      label: "De vijf diensten op de startpagina",
     },
   },
 };

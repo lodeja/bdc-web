@@ -4,19 +4,32 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function StickyQuote() {
-  const [hidden, setHidden] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const target = document.getElementById("contact");
-    if (!target) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      setHidden(entry.isIntersecting);
+    const hero = document.getElementById("hero-cta");
+    const contact = document.getElementById("contact");
+    let heroInView = Boolean(hero);
+    let contactInView = false;
+
+    const update = () => setVisible(!heroInView && !contactInView);
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === hero) heroInView = entry.isIntersecting;
+        if (entry.target === contact) contactInView = entry.isIntersecting;
+      }
+      update();
     });
-    observer.observe(target);
+
+    if (hero) observer.observe(hero);
+    if (contact) observer.observe(contact);
+    if (!hero) update();
+
     return () => observer.disconnect();
   }, []);
 
-  if (hidden) return null;
+  if (!visible) return null;
 
   return (
     <Link className="jdc-sticky" href="/#contact">

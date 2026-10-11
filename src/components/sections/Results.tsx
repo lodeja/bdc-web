@@ -33,21 +33,17 @@ export function Results() {
     <SectionShell
       id="resultaten"
       title="Zo kan het eruitzien"
-      lead="Een voorbeeld van panelen of een gevel. Dit is een illustratie, geen foto van ons werk."
+      lead="U schuift de lijn over het vlak. Links het vuil, rechts na de wasbeurt."
       tone="white"
     >
-      <div className="grid gap-10 lg:grid-cols-5 lg:items-start">
-        <div className="lg:col-span-3">
-          <BeforeAfterSlider />
-        </div>
-        <div className="lg:col-span-2">
-          <h3 className="text-lg font-semibold text-jdc-navy">
-            Zonnepanelen & gevels
-          </h3>
-          <p className="mt-3 text-sm leading-relaxed text-jdc-slate sm:text-base">
-            Stof, pollen en atmosferische vervuiling leggen een sluier op panelen
-            en gevels. Een wasbeurt haalt die laag weg. Hoe groot het verschil
-            is, verschilt per installatie.
+      <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.8fr)] lg:gap-14">
+        <BeforeAfterSlider />
+        <div>
+          <h3 className="jdc-display text-4xl text-jdc-navy sm:text-5xl">Voor en na</h3>
+          <p className="mt-4 text-sm leading-relaxed text-jdc-slate sm:text-base">
+            Stof, stuifmeel en vuil uit de lucht leggen een sluier op panelen en
+            gevels. Een wasbeurt haalt die laag weg. Hoe groot het verschil is,
+            verschilt per installatie.
           </p>
           {references.length > 0 ? (
             <ul className="mt-6 space-y-3">

@@ -3,7 +3,6 @@ import { Hero } from "@/components/Hero";
 import { Footer } from "@/components/Footer";
 import { StickyQuote } from "@/components/StickyQuote";
 import { Services } from "@/components/sections/Services";
-import { Industrial } from "@/components/sections/Industrial";
 import { Benefits } from "@/components/sections/Benefits";
 import { Process } from "@/components/sections/Process";
 import { Comparison } from "@/components/sections/Comparison";
@@ -27,7 +26,6 @@ export default function Home() {
       <main id="main" tabIndex={-1} className="flex-1 outline-none">
         <Hero />
         <Services />
-        <Industrial />
         <Benefits />
         <Process />
         <Comparison />

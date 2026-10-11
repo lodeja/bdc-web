@@ -73,6 +73,11 @@ body {
   line-height: 0.96;
 }
 
+.jdc-mono {
+  font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
+  font-weight: 500;
+}
+
 ::selection {
   background: color-mix(in oklab, var(--jdc-cyan) 35%, white);
   color: var(--jdc-navy-deep);
