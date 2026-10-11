@@ -97,12 +97,12 @@ const EASE_VAN = "cubic-bezier(0.55, 0.04, 0.82, 0.22)";
 
 const desktopGeom: Geom = {
   variant: "desktop",
-  viewW: 680,
+  viewW: 853,
   viewH: 640,
   cols: 3,
   rows: 3,
   tower: {
-    x: 300,
+    x: 386.5,
     y: 24,
     w: 340,
     h: 490,
@@ -112,11 +112,11 @@ const desktopGeom: Geom = {
     gapX: 10,
     gapY: 8,
   },
-  droneLand: { x: 250, y: 478 },
-  operator: { x: 448, y: 620 },
+  droneLand: { x: 336.5, y: 478 },
+  operator: { x: 534.5, y: 620 },
   figure: 0.82,
   van: {
-    x: 36,
+    x: 122.5,
     y: 528,
     travel: -460,
     length: 300,
@@ -137,12 +137,12 @@ const desktopGeom: Geom = {
 
 const mobileGeom: Geom = {
   variant: "mobile",
-  viewW: 360,
+  viewW: 773,
   viewH: 580,
   cols: 3,
   rows: 3,
   tower: {
-    x: 24,
+    x: 230.5,
     y: 18,
     w: 312,
     h: 400,
@@ -152,11 +152,11 @@ const mobileGeom: Geom = {
     gapX: 8,
     gapY: 6,
   },
-  droneLand: { x: 168, y: 430 },
-  operator: { x: 312, y: 568 },
+  droneLand: { x: 374.5, y: 430 },
+  operator: { x: 518.5, y: 568 },
   figure: 0.72,
   van: {
-    x: 14,
+    x: 220.5,
     y: 464,
     travel: -340,
     length: 248,

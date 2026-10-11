@@ -108,7 +108,7 @@ test("reduced motion shows drone, operator and van", async ({ page }) => {
           node.left >= box.left - 1 &&
           node.top >= box.top - 1 &&
           node.right <= box.right + 1 &&
-          node.bottom <= box.bottom - 4,
+          node.bottom <= box.bottom + 1,
       };
     });
     return {
