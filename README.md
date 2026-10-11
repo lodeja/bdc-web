@@ -58,6 +58,7 @@ Bestand: `src/config/business.ts`
 | `social` | `{ label, href }`, of `[]` | Footerlinks |
 | `certifications` | `{ name, issuer, url }`, of `[]` | Footer. `issuer` en `url` mogen `null` |
 | `references` | `{ name, summary, url }`, of `[]` | Lijst onder Resultaten. Alleen publiceren met toestemming |
+| `dossierSpecs` | `{ label, value }`, of `[]` | Specificatietabel bij de tekening. Leeg verbergt de hele tabel |
 | `privacyPolicyPath` | Pad zoals `/privacy/`, of `null` | Footerlink |
 | `compliance.uasOperatorNumber` | DGLV-exploitantnummer zonder de laatste 3 tekens, of `null` | Veiligheidspagina en footer |
 | `compliance.operationalAuthorisation` | Referentie van de DGLV-vergunning, of `null` | Veiligheidspagina en footer |

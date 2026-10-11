@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Big_Shoulders, Schibsted_Grotesk } from "next/font/google";
 import { business } from "@/config/business";
 import { withBasePath } from "@/lib/paths";
 import { absoluteUrl, siteOrigin } from "@/lib/site";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const display = Big_Shoulders({
   subsets: ["latin"],
+  weight: "700",
+  display: "swap",
+  variable: "--font-display",
+  adjustFontFallback: false,
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const text = Schibsted_Grotesk({
   subsets: ["latin"],
-  preload: false,
+  weight: "400",
+  display: "swap",
+  variable: "--font-body",
 });
 
 const origin = siteOrigin();
@@ -76,7 +80,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="nl-BE"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${display.variable} ${text.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <a href="#main" className="jdc-skip-link">

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { waitForHydration } from "./hydrate";
 
 const SERVICE_PAGES = [
   {
@@ -78,19 +79,48 @@ test("dakreiniging preselects the quote form and stays accessible", async ({ pag
   await page.goto("/dakreiniging/");
   await expect(page.getByRole("heading", { name: "Wanneer we geen drone inzetten" })).toBeVisible();
   await expectAccessible(page);
-  await page.getByRole("link", { name: "Vraag een vrijblijvende offerte aan" }).click();
+  await page.locator("article").getByRole("link", { name: "Vraag een vrijblijvende offerte aan" }).click();
   await expect(page).toHaveURL(/dienst=dak/);
-  await expect(page.locator('select[name="service"]')).toHaveValue("dak");
+  await expect(page.getByRole("radio", { name: "Dakreiniging" })).toBeChecked();
 });
 
 test("a query preselects the quote service", async ({ page }) => {
   await page.goto("/?dienst=zonnepanelen#contact");
-  await expect(page.locator('select[name="service"]')).toHaveValue("zonnepanelen");
+  await expect(page.getByRole("radio", { name: "Zonnepanelen reinigen" })).toBeChecked();
+});
+
+test("quote wizard reaches an unwired confirmation and the slider moves by keyboard", async ({ page }) => {
+  await page.goto("/");
+  const slider = page.getByRole("slider", { name: "Vergelijk voor en na reiniging" });
+  await slider.scrollIntoViewIfNeeded();
+  await slider.focus();
+  const before = Number(await slider.inputValue());
+  await page.keyboard.press("ArrowRight");
+  expect(Number(await slider.inputValue())).toBeGreaterThan(before);
+
+  await page.locator("#contact").scrollIntoViewIfNeeded();
+  await page.getByRole("button", { name: "Volgende" }).click();
+  await expect(page.getByText("Selecteer een dienst.")).toBeVisible();
+  await page.getByRole("radio", { name: "Gevelreiniging" }).check();
+  await page.getByRole("button", { name: "Volgende" }).click();
+  await page.getByRole("radio", { name: "Appartementsgebouw" }).check();
+  await page.getByRole("button", { name: "Volgende" }).click();
+  await expect(page.getByText("De prijs hangt af van de oppervlakte")).toBeVisible();
+  await page.getByRole("button", { name: "Volgende" }).click();
+  await page.getByRole("button", { name: "Volgende" }).click();
+  await page.locator('input[name="name"]').fill("Anna Peeters");
+  await page.locator('input[name="email"]').fill("anna@example.com");
+  await page.locator('textarea[name="message"]').fill("Gevel van een appartement, noordkant.");
+  await page.locator('input[name="consent"]').check();
+  await page.getByRole("button", { name: "Verstuur aanvraag" }).click();
+  await expect(page.getByText("Uw aanvraag is niet verzonden. Online aanvragen openen binnenkort.")).toBeVisible();
+  await expect(page.getByText("Bedankt")).toHaveCount(0);
 });
 
 test("desktop diensten submenu responds to the keyboard", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop", "The disclosure is the desktop nav.");
   await page.goto("/");
+  await waitForHydration(page);
   const nav = page.getByRole("navigation", { name: "Hoofdnavigatie" });
   const button = nav.getByRole("button", { name: "Diensten" });
   await button.focus();
@@ -109,6 +139,7 @@ test("desktop diensten submenu responds to the keyboard", async ({ page }, testI
 test("mobile diensten list opens from the menu button", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "The disclosure sits in the hamburger dialog.");
   await page.goto("/");
+  await waitForHydration(page);
   await page.getByRole("button", { name: "Menu openen" }).click();
   const dialog = page.getByRole("dialog", { name: "Mobiel menu" });
   const button = dialog.getByRole("button", { name: "Diensten" });

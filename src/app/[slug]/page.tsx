@@ -63,7 +63,7 @@ export default async function ServicePage({
           <p className="font-mono text-xs tracking-[0.18em] text-jdc-cyan-ink uppercase">
             Dienst
           </p>
-          <h1 className="mt-3 text-balance text-4xl font-semibold tracking-tight text-jdc-navy sm:text-5xl">
+          <h1 className="jdc-display mt-3 text-balance text-4xl text-jdc-navy sm:text-6xl">
             {page.headline}
           </h1>
           <div className="jdc-flight-rule mt-6 max-w-xs" aria-hidden="true" />
@@ -86,6 +86,9 @@ export default async function ServicePage({
               ))}
             </div>
           </div>
+          <p className="mb-2 text-xs font-semibold tracking-[0.14em] text-jdc-cyan-ink uppercase">
+            Fig. 01
+          </p>
           <ServiceFigure id={page.id} caption="Illustratie" />
         </div>
 
@@ -141,17 +144,10 @@ export default async function ServicePage({
           </h2>
           <div className="mt-6 max-w-3xl divide-y divide-jdc-navy/10 border-y border-jdc-navy/10">
             {page.faqs.map((item) => (
-              <details key={item.q} className="group py-1">
-                <summary className="cursor-pointer list-none py-4 text-base font-semibold text-jdc-navy marker:content-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan [&::-webkit-details-marker]:hidden">
-                  <span className="flex items-start justify-between gap-4">
-                    {item.q}
-                    <span aria-hidden="true" className="font-mono text-sm text-jdc-cyan-ink">
-                      +
-                    </span>
-                  </span>
-                </summary>
-                <p className="pb-4 text-base leading-relaxed text-jdc-slate">{item.a}</p>
-              </details>
+              <article key={item.q} className="py-4">
+                <h3 className="text-base font-semibold text-jdc-navy">{item.q}</h3>
+                <p className="mt-2 text-base leading-relaxed text-jdc-slate">{item.a}</p>
+              </article>
             ))}
           </div>
         </section>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
+import { StickyQuote } from "./StickyQuote";
 
 export function SiteFrame({ children }: { children: ReactNode }) {
   return (
@@ -10,6 +11,7 @@ export function SiteFrame({ children }: { children: ReactNode }) {
         {children}
       </main>
       <Footer />
+      <StickyQuote />
     </>
   );
 }

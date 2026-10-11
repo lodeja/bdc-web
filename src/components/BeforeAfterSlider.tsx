@@ -70,12 +70,14 @@ export function BeforeAfterSlider() {
           max={92}
           value={pos}
           onChange={(e) => setPos(Number(e.target.value))}
+          aria-valuetext={`${pos} procent van de vergelijking`}
           className="absolute inset-0 z-10 h-full w-full cursor-ew-resize opacity-0"
         />
       </div>
-      <p className="border-t border-white/10 px-4 py-3 text-xs text-white/80 sm:px-5">
-        {caption}
-      </p>
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-t border-white/10 px-4 py-3 sm:px-5">
+        <p className="text-xs font-semibold tracking-[0.14em] text-jdc-cyan uppercase">Fig. 02</p>
+        <p className="text-xs text-white/80">{caption}</p>
+      </div>
     </div>
   );
 }
@@ -132,7 +134,7 @@ function SolarScene({
         y="36"
         fill={dirty ? "#e4ebf4" : "#33d6f0"}
         fontSize="14"
-        fontFamily="var(--font-geist-sans),system-ui,sans-serif"
+        fontFamily="var(--font-body),system-ui,sans-serif"
         fontWeight="600"
       >
         {dirty ? "Voor" : "Na"}

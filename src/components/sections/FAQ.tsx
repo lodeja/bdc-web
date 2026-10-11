@@ -1,8 +1,4 @@
-"use client";
-
-import { useId, useState } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
 import { SectionShell } from "../SectionShell";
 
 type FaqItem = {
@@ -46,9 +42,6 @@ const FAQS: readonly FaqItem[] = [
 ];
 
 export function FAQ() {
-  const baseId = useId();
-  const [open, setOpen] = useState<number | null>(0);
-
   return (
     <SectionShell
       id="faq"
@@ -56,55 +49,23 @@ export function FAQ() {
       lead="Korte antwoorden, in gewone taal."
       tone="fog"
     >
-      <div className="mx-auto max-w-3xl divide-y divide-jdc-navy/10 rounded-sm border border-jdc-navy/10 bg-white">
-        {FAQS.map((item, i) => {
-          const panelId = `${baseId}-panel-${i}`;
-          const btnId = `${baseId}-btn-${i}`;
-          const isOpen = open === i;
-          return (
-            <div key={item.q}>
-              <h3>
-                <button
-                  type="button"
-                  id={btnId}
-                  aria-expanded={isOpen}
-                  aria-controls={panelId}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-base font-semibold text-jdc-navy transition-colors hover:bg-jdc-fog/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-jdc-cyan sm:px-6"
-                  onClick={() => setOpen(isOpen ? null : i)}
+      <div className="mx-auto max-w-3xl divide-y divide-jdc-navy/10 border-y border-jdc-navy/10">
+        {FAQS.map((item) => (
+          <article key={item.q} className="py-5">
+            <h3 className="text-lg font-semibold text-jdc-navy">{item.q}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-jdc-slate sm:text-base">{item.a}</p>
+            {item.more ? (
+              <p className="mt-3">
+                <Link
+                  href={item.more.href}
+                  className="text-sm font-semibold text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                 >
-                  {item.q}
-                  <ChevronDown
-                    className={`h-5 w-5 shrink-0 text-jdc-slate transition-transform duration-300 ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
-                    aria-hidden
-                  />
-                </button>
-              </h3>
-              <div
-                id={panelId}
-                role="region"
-                aria-labelledby={btnId}
-                hidden={!isOpen}
-                className="px-5 pb-5 sm:px-6"
-              >
-                <p className="text-sm leading-relaxed text-jdc-slate sm:text-base">
-                  {item.a}
-                </p>
-                {item.more ? (
-                  <p className="mt-3">
-                    <Link
-                      href={item.more.href}
-                      className="text-sm font-semibold text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
-                    >
-                      {item.more.label}
-                    </Link>
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          );
-        })}
+                  {item.more.label}
+                </Link>
+              </p>
+            ) : null}
+          </article>
+        ))}
       </div>
     </SectionShell>
   );

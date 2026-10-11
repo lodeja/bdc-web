@@ -34,7 +34,7 @@ export function SectionShell({
         <div className="max-w-2xl">
           <h2
             id={`${id}-heading`}
-            className={`text-balance text-3xl font-semibold tracking-tight sm:text-4xl ${
+            className={`jdc-display text-balance text-4xl sm:text-5xl ${
               tone === "navy" ? "text-white" : "text-jdc-navy"
             }`}
           >
@@ -43,7 +43,7 @@ export function SectionShell({
           {lead ? (
             <p
               className={`mt-4 text-pretty text-base leading-relaxed sm:text-lg ${
-                tone === "navy" ? "text-white/70" : "text-jdc-slate"
+                tone === "navy" ? "text-[#d5e2ee]" : "text-jdc-slate"
               }`}
             >
               {lead}

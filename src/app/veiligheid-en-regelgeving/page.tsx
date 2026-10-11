@@ -53,7 +53,7 @@ export default function SafetyPage() {
           ]}
         />
         <header className="mt-8">
-          <h1 className="text-4xl font-semibold tracking-tight text-balance text-jdc-navy sm:text-5xl">
+          <h1 className="jdc-display text-balance text-4xl text-jdc-navy sm:text-6xl">
             Veilig en volgens de regels, van plaatsbezoek tot oplevering
           </h1>
           <div className="jdc-flight-rule mt-6 max-w-xs" aria-hidden="true" />

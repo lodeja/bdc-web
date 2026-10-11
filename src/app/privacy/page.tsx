@@ -45,7 +45,7 @@ export default function PrivacyPage() {
           ]}
         />
         <header className="mt-8">
-          <h1 className="text-4xl font-semibold tracking-tight text-jdc-navy sm:text-5xl">
+          <h1 className="jdc-display text-4xl text-jdc-navy sm:text-6xl">
             Privacy
           </h1>
           <div className="jdc-flight-rule mt-6 max-w-xs" aria-hidden="true" />
