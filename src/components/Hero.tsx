@@ -28,9 +28,9 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-lg text-pretty text-base leading-relaxed text-white/75 sm:mt-6 sm:text-lg">
-            JDC reinigt daken, gevels, zonnepanelen en geschikte industriële
-            oppervlakken met professionele drone-technologie — precies, veilig
-            en zonder zware steigers.
+            JDC reinigt daken, gevels, ramen en glas, zonnepanelen en geschikte
+            industriële oppervlakken met professionele drone-technologie —
+            precies, veilig en zonder zware steigers.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">

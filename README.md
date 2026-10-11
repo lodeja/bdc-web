@@ -32,6 +32,8 @@ Logo WebPs in `/public/brand/` (transparent): `jdc-mono.webp`, `jdc-wordmark.web
 
 The public brand is Janssens Drone Cleaning. Do not rename the repository or the `bdc-web` base path unless the GitHub Pages path changes too.
 
+Confirmed services live in `src/config/services.ts`: dakreiniging, gevelreiniging, ramen- en glasreiniging, zonnepanelen reinigen, industriële reiniging. The home page reads that list. `slug` is reserved for later per-service pages; those routes are not built yet.
+
 ## Bedrijfsgegevens invullen
 
 Alles wat nog niet vastligt staat op `null` of in een lege lijst. Verzin niets: laat het veld leeg tot er een echt gegeven is. Componenten verbergen een leeg veld. Zodra je het invult, verschijnt het vanzelf.

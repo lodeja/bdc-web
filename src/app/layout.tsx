@@ -29,13 +29,15 @@ export const metadata: Metadata = {
     template: "%s | JDC",
   },
   description:
-    "JDC reinigt daken, gevels, zonnepanelen en geschikte industriële oppervlakken met professionele drone-technologie in België.",
+    "JDC reinigt daken, gevels, ramen en glas, zonnepanelen en geschikte industriële oppervlakken met professionele drone-technologie in België.",
   applicationName: "Janssens Drone Cleaning",
   keywords: [
     "drone reiniging",
     "gevelreiniging",
     "dakreiniging",
     "zonnepanelen reinigen",
+    "ramenreiniging",
+    "glasreiniging",
     "industriële reiniging",
     "Belgium",
     "JDC",
@@ -49,13 +51,13 @@ export const metadata: Metadata = {
     siteName: "Janssens Drone Cleaning",
     title: "Janssens Drone Cleaning (JDC)",
     description:
-      "Professionele drone-reiniging voor daken, gevels, zonnepanelen en industriële oppervlakken.",
+      "Professionele drone-reiniging voor daken, gevels, ramen en glas, zonnepanelen en industriële oppervlakken.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Janssens Drone Cleaning (JDC)",
     description:
-      "Professionele drone-reiniging voor daken, gevels, zonnepanelen en industriële oppervlakken.",
+      "Professionele drone-reiniging voor daken, gevels, ramen en glas, zonnepanelen en industriële oppervlakken.",
   },
   robots: {
     index: true,

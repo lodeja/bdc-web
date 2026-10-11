@@ -36,8 +36,8 @@ export function Footer() {
             <Logo className="h-11 w-auto" variant="mono" idSuffix="ftr" />
           </a>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/80">
-            Professionele drone-reiniging voor daken, gevels, zonnepanelen en
-            geschikte industriële oppervlakken.
+            Professionele drone-reiniging voor daken, gevels, ramen en glas,
+            zonnepanelen en geschikte industriële oppervlakken.
           </p>
         </div>
 

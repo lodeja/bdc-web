@@ -2,6 +2,7 @@
 
 import { useId, useState, type FormEvent } from "react";
 import { business, filled } from "@/config/business";
+import { services } from "@/config/services";
 
 type FieldErrors = Partial<
   Record<"name" | "email" | "phone" | "service" | "message" | "consent", string>
@@ -15,12 +16,9 @@ type Status =
 
 const SERVICES = [
   { value: "", label: "Kies een dienst" },
-  { value: "dak", label: "Dakreiniging" },
-  { value: "gevel", label: "Gevelreiniging" },
-  { value: "zonnepanelen", label: "Zonnepanelen" },
-  { value: "industrie", label: "Industriële reiniging" },
+  ...services.map((service) => ({ value: service.id, label: service.title })),
   { value: "andere", label: "Andere / nog niet zeker" },
-] as const;
+];
 
 type Payload = {
   name: string;

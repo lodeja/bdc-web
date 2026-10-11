@@ -7,7 +7,7 @@ import { SectionShell } from "../SectionShell";
 const FAQS = [
   {
     q: "Voor welke oppervlakken is drone-reiniging geschikt?",
-    a: "Vaak daken, gevels, zonnepanelen en sommige industriële wanden. Geschiktheid hangt af van materiaal, bereikbaarheid, obstakels en weersomstandigheden.",
+    a: "Vaak daken, gevels, ramen en glas, zonnepanelen en sommige industriële wanden. Geschiktheid hangt af van materiaal, bereikbaarheid, obstakels en weersomstandigheden.",
   },
   {
     q: "Vervangt dit altijd steigers of een hoogwerker?",
