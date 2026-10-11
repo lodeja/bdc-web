@@ -26,6 +26,7 @@
 .playwright-cli/
 test-results/
 playwright-report/
+.lighthouseci/
 /tmp/
 
 # debug
