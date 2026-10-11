@@ -1,7 +1,7 @@
 "use client";
 
-import gsap from "gsap";
-import { useId, useLayoutEffect, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useRef } from "react";
+import { yieldMain } from "@/lib/yield-main";
 
 /**
  * Industrial façade / tank-bay cleaning scene (SVG + GSAP).
@@ -14,49 +14,68 @@ export function IndustrialDroneCleaningAnimation() {
   useLayoutEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
-
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    const drone = svg.querySelector<SVGGElement>(`#ind-drone-${uid}`);
-    const spray = svg.querySelector<SVGGElement>(`#ind-spray-${uid}`);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    svg.pauseAnimations();
+    const drone = svg.querySelector<SVGElement>(`#ind-drone-${uid}`);
+    const spray = svg.querySelector<SVGElement>(`#ind-spray-${uid}`);
     const dirt = svg.querySelector<SVGRectElement>(`#ind-dirt-${uid}`);
-    const gleam = svg.querySelector<SVGGElement>(`#ind-gleam-${uid}`);
-
-    if (!drone || !spray || !dirt) return;
-
-    if (reduce) {
-      svg.pauseAnimations();
-      gsap.set(dirt, { attr: { height: 0, y: 280 } });
-      gsap.set(drone, { opacity: 0 });
-      gsap.set(spray, { opacity: 0 });
-      if (gleam) gsap.set(gleam, { opacity: 0.7 });
-      return;
+    const gleam = svg.querySelector<SVGElement>(`#ind-gleam-${uid}`);
+    if (dirt) {
+      dirt.setAttribute("height", "0");
+      dirt.setAttribute("y", "280");
     }
+    if (drone) drone.style.opacity = "0";
+    if (spray) spray.style.opacity = "0";
+    if (gleam) gleam.style.opacity = "0.7";
+  }, [uid]);
 
-    gsap.set(drone, { x: 80, y: 90, opacity: 0 });
-    gsap.set(spray, { opacity: 0 });
-    gsap.set(dirt, { attr: { y: 120, height: 160 } });
-    if (gleam) gsap.set(gleam, { opacity: 0.15 });
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const tl = gsap.timeline({ defaults: { ease: "power2.inOut" } });
-    tl.to(drone, { opacity: 1, duration: 0.35 })
-      .to(drone, { x: 340, y: 150, duration: 1.4, ease: "power3.inOut" })
-      .to(spray, { opacity: 1, duration: 0.2 }, "-=0.2")
-      .to(
-        dirt,
-        { attr: { y: 280, height: 0 }, duration: 2.2, ease: "power1.inOut" },
-        "<",
-      )
-      .to(gleam, { opacity: 0.75, duration: 1.2 }, "<0.4")
-      .to(drone, { y: 200, duration: 0.9 }, "-=0.6")
-      .to(drone, { x: 420, y: 120, duration: 1.1 })
-      .to(spray, { opacity: 0, duration: 0.25 }, "-=0.3")
-      .to(drone, { x: 620, y: 70, opacity: 0, duration: 1.1, ease: "power3.in" });
+    let cancelled = false;
+    let timeline: { kill: () => void } | null = null;
+
+    void (async () => {
+      const { default: gsap } = await import("gsap");
+      if (cancelled) return;
+      await yieldMain();
+      if (cancelled) return;
+
+      const drone = svg.querySelector<SVGGElement>(`#ind-drone-${uid}`);
+      const spray = svg.querySelector<SVGGElement>(`#ind-spray-${uid}`);
+      const dirt = svg.querySelector<SVGRectElement>(`#ind-dirt-${uid}`);
+      const gleam = svg.querySelector<SVGGElement>(`#ind-gleam-${uid}`);
+      if (!drone || !spray || !dirt) return;
+
+      gsap.set(drone, { x: 80, y: 90, opacity: 0 });
+      gsap.set(spray, { opacity: 0 });
+      gsap.set(dirt, { attr: { y: 120, height: 160 } });
+      if (gleam) gsap.set(gleam, { opacity: 0.15 });
+      await yieldMain();
+      if (cancelled) return;
+
+      const tl = gsap.timeline({ defaults: { ease: "power2.inOut" } });
+      timeline = tl;
+      tl.to(drone, { opacity: 1, duration: 0.35 })
+        .to(drone, { x: 340, y: 150, duration: 1.4, ease: "power3.inOut" })
+        .to(spray, { opacity: 1, duration: 0.2 }, "-=0.2")
+        .to(
+          dirt,
+          { attr: { y: 280, height: 0 }, duration: 2.2, ease: "power1.inOut" },
+          "<",
+        )
+        .to(gleam, { opacity: 0.75, duration: 1.2 }, "<0.4")
+        .to(drone, { y: 200, duration: 0.9 }, "-=0.6")
+        .to(drone, { x: 420, y: 120, duration: 1.1 })
+        .to(spray, { opacity: 0, duration: 0.25 }, "-=0.3")
+        .to(drone, { x: 620, y: 70, opacity: 0, duration: 1.1, ease: "power3.in" });
+    })();
 
     return () => {
-      tl.kill();
+      cancelled = true;
+      timeline?.kill();
     };
   }, [uid]);
 
@@ -170,7 +189,7 @@ export function IndustrialDroneCleaningAnimation() {
         <rect x="300" y="240" width="50" height="8" fill="#3a4554" />
         <rect x="310" y="248" width="8" height="52" fill="#3a4554" />
 
-        <g id={`ind-drone-${uid}`}>
+        <g id={`ind-drone-${uid}`} opacity={0} transform="translate(80 90)">
           <g id={`ind-spray-${uid}`} opacity="0">
             {[0, 1, 2].map((i) => (
               <line

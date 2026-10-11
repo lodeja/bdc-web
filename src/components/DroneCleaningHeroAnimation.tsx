@@ -1,8 +1,8 @@
 "use client";
 
-import gsap from "gsap";
-import { useId, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef } from "react";
 import { withBasePath } from "@/lib/paths";
+import { yieldMain } from "@/lib/yield-main";
 
 /**
  * Flat-vector tower cleaning scene (SVG + GSAP).
@@ -140,12 +140,38 @@ function lookAngleToward(targetX: number, targetY: number): number {
   return Math.max(-42, Math.min(8, deg));
 }
 
+type Killable = { kill: () => void };
+
+/** Finished job, without GSAP. Used when the visitor prefers reduced motion. */
+function applyHeroEndFrame(svg: SVGSVGElement, uid: string, route: readonly Win[]) {
+  svg.pauseAnimations();
+  const drone = svg.querySelector<SVGElement>(`#drone-${uid}`);
+  const beams = svg.querySelector<SVGElement>(`#beams-${uid}`);
+  const operator = svg.querySelector<SVGElement>(`#operator-${uid}`);
+  const van = svg.querySelector<SVGElement>(`#van-${uid}`);
+  if (drone) drone.style.opacity = "0";
+  if (beams) beams.style.opacity = "0";
+  if (operator) operator.style.opacity = "0";
+  if (van) van.style.opacity = "0";
+  for (const w of route) {
+    const mask = svg.querySelector<SVGRectElement>(`#dirty-mask-${w.id}-${uid}`);
+    if (mask) {
+      mask.setAttribute("x", String(w.x + w.w));
+      mask.setAttribute("width", "0");
+    }
+    const sparkle = svg.querySelector<SVGElement>(`#sparkle-${w.id}-${uid}`);
+    if (sparkle) sparkle.setAttribute("opacity", "1");
+    const shine = svg.querySelector<SVGElement>(`#shine-${w.id}-${uid}`);
+    if (shine) shine.style.opacity = "0.75";
+  }
+}
+
 export function DroneCleaningHeroAnimation() {
   const uid = useId().replace(/:/g, "");
   const rootRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const mainTlRef = useRef<gsap.core.Timeline | null>(null);
-  const cloudTlRef = useRef<gsap.core.Timeline | null>(null);
+  const mainTlRef = useRef<Killable | null>(null);
+  const cloudTlRef = useRef<Killable | null>(null);
 
   const windows = useMemo(() => buildWindows(), []);
   const route = useMemo(() => buildRoute(windows), [windows]);
@@ -153,10 +179,33 @@ export function DroneCleaningHeroAnimation() {
   useLayoutEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    applyHeroEndFrame(svg, uid, route);
+  }, [uid, route]);
 
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let cancelled = false;
+    const blinkTweens: Killable[] = [];
+    const delayedCalls: Killable[] = [];
+
+    const kill = () => {
+      mainTlRef.current?.kill();
+      mainTlRef.current = null;
+      delayedCalls.forEach((tween) => tween.kill());
+      blinkTweens.forEach((tween) => tween.kill());
+      cloudTlRef.current?.kill();
+      cloudTlRef.current = null;
+    };
+
+    void (async () => {
+      const { default: gsap } = await import("gsap");
+      if (cancelled) return;
+      await yieldMain();
+      if (cancelled) return;
 
     const drone = svg.querySelector<SVGGElement>(`#drone-${uid}`);
     const beams = svg.querySelector<SVGGElement>(`#beams-${uid}`);
@@ -177,8 +226,6 @@ export function DroneCleaningHeroAnimation() {
     const shines = route.map((w) =>
       svg.querySelector<SVGGElement>(`#shine-${w.id}-${uid}`),
     );
-    const blinkTweens: gsap.core.Tween[] = [];
-    const delayedCalls: gsap.core.Tween[] = [];
 
     const startWindowBlink = (w: Win, i: number) => {
       const shine = shines[i];
@@ -250,13 +297,6 @@ export function DroneCleaningHeroAnimation() {
       });
     };
 
-    // Reduced motion: static finished job. Do not start GSAP timelines or SMIL.
-    if (reduce) {
-      svg.pauseAnimations();
-      showEndFrame();
-      return;
-    }
-
     cloudTlRef.current?.kill();
     const cloudTl = gsap.timeline({ repeat: -1 });
     cloudTlRef.current = cloudTl;
@@ -273,26 +313,29 @@ export function DroneCleaningHeroAnimation() {
     if (cleaningSessionComplete) {
       showEndFrame();
       route.forEach((w, i) => startWindowBlink(w, i));
-      return () => {
-        blinkTweens.forEach((t) => t.kill());
-        delayedCalls.forEach((t) => t.kill());
-        cloudTl.kill();
-        cloudTlRef.current = null;
-      };
+      return;
     }
+
+    await yieldMain();
+    if (cancelled) return;
 
     dirtyMasks.forEach((m, i) => {
       if (!m) return;
       const w = route[i];
       gsap.set(m, { attr: { x: w.x, width: w.w } });
     });
-    sparkles.forEach((s) => {
-      if (!s) return;
+    for (let i = 0; i < sparkles.length; i++) {
+      const s = sparkles[i];
+      if (!s) continue;
       gsap.set(s, { opacity: 0 });
       s.querySelectorAll<SVGGElement>("[data-spark]").forEach((dot) => {
         gsap.set(dot, { opacity: 0, scale: 0.7, transformOrigin: "50% 50%" });
       });
-    });
+      if (i % 4 === 3) {
+        await yieldMain();
+        if (cancelled) return;
+      }
+    }
     shines.forEach((s) => {
       if (s) gsap.set(s, { opacity: 0.4 });
     });
@@ -380,7 +423,12 @@ export function DroneCleaningHeroAnimation() {
     tl.to(drone, { y: "-=2", duration: 0.35, ease: "sine.inOut" });
 
     // Beat 3 — window-by-window clean; head/body stay aimed at the flying drone
-    route.forEach((w, i) => {
+    for (let i = 0; i < route.length; i++) {
+      if (i > 0) {
+        await yieldMain();
+        if (cancelled) return;
+      }
+      const w = route[i];
       const pos = hover(w);
       const mask = dirtyMasks[i];
       const travel = i === 0 ? 0.14 : 0.36 + seeded(w.id, 1) * 0.1;
@@ -445,7 +493,10 @@ export function DroneCleaningHeroAnimation() {
       if (i < route.length - 1) {
         tl.to(beams, { opacity: 0.35, duration: 0.1 }, ">-0.04");
       }
-    });
+    }
+
+    await yieldMain();
+    if (cancelled) return;
 
     // Beat 4 — drone packs up / exits sky (operator follows, then drops aim)
     tl.to(beams, { opacity: 0, duration: 0.25, ease: "power1.in" });
@@ -499,14 +550,11 @@ export function DroneCleaningHeroAnimation() {
       ease: "power1.inOut",
     });
     tl.to(van, { opacity: 0, duration: 0.35, ease: "power1.in" }, ">-0.4");
+    })();
 
     return () => {
-      tl.kill();
-      mainTlRef.current = null;
-      delayedCalls.forEach((t) => t.kill());
-      blinkTweens.forEach((t) => t.kill());
-      cloudTl.kill();
-      cloudTlRef.current = null;
+      cancelled = true;
+      kill();
     };
   }, [uid, route]);
 
@@ -603,17 +651,17 @@ export function DroneCleaningHeroAnimation() {
         />
 
         {/* Matte black van — top half only (logo panel), further back */}
-        <g id={`van-${uid}`}>
+        <g id={`van-${uid}`} transform={`translate(${VAN_PARK.x} ${VAN_PARK.y})`}>
           <FlatWorkVan />
         </g>
 
         {/* Operator — upper body only at frame bottom, looks at drone */}
-        <g id={`operator-${uid}`}>
+        <g id={`operator-${uid}`} transform={`translate(${OPERATOR_STAND.x} ${OPERATOR_STAND.y})`}>
           <FlatDroneOperator lookId={`operator-look-${uid}`} />
         </g>
 
         {/* Gray icon drone — ¾ side view, nose toward facade */}
-        <g id={`drone-${uid}`}>
+        <g id={`drone-${uid}`} opacity={0} transform="translate(200 200)">
           <g id={`beams-${uid}`} opacity="0">
             {[0, 1, 2, 3].map((i) => (
               <line
