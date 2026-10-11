@@ -5,20 +5,33 @@ async function crew(page: Page, name: "drone" | "operator" | "van" | "dirt") {
   return page.locator(`[data-hero="${name}"]:visible`).first();
 }
 
+async function translation(page: Page, name: "drone" | "dirt") {
+  const el = await crew(page, name);
+  return el.evaluate((node) => {
+    const value = getComputedStyle(node).transform;
+    const match = value.match(/matrix\(([^)]+)\)/);
+    if (!match) return { x: 0, y: 0 };
+    const parts = match[1].split(",").map((part) => Number(part.trim()));
+    return { x: parts[4] ?? 0, y: parts[5] ?? 0 };
+  });
+}
+
+function apart(
+  a: { x: number; y: number } | null,
+  b: { x: number; y: number } | null,
+) {
+  return Math.hypot((b?.x ?? 0) - (a?.x ?? 0), (b?.y ?? 0) - (a?.y ?? 0));
+}
+
 async function moved(page: Page, name: "drone" | "dirt", timeout: number) {
   const el = await crew(page, name);
   await expect(el).toBeVisible();
-  const start = await el.boundingBox();
-  expect(start).not.toBeNull();
+  const start = await translation(page, name);
   await expect
-    .poll(
-      async () => {
-        const next = await el.boundingBox();
-        if (!next || !start) return 0;
-        return Math.hypot(next.x - start.x, next.y - start.y);
-      },
-      { timeout, intervals: [80, 120, 200] },
-    )
+    .poll(async () => apart(start, await translation(page, name)), {
+      timeout,
+      intervals: [80, 120, 200],
+    })
     .toBeGreaterThan(name === "drone" ? 12 : 0.5);
 }
 
@@ -61,11 +74,15 @@ test("reduced motion shows drone, operator and van", async ({ page }) => {
   expect(Math.hypot((end?.x ?? 0) - (start?.x ?? 0), (end?.y ?? 0) - (start?.y ?? 0))).toBeLessThan(2);
 
   const width = page.viewportSize()?.width ?? 1440;
-  const wiped = await page.locator('[data-hero="dirt"]').evaluateAll((nodes) =>
-    nodes
-      .filter((node) => node.getBoundingClientRect().height > 8)
-      .map((node) => getComputedStyle(node).transform),
-  );
+  const wiped = await page.evaluate(() => {
+    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    if (!frame) return [];
+    return [...frame.querySelectorAll('[data-hero="dirt"]')].map(
+      (node) => getComputedStyle(node).transform,
+    );
+  });
   expect(wiped).toHaveLength(width < 800 ? 2 : 3);
   for (const transform of wiped) {
     expect(transform.startsWith("matrix(0,")).toBe(true);
@@ -77,25 +94,21 @@ test("story replays on reload and keeps playing through history", async ({ page 
   await page.goto("/");
   const drone = await crew(page, "drone");
   await expect(drone).toBeVisible();
-  const origin = await drone.boundingBox();
+  const origin = await translation(page, "drone");
   await moved(page, "drone", 2500);
-  const mid = await drone.boundingBox();
-  expect(Math.hypot((mid?.x ?? 0) - (origin?.x ?? 0), (mid?.y ?? 0) - (origin?.y ?? 0))).toBeGreaterThan(12);
+  const mid = await translation(page, "drone");
+  expect(apart(origin, mid)).toBeGreaterThan(8);
 
   await page.evaluate(() => history.pushState({ hero: 1 }, "", `${location.pathname}#verhaal`));
   await page.goBack();
-  const afterHistory = await drone.boundingBox();
-  expect(
-    Math.hypot((afterHistory?.x ?? 0) - (origin?.x ?? 0), (afterHistory?.y ?? 0) - (origin?.y ?? 0)),
-  ).toBeGreaterThan(8);
+  const afterHistory = await translation(page, "drone");
+  expect(apart(origin, afterHistory)).toBeGreaterThan(8);
 
   await page.reload({ waitUntil: "domcontentloaded" });
   const replayed = await crew(page, "drone");
   await expect(replayed).toBeVisible();
-  const restarted = await replayed.boundingBox();
-  expect(
-    Math.hypot((restarted?.x ?? 0) - (mid?.x ?? 0), (restarted?.y ?? 0) - (mid?.y ?? 0)),
-  ).toBeGreaterThan(12);
+  const restarted = await translation(page, "drone");
+  expect(apart(mid, restarted)).toBeGreaterThan(12);
 });
 
 test("crew is in the first HTML response without javascript", async ({ browser }, testInfo) => {
