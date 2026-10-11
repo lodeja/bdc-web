@@ -72,7 +72,7 @@ export default async function ServicePage({
           </p>
         </header>
 
-        <div className="mt-12 grid items-start gap-10 border-t border-jdc-navy/10 pt-12 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-16">
+        <div className="mt-12 grid items-start gap-10 border-t border-jdc-navy/10 pt-12 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-16">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-jdc-navy">
               {page.howTitle}
@@ -86,10 +86,9 @@ export default async function ServicePage({
               ))}
             </div>
           </div>
-          <p className="mb-2 text-xs font-semibold tracking-[0.14em] text-jdc-cyan-ink uppercase">
-            Fig. 01
-          </p>
-          <ServiceFigure id={page.id} caption="Illustratie" />
+          <aside className="lg:sticky lg:top-28">
+            <ServiceFigure id={page.id} label="Fig. 01" caption="Illustratie" />
+          </aside>
         </div>
 
         <section className="mt-16 border-t border-jdc-navy/10 pt-12" aria-labelledby="grenzen-heading">
@@ -151,6 +150,35 @@ export default async function ServicePage({
             ))}
           </div>
         </section>
+
+        <nav className="mt-16 border-t border-jdc-navy/10 pt-12" aria-labelledby="andere-diensten-heading">
+          <h2 id="andere-diensten-heading" className="text-2xl font-semibold tracking-tight text-jdc-navy">
+            Andere diensten
+          </h2>
+          <ul className="mt-6 grid gap-px border border-jdc-navy/10 bg-jdc-navy/10 sm:grid-cols-2 lg:grid-cols-4">
+            {services
+              .filter((service) => service.id !== page.id)
+              .map((service) => (
+                <li key={service.id} className="bg-jdc-fog">
+                  <Link
+                    href={service.href}
+                    className="group flex h-full flex-col gap-2 p-5 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-jdc-cyan"
+                  >
+                    <span className="flex items-center justify-between gap-3 text-base font-semibold text-jdc-navy">
+                      {service.title}
+                      <span
+                        aria-hidden="true"
+                        className="text-jdc-cyan-ink transition-transform group-hover:translate-x-1 motion-reduce:transition-none"
+                      >
+                        →
+                      </span>
+                    </span>
+                    <span className="text-sm leading-relaxed text-jdc-slate">{service.description}</span>
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </nav>
 
         <section className="mt-16 border border-jdc-navy/15 bg-jdc-navy-deep px-6 py-8 text-white sm:px-8" aria-labelledby="offerte-heading">
           <div className="jdc-flight-rule jdc-flight-rule-on-dark max-w-[8rem]" aria-hidden="true" />
