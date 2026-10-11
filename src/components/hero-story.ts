@@ -280,7 +280,7 @@ function buildStory(g: Geom): HeroStory {
   const duration = boardEnd + g.drive;
   const last = visits[visits.length - 1];
   const spins = Math.max(24, Math.round((HERO_DELAY_S + landEnd) / 0.09));
-  const wipeDur = 0.58;
+  const wipeDur = 0.42;
   const wipeDelay = new Map<string, number>();
   const wipeOrigin = new Map<string, "left" | "right">();
   const glintDelay = new Map<string, number>();
@@ -313,14 +313,14 @@ function buildStory(g: Geom): HeroStory {
     x: trackEnd - doorW,
     y: 3,
     w: doorW,
-    h: g.van.axleY + 4,
+    h: g.van.axleY + 10,
   };
   const cargo = {
     x: g.van.x + door.x + door.w * 0.5,
     y: g.van.y + g.van.axleY * 0.42,
   };
   // Boots rise onto the sill. Negative Y is up. The door then slides shut over him.
-  const sink = -14;
+  const sink = -8;
 
   push(0, g.droneLand.x, g.droneLand.y, EASE_OUT);
   for (const visit of visits) push(visit.t, visit.at.x, visit.at.y, EASE_LANE);
@@ -352,12 +352,54 @@ function buildStory(g: Geom): HeroStory {
   }
 
   const pct = (t: number) => `${((t / duration) * 100).toFixed(3)}%`;
-  const posKf = keys
-    .map(
-      (k) =>
-        `${pct(k.t)}{transform:translate(${num(k.x)}px,${num(k.y)}px);animation-timing-function:${k.ease}}`,
-    )
-    .join("");
+  const bodyScale = g.van.length / 408;
+  const pivot = { x: g.van.x + g.van.length * 0.22, y: g.van.y + 121 * bodyScale };
+  const squatAt = (p: number) => {
+    const marks = [
+      { p: 0, a: 0 },
+      { p: 0.16, a: 1.6 },
+      { p: 0.42, a: 0.35 },
+      { p: 1, a: 0 },
+    ];
+    let i = 0;
+    while (i < marks.length - 1 && p > marks[i + 1].p) i += 1;
+    const a = marks[i];
+    const b = marks[Math.min(marks.length - 1, i + 1)];
+    const span = b.p - a.p || 1;
+    const u = Math.min(1, Math.max(0, (p - a.p) / span));
+    return a.a + (b.a - a.a) * u;
+  };
+  const rideAt = (dist: number, angleDeg: number) => {
+    const rad = (angleDeg * Math.PI) / 180;
+    const c = Math.cos(rad);
+    const s = Math.sin(rad);
+    const dx = cargo.x - pivot.x;
+    const dy = cargo.y - pivot.y;
+    return {
+      x: pivot.x + dx * c + dy * s + g.van.travel * dist,
+      y: pivot.y - dx * s + dy * c,
+    };
+  };
+  const driveMarks = [
+    { p: 0, dist: 0 },
+    { p: 0.18, dist: 0.04 },
+    { p: 0.4, dist: 0.16 },
+    { p: 0.62, dist: 0.4 },
+    { p: 0.82, dist: 0.7 },
+    { p: 1, dist: 1 },
+  ];
+  const posKf = [
+    ...keys
+      .filter((k) => k.t < boardEnd - 0.01)
+      .map(
+        (k) =>
+          `${pct(k.t)}{transform:translate(${num(k.x)}px,${num(k.y)}px);animation-timing-function:${k.ease}}`,
+      ),
+    ...driveMarks.map((mark) => {
+      const at = rideAt(mark.dist, squatAt(mark.p));
+      return `${pct(boardEnd + g.drive * mark.p)}{transform:translate(${num(at.x)}px,${num(at.y)}px);animation-timing-function:linear}`;
+    }),
+  ].join("");
   const tiltKf = keys
     .map(
       (k) =>
@@ -426,14 +468,6 @@ function buildStory(g: Geom): HeroStory {
     ),
     `${arrivePct},100%{transform:translate(0px,0px)}`,
   ].join("");
-  const driveMarks = [
-    { p: 0, dist: 0 },
-    { p: 0.18, dist: 0.04 },
-    { p: 0.4, dist: 0.16 },
-    { p: 0.62, dist: 0.4 },
-    { p: 0.82, dist: 0.7 },
-    { p: 1, dist: 1 },
-  ];
   const markPct = (mark: { p: number }) => pct(boardEnd + g.drive * mark.p);
   const vanKf = [
     `0%,${boardPct}{transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation-timing-function:linear}`,
@@ -449,18 +483,28 @@ function buildStory(g: Geom): HeroStory {
         `${markPct(mark)}{transform:rotate(${num(wheelSign * wheelDeg * mark.dist)}deg);animation-timing-function:linear}`,
     ),
   ].join("");
+  const easeWalk = "cubic-bezier(0.42, 0, 0.58, 1)";
+  const riseAt = Math.max(walkStart + 0.05, arrive - 0.7);
   const walkKf = [
-    `0%,${pct(walkStart)}{transform:translate(0px,0px);animation-timing-function:linear}`,
+    `0%,${pct(walkStart)}{transform:translate(0px,0px);animation-timing-function:${easeWalk}}`,
     ...stepX.map(
       (portion, i) =>
-        `${pct(stepAt(i))}{transform:translate(${num(walk * portion)}px,${num([0, 0, 0, sink * 0.55][i] ?? 0)}px);animation-timing-function:linear}`,
+        `${pct(stepAt(i))}{transform:translate(${num(walk * portion)}px,0px);animation-timing-function:${easeWalk}}`,
     ),
-    `${arrivePct}{transform:translate(${num(walk)}px,${num(sink)}px);animation-timing-function:linear}`,
-    `${boardPct}{transform:translate(${num(walk)}px,${num(sink)}px);animation-timing-function:linear}`,
+    `${arrivePct}{transform:translate(${num(walk)}px,0px);animation-timing-function:linear}`,
+    `${boardPct}{transform:translate(${num(walk)}px,0px);animation-timing-function:linear}`,
     ...driveMarks.slice(1).map(
       (mark) =>
-        `${markPct(mark)}{transform:translate(${num(walk + g.van.travel * mark.dist)}px,${num(sink)}px);animation-timing-function:linear}`,
+        `${markPct(mark)}{transform:translate(${num(walk + g.van.travel * mark.dist)}px,0px);animation-timing-function:linear}`,
     ),
+  ].join("");
+  const riseKf = [
+    `0%,${pct(riseAt)}{transform:translateY(0px);animation-timing-function:${EASE_OUT}}`,
+    `${arrivePct},100%{transform:translateY(${num(sink)}px)}`,
+  ].join("");
+  const leanKf = [
+    `0%,${pct(riseAt)}{transform:rotate(0deg);animation-timing-function:${EASE_OUT}}`,
+    `${arrivePct},100%{transform:rotate(-8deg)}`,
   ].join("");
   const doorKf = [
     `0%,${landPct}{transform:translateX(0px);animation-timing-function:cubic-bezier(0.22,0.8,0.2,1)}`,
@@ -485,6 +529,10 @@ function buildStory(g: Geom): HeroStory {
 @keyframes jdc-ha-look-${v}{${lookKf}}
 .jdc-ha-walk-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);opacity:1;animation:jdc-ha-walk-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-walk-${v}{${walkKf}}
+.jdc-ha-rise-${v}{transform-box:view-box;transform-origin:0 0;transform:translateY(0px);animation:jdc-ha-rise-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-ha-rise-${v}{${riseKf}}
+.jdc-ha-lean-${v}{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(0deg);animation:jdc-ha-lean-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-ha-lean-${v}{${leanKf}}
 .jdc-ha-stride-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);animation:jdc-ha-stride-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-stride-${v}{${strideKf}}
 .jdc-ha-leg-a-${v},.jdc-ha-leg-b-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation-duration:${duration}s;animation-timing-function:linear;animation-fill-mode:both;animation-delay:${HERO_DELAY_S}s}
@@ -496,6 +544,13 @@ function buildStory(g: Geom): HeroStory {
 @keyframes jdc-ha-van-${v}{${vanKf}}
 .jdc-ha-pitch-${v}{transform-box:fill-box;transform-origin:22% 100%;transform:rotate(0deg);animation:jdc-ha-pitch-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-pitch-${v}{
+  0%,${boardPct}{transform:rotate(0deg);animation-timing-function:ease-out}
+  ${pitchIn}{transform:rotate(1.6deg);animation-timing-function:ease-out}
+  ${pitchMid}{transform:rotate(0.35deg)}
+  100%{transform:rotate(0deg)}
+}
+.jdc-ha-ride-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-ride-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-ha-ride-${v}{
   0%,${boardPct}{transform:rotate(0deg);animation-timing-function:ease-out}
   ${pitchIn}{transform:rotate(1.6deg);animation-timing-function:ease-out}
   ${pitchMid}{transform:rotate(0.35deg)}
@@ -522,6 +577,7 @@ function buildStory(g: Geom): HeroStory {
   ${landPct},100%{opacity:.22}
 }
 .jdc-ha-dirt-${v}{transform-box:fill-box;transform-origin:var(--wipe-origin) center;transform:scaleX(0);animation-name:jdc-ha-wipe;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33,0,0.2,1);animation-fill-mode:both}
+.jdc-ha-mask{transform-box:fill-box;transform-origin:0 0;transform:translateX(var(--wipe-shift));animation-name:jdc-ha-mask;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33,0,0.2,1);animation-fill-mode:both}
 .jdc-ha-glint-${v}{opacity:.5;animation:jdc-ha-glint .85s cubic-bezier(0.22,1,0.36,1) both;animation-delay:var(--glint-delay)}
 `;
 
@@ -566,7 +622,8 @@ export const heroMotionCss = `
 .jdc-ha-frame svg{position:absolute;max-width:none;display:block;overflow:hidden}
 ${frameRule(desktopStory)}
 ${frameRule(mobileStory)}
-@keyframes jdc-ha-wipe{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes jdc-ha-wipe{from,82%{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes jdc-ha-mask{from{transform:translateX(0)}82%,to{transform:translateX(var(--wipe-shift))}}
 @keyframes jdc-ha-glint{0%{opacity:0}38%{opacity:.95}100%{opacity:.48}}
 @keyframes jdc-ha-spin{to{transform:rotate(398deg)}}
 .jdc-ha-rotor{transform-box:fill-box;transform-origin:center;transform:rotate(38deg);animation-name:jdc-ha-spin;animation-duration:.22s;animation-timing-function:linear;animation-iteration-count:infinite}

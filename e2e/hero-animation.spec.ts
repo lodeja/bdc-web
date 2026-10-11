@@ -363,6 +363,51 @@ test("mobile keeps the drone clear of the buttons and shows three columns", asyn
   expect(gap).toBeGreaterThan(16);
 });
 
+test("the landed drone rides the van roof through the drive-off", async ({ page }) => {
+  await page.goto("/");
+  const sample = await page.evaluate(() => {
+    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    if (!frame) return null;
+    const read = (sel: string) => {
+      const value = getComputedStyle(frame.querySelector(sel)!).transform;
+      const m3 = value.match(/matrix3d\(([^)]+)\)/);
+      if (m3) {
+        const p = m3[1].split(",").map((part) => Number(part.trim()));
+        return { x: p[12] ?? 0, y: p[13] ?? 0 };
+      }
+      const match = value.match(/matrix\(([^)]+)\)/);
+      if (!match) return { x: 0, y: 0 };
+      const p = match[1].split(",").map((part) => Number(part.trim()));
+      return { x: p[4] ?? 0, y: p[5] ?? 0 };
+    };
+    const dx: number[] = [];
+    const dy: number[] = [];
+    let prev = Number.POSITIVE_INFINITY;
+    for (let ms = 8_000; ms <= 12_000; ms += 50) {
+      for (const anim of document.getAnimations()) {
+        anim.pause();
+        anim.currentTime = ms;
+      }
+      const drone = read('[data-hero="drone"]');
+      const van = read('[data-hero="van"]');
+      if (van.x < prev - 0.4) {
+        dx.push(drone.x - van.x);
+        dy.push(drone.y - van.y);
+      }
+      prev = van.x;
+    }
+    const span = (values: number[]) =>
+      values.length ? Math.max(...values) - Math.min(...values) : 999;
+    return { samples: dx.length, xSpread: span(dx), ySpread: span(dy) };
+  });
+  expect(sample).not.toBeNull();
+  expect(sample?.samples ?? 0).toBeGreaterThan(8);
+  expect(sample?.xSpread ?? 999).toBeLessThanOrEqual(8);
+  expect(sample?.ySpread ?? 999).toBeLessThanOrEqual(8);
+});
+
 test("the van drives off after the facade is cleaned", async ({ page }) => {
   await page.goto("/");
   const van = page.locator('[data-hero="van"]:visible').first();

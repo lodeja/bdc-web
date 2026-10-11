@@ -53,6 +53,18 @@ function Scene({ story, className }: { story: HeroStory; className: string }) {
           <clipPath id={`${v}-scene-clip`}>
             <rect width={story.viewW} height={story.viewH} />
           </clipPath>
+          <linearGradient id={`${v}-dirt-right`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#C4B193" stopOpacity="0" />
+            <stop offset="40%" stopColor="#C4B193" stopOpacity="0" />
+            <stop offset="50%" stopColor="#C4B193" stopOpacity="0.92" />
+            <stop offset="100%" stopColor="#C4B193" stopOpacity="0.92" />
+          </linearGradient>
+          <linearGradient id={`${v}-dirt-left`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#C4B193" stopOpacity="0.92" />
+            <stop offset="50%" stopColor="#C4B193" stopOpacity="0.92" />
+            <stop offset="60%" stopColor="#C4B193" stopOpacity="0" />
+            <stop offset="100%" stopColor="#C4B193" stopOpacity="0" />
+          </linearGradient>
           <clipPath id={`${v}-door-track`} clipPathUnits="userSpaceOnUse">
             <rect
               x={story.van.frontAxle + story.van.wheelR + 2}
@@ -71,6 +83,7 @@ function Scene({ story, className }: { story: HeroStory; className: string }) {
           </g>
           <Operator story={story} />
           <g data-hero="drone" className={`jdc-ha-play jdc-ha-drone-${v}`}>
+            <g data-hero="ride" className={`jdc-ha-play jdc-ha-ride-${v}`}>
             <g data-hero="tilt" className={`jdc-ha-play jdc-ha-tilt-${v}`}>
               <g data-hero="bank" className={`jdc-ha-play jdc-ha-bank-${v}`}>
                 <g className={`jdc-ha-play jdc-ha-bob-${v}`}>
@@ -79,6 +92,7 @@ function Scene({ story, className }: { story: HeroStory; className: string }) {
                   </g>
                 </g>
               </g>
+            </g>
             </g>
           </g>
           <g className={`jdc-ha-play jdc-ha-van-${v}`}>
@@ -164,8 +178,9 @@ function Pane({ w, story }: { w: Win; story: HeroStory }) {
   const delay = story.wipeDelay.get(w.id) ?? 1;
   const origin = story.wipeOrigin.get(w.id) ?? "right";
   const glintAt = story.glintDelay.get(w.id) ?? 1;
-  const edge = Math.max(2.5, w.w * 0.035);
-  const edgeX = origin === "right" ? w.x : w.x + w.w - edge;
+  const flyingRight = origin === "right";
+  const shift = flyingRight ? w.w * 1.2 : -w.w * 1.2;
+  const sheetX = flyingRight ? w.x - w.w : w.x;
   return (
     <g>
       <rect x={w.x} y={w.y} width={w.w} height={w.h} fill={`url(#${v}-glass)`} />
@@ -197,6 +212,7 @@ function Pane({ w, story }: { w: Win; story: HeroStory }) {
       </clipPath>
       <g
         data-hero="dirt"
+        clipPath={`url(#${w.id}-clip)`}
         className={`jdc-ha-play jdc-ha-dirt-${v}`}
         style={{
           ["--wipe-delay" as string]: `${delay}s`,
@@ -204,11 +220,32 @@ function Pane({ w, story }: { w: Win; story: HeroStory }) {
           ["--wipe-origin" as string]: origin,
         }}
       >
-        <rect x={w.x} y={w.y} width={w.w} height={w.h} fill="#C4B193" opacity="0.92" />
-        <rect x={w.x} y={w.y} width={w.w} height={w.h * 0.2} fill="#A48B68" opacity="0.4" />
-        <rect x={w.x + w.w * 0.3} y={w.y + 4} width="1.3" height={w.h - 8} fill="#8C7352" opacity="0.28" />
-        <rect x={edgeX} y={w.y} width={edge} height={w.h} fill="#F4FDFF" />
-        <rect x={origin === "right" ? edgeX + edge : edgeX - 2} y={w.y} width="2" height={w.h} fill="#67E0F6" opacity="0.9" />
+        <g
+          className="jdc-ha-play jdc-ha-mask"
+          style={{
+            ["--wipe-shift" as string]: `${shift}px`,
+            ["--wipe-delay" as string]: `${delay}s`,
+            ["--wipe-dur" as string]: `${story.wipeDur}s`,
+          }}
+        >
+          <rect x={sheetX} y={w.y} width={w.w * 2} height={w.h} fill={`url(#${v}-dirt-${flyingRight ? "right" : "left"})`} />
+          <rect
+            x={flyingRight ? sheetX + w.w * 1.08 : sheetX + w.w * 0.04}
+            y={w.y}
+            width={w.w * 0.4}
+            height={w.h * 0.2}
+            fill="#A48B68"
+            opacity="0.4"
+          />
+          <rect
+            x={sheetX + w.w}
+            y={w.y}
+            width={Math.max(3, w.w * 0.08)}
+            height={w.h}
+            fill="#67E0F6"
+            opacity="0.55"
+          />
+        </g>
       </g>
       <rect x={w.x} y={w.y} width={w.w} height={w.h} fill="none" stroke="#1C2128" strokeWidth="3" />
     </g>
@@ -222,6 +259,8 @@ function Operator({ story }: { story: HeroStory }) {
   const hipY = y - 36 * s;
   return (
     <g data-hero="operator" className={`jdc-ha-play jdc-ha-walk-${v}`}>
+      <g className={`jdc-ha-play jdc-ha-rise-${v}`}>
+      <g data-hero="lean" className={`jdc-ha-play jdc-ha-lean-${v}`}>
       <ellipse cx={x} cy={y - 1} rx={22 * s} ry={4.5} fill="#071525" opacity="0.16" />
       <g className={`jdc-ha-play jdc-ha-stride-${v}`}>
         <Leg variant={v} which="a" hipX={x - 4 * s} hipY={hipY} s={s} fill="#1A2230" />
@@ -249,6 +288,8 @@ function Operator({ story }: { story: HeroStory }) {
             </g>
           </g>
         </g>
+      </g>
+      </g>
       </g>
     </g>
   );
