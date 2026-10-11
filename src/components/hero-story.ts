@@ -113,26 +113,26 @@ const desktopGeom: Geom = {
     gapY: 8,
   },
   droneLand: { x: 250, y: 478 },
-  operator: { x: 308, y: 628 },
+  operator: { x: 448, y: 628 },
   figure: 0.82,
   van: {
     x: 36,
     y: 542,
-    travel: -420,
+    travel: -460,
     length: 300,
     rearAxle: 236.8,
     frontAxle: 70.6,
     axleY: 73.5,
-    wheelR: 15.4,
+    wheelR: 18,
   },
   approach: 0.85,
   lane: 1.22,
   drop: 0.36,
   settle: 0.3,
   land: 0.75,
-  board: 1.45,
-  drive: 1.85,
-  bob: 5,
+  board: 2.5,
+  drive: 2.05,
+  bob: 24,
 };
 
 const mobileGeom: Geom = {
@@ -153,26 +153,26 @@ const mobileGeom: Geom = {
     gapY: 6,
   },
   droneLand: { x: 168, y: 430 },
-  operator: { x: 198, y: 562 },
+  operator: { x: 312, y: 568 },
   figure: 0.72,
   van: {
     x: 14,
-    y: 456,
-    travel: -310,
+    y: 464,
+    travel: -340,
     length: 248,
     rearAxle: 195.7,
     frontAxle: 58.4,
     axleY: 60.8,
-    wheelR: 12.8,
+    wheelR: 13.4,
   },
   approach: 0.7,
   lane: 1.02,
   drop: 0.28,
   settle: 0.2,
   land: 0.65,
-  board: 1.2,
-  drive: 1.6,
-  bob: 3.2,
+  board: 2.35,
+  drive: 1.75,
+  bob: 20,
 };
 
 function buildWindows(g: Geom): Win[] {
@@ -212,18 +212,18 @@ function clamp(n: number, min: number, max: number) {
 }
 
 /**
- * Pitch into the travel direction. The craft points right, so this stays in
- * ±16° instead of a full atan2 (that would flip it). Positive is nose-down.
- * Straight legs hold about 13°. A mostly vertical leg banks to about 14°.
+ * Pitch into the travel direction. The craft points right, so this stays a
+ * nose-up / nose-down angle instead of a full atan2 (that would flip it).
+ * Positive is nose-down. Cruise is about ±18°. A vertical leg is about ±22°.
  */
 function tilt(a: Point, b: Point) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   if (Math.hypot(dx, dy) < 8) return 0;
   if (Math.abs(dx) >= Math.abs(dy) * 0.65) {
-    return clamp(Math.sign(dx) * 13 + Math.sign(dy || 1) * 2, -16, 16);
+    return clamp(Math.sign(dx) * 18 + Math.sign(dy || 1) * 6, -26, 26);
   }
-  return clamp(Math.sign(dy) * 14, -16, 16);
+  return clamp(Math.sign(dy) * 22, -26, 26);
 }
 
 function lookDeg(neck: Point, drone: Point) {
@@ -237,7 +237,7 @@ function num(n: number) {
   return Number(n.toFixed(2)).toString();
 }
 
-type Key = { t: number; x: number; y: number; rot: number; ease: string };
+type Key = { t: number; x: number; y: number; rot: number; bank: number; ease: string };
 
 function buildStory(g: Geom): HeroStory {
   const windows = buildWindows(g);
@@ -284,21 +284,21 @@ function buildStory(g: Geom): HeroStory {
       prev.ease = ease;
       return;
     }
-    keys.push({ t, x, y, rot: 0, ease });
+    keys.push({ t, x, y, rot: 0, bank: 0, ease });
   };
 
   const door = {
-    x: g.van.length * 0.32,
-    y: 2,
-    w: Math.max(72, g.van.length * 0.2),
-    h: g.van.axleY + g.van.wheelR - 2,
+    x: g.van.frontAxle + g.van.wheelR + 8,
+    y: 3,
+    w: Math.min(86, Math.max(64, g.van.rearAxle - g.van.frontAxle - g.van.wheelR * 2 - 18)),
+    h: g.van.axleY - 4,
   };
   const cargo = {
     x: g.van.x + door.x + door.w * 0.5,
     y: g.van.y + g.van.axleY * 0.42,
   };
-  // Steps down into the cargo so the helmet clears the roof. The door covers him.
-  const sink = 14;
+  // Last step ducks the helmet under the roof. The door then slides shut over him.
+  const sink = 16;
 
   push(0, g.droneLand.x, g.droneLand.y, EASE_OUT);
   for (const visit of visits) push(visit.t, visit.at.x, visit.at.y, EASE_LANE);
@@ -317,6 +317,7 @@ function buildStory(g: Geom): HeroStory {
   }
   for (const key of keys) {
     if (key.t >= landEnd - 0.01) key.rot = 0;
+    key.bank = clamp(key.rot * 0.45, -12, 12);
   }
 
   const pct = (t: number) => `${((t / duration) * 100).toFixed(3)}%`;
@@ -338,62 +339,117 @@ function buildStory(g: Geom): HeroStory {
       return `${pct(k.t)}{transform:rotate(${num(deg)}deg);animation-timing-function:${EASE_OUT}}`;
     })
     .join("");
+  const bankKf = keys
+    .map(
+      (k) =>
+        `${pct(k.t)}{transform:rotate(${num(k.bank)}deg);animation-timing-function:${k.ease}}`,
+    )
+    .join("");
 
   const cleanPct = pct(cleanEnd);
   const settlePct = pct(settleEnd);
   const landPct = pct(landEnd);
   const boardPct = pct(boardEnd);
-  const drivePct = pct(boardEnd);
-  const pitchPct = pct(boardEnd + g.drive * 0.22);
-  const mistIn = g.approach * 0.45;
-  const mistFull = g.approach * 0.92;
-  const mistOut = cleanEnd;
-  const mistGone = cleanEnd + 0.48;
+  const openAt = landEnd + 0.24;
+  const walkStart = landEnd + 0.28;
+  const arrive = boardEnd - 1.25;
+  const openPct = pct(openAt);
+  const arrivePct = pct(arrive);
+  const mistIn = g.approach * 0.2;
+  const mistFull = g.approach + 0.55;
+  const mistOut = cleanEnd - 0.15;
+  const mistGone = cleanEnd + 0.7;
   const v = g.variant;
   const wheelDeg = (Math.abs(g.van.travel) / (2 * Math.PI * g.van.wheelR)) * 360;
   const wheelSign = g.van.travel < 0 ? -1 : 1;
-  const endX = g.van.x + g.van.travel;
   const walk = g.van.x + door.x + door.w * 0.5 - g.operator.x;
-  const ride = walk + g.van.travel;
+  const slide = -(door.w + 10);
   const landLook = lookDeg(neck, g.droneLand);
   const bobCycles = Math.max(4, Math.round((landEnd / 1.15) * 2) / 2);
-  const stepAt = (p: number) => landEnd + g.board * p;
-  const steps = [0.18, 0.36, 0.54, 0.72, 0.88];
-  const legA = [32, -34, 30, -28, 18];
+  const span = Math.max(0.4, arrive - walkStart);
+  const stepFracs = [0.12, 0.34, 0.56, 0.78];
+  const stepX = [0.22, 0.48, 0.72, 0.9];
+  const legA = [52, -50, 48, -46];
+  const stepAt = (i: number) => walkStart + span * stepFracs[i];
   const legKf = (angles: number[]) =>
     [
-      `0%,${landPct}{transform:rotate(0deg);animation-timing-function:ease-in-out}`,
-      ...steps.map(
-        (p, i) =>
-          `${pct(stepAt(p))}{transform:rotate(${angles[i]}deg);animation-timing-function:ease-in-out}`,
-      ),
-      `${boardPct},100%{transform:rotate(0deg)}`,
+      `0%,${pct(walkStart)}{transform:rotate(0deg);animation-timing-function:ease-out}`,
+      ...angles.flatMap((deg, i) => {
+        const t = stepAt(i);
+        const hold = Math.min(t + 0.14, arrive - 0.08);
+        return [
+          `${pct(t)}{transform:rotate(${deg}deg);animation-timing-function:linear}`,
+          `${pct(hold)}{transform:rotate(${deg}deg);animation-timing-function:ease-in-out}`,
+        ];
+      }),
+      `${arrivePct},100%{transform:rotate(0deg)}`,
     ].join("");
   const strideKf = [
-    `0%,${landPct}{transform:translate(0px,0px);animation-timing-function:ease-in-out}`,
-    ...steps.map(
-      (p, i) =>
-        `${pct(stepAt(p))}{transform:translate(0px,${i % 2 === 0 ? -3.5 : 0}px);animation-timing-function:ease-in-out}`,
+    `0%,${pct(walkStart)}{transform:translate(0px,0px);animation-timing-function:ease-in-out}`,
+    ...stepFracs.map(
+      (_frac, i) =>
+        `${pct(stepAt(i))}{transform:translate(0px,${i % 2 === 0 ? -6 : 0}px);animation-timing-function:ease-in-out}`,
     ),
-    `${boardPct},100%{transform:translate(0px,0px)}`,
+    `${arrivePct},100%{transform:translate(0px,0px)}`,
   ].join("");
+  const driveMarks = [
+    { p: 0, dist: 0 },
+    { p: 0.18, dist: 0.04 },
+    { p: 0.4, dist: 0.16 },
+    { p: 0.62, dist: 0.4 },
+    { p: 0.82, dist: 0.7 },
+    { p: 1, dist: 1 },
+  ];
+  const markPct = (mark: { p: number }) => pct(boardEnd + g.drive * mark.p);
+  const vanKf = [
+    `0%,${boardPct}{transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation-timing-function:linear}`,
+    ...driveMarks.slice(1).map(
+      (mark) =>
+        `${markPct(mark)}{transform:translate(${num(g.van.x + g.van.travel * mark.dist)}px,${num(g.van.y)}px);animation-timing-function:linear}`,
+    ),
+  ].join("");
+  const wheelKf = [
+    `0%,${boardPct}{transform:rotate(0deg);animation-timing-function:linear}`,
+    ...driveMarks.slice(1).map(
+      (mark) =>
+        `${markPct(mark)}{transform:rotate(${num(wheelSign * wheelDeg * mark.dist)}deg);animation-timing-function:linear}`,
+    ),
+  ].join("");
+  const walkKf = [
+    `0%,${pct(walkStart)}{transform:translate(0px,0px);animation-timing-function:linear}`,
+    ...stepX.map(
+      (portion, i) =>
+        `${pct(stepAt(i))}{transform:translate(${num(walk * portion)}px,${num([0, 0, sink * 0.35, sink * 0.7][i] ?? 0)}px);animation-timing-function:linear}`,
+    ),
+    `${arrivePct}{transform:translate(${num(walk)}px,${num(sink)}px);animation-timing-function:linear}`,
+    `${boardPct}{transform:translate(${num(walk)}px,${num(sink)}px);animation-timing-function:linear}`,
+    ...driveMarks.slice(1).map(
+      (mark) =>
+        `${markPct(mark)}{transform:translate(${num(walk + g.van.travel * mark.dist)}px,${num(sink)}px);animation-timing-function:linear}`,
+    ),
+  ].join("");
+  const doorKf = [
+    `0%,${landPct}{transform:translateX(0px);animation-timing-function:cubic-bezier(0.22,0.8,0.2,1)}`,
+    `${openPct}{transform:translateX(${num(slide)}px);animation-timing-function:linear}`,
+    `${arrivePct}{transform:translateX(${num(slide)}px);animation-timing-function:linear}`,
+    `${boardPct},100%{transform:translateX(0px)}`,
+  ].join("");
+  const pitchIn = pct(boardEnd + g.drive * 0.16);
+  const pitchMid = pct(boardEnd + g.drive * 0.42);
 
   const css = `
 .jdc-ha-drone-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(${num(g.droneLand.x)}px,${num(g.droneLand.y)}px);opacity:1;animation:jdc-ha-drone-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-drone-${v}{${posKf}}
 .jdc-ha-tilt-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-tilt-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-tilt-${v}{${tiltKf}}
+.jdc-ha-bank-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-bank-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-ha-bank-${v}{${bankKf}}
 .jdc-ha-bob-${v}{transform-box:fill-box;transform-origin:center;transform:translateY(0px);animation:jdc-ha-bob-${v} 1.15s ease-in-out ${bobCycles} both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-bob-${v}{0%,100%{transform:translateY(0px)}50%{transform:translateY(${num(-g.bob)}px)}}
 .jdc-ha-look-${v}{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(${num(landLook)}deg);animation:jdc-ha-look-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-look-${v}{${lookKf}}
 .jdc-ha-walk-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);opacity:1;animation:jdc-ha-walk-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-walk-${v}{
-  0%,${landPct}{transform:translate(0px,0px);animation-timing-function:${EASE_OUT}}
-  ${pct(stepAt(0.55))}{transform:translate(${num(walk * 0.55)}px,0px);animation-timing-function:${EASE_OUT}}
-  ${boardPct}{transform:translate(${num(walk)}px,${num(sink)}px);animation-timing-function:${EASE_VAN}}
-  100%{transform:translate(${num(ride)}px,${num(sink)}px)}
-}
+@keyframes jdc-ha-walk-${v}{${walkKf}}
 .jdc-ha-stride-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);animation:jdc-ha-stride-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-stride-${v}{${strideKf}}
 .jdc-ha-leg-a-${v},.jdc-ha-leg-b-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation-duration:${duration}s;animation-timing-function:linear;animation-fill-mode:both;animation-delay:${HERO_DELAY_S}s}
@@ -402,33 +458,33 @@ function buildStory(g: Geom): HeroStory {
 @keyframes jdc-ha-leg-a-${v}{${legKf(legA)}}
 @keyframes jdc-ha-leg-b-${v}{${legKf(legA.map((deg) => -deg))}}
 .jdc-ha-van-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation:jdc-ha-van-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-van-${v}{
-  0%,${drivePct}{transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation-timing-function:${EASE_VAN}}
-  100%{transform:translate(${num(endX)}px,${num(g.van.y)}px)}
-}
+@keyframes jdc-ha-van-${v}{${vanKf}}
 .jdc-ha-pitch-${v}{transform-box:fill-box;transform-origin:${num(g.van.rearAxle)}px ${num(g.van.axleY)}px;transform:rotate(0deg);animation:jdc-ha-pitch-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-pitch-${v}{
-  0%,${drivePct}{transform:rotate(0deg)}
-  ${pitchPct}{transform:rotate(-2.6deg);animation-timing-function:cubic-bezier(0.22,1,0.36,1)}
-  100%{transform:rotate(-0.35deg)}
+  0%,${boardPct}{transform:rotate(0deg);animation-timing-function:ease-out}
+  ${pitchIn}{transform:rotate(-7deg);animation-timing-function:ease-out}
+  ${pitchMid}{transform:rotate(-2.4deg)}
+  100%{transform:rotate(-0.4deg)}
 }
 .jdc-ha-wheel-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-wheel-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-wheel-${v}{
-  0%,${drivePct}{transform:rotate(0deg);animation-timing-function:${EASE_VAN}}
-  100%{transform:rotate(${num(wheelSign * wheelDeg)}deg)}
-}
+@keyframes jdc-ha-wheel-${v}{${wheelKf}}
+.jdc-ha-door-${v}{transform-box:view-box;transform-origin:0 0;transform:translateX(0px);animation:jdc-ha-door-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-ha-door-${v}{${doorKf}}
 .jdc-ha-mist-${v}{opacity:0;animation:jdc-ha-mist-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-mist-${v}{
-  0%,${(mistIn / duration * 100).toFixed(3)}%{opacity:0}
-  ${(mistFull / duration * 100).toFixed(3)}%,${(mistOut / duration * 100).toFixed(3)}%{opacity:1}
-  ${(Math.min(1, mistGone / duration) * 100).toFixed(3)}%,100%{opacity:0}
+  0%,${pct(mistIn)}{opacity:0}
+  ${pct(mistIn + 0.22)}{opacity:.4}
+  ${pct(mistFull)}{opacity:1}
+  ${pct(mistOut)}{opacity:1}
+  ${pct(mistOut + 0.28)}{opacity:.35}
+  ${pct(Math.min(duration, mistGone))},100%{opacity:0}
 }
-.jdc-ha-disc-${v}{opacity:.2;animation:jdc-ha-disc-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+.jdc-ha-disc-${v}{opacity:.25;animation:jdc-ha-disc-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-disc-${v}{
-  0%,${pct(g.approach * 0.4)}{opacity:.18}
-  ${pct(g.approach)},${cleanPct}{opacity:.78}
-  ${settlePct}{opacity:.4}
-  ${landPct},100%{opacity:.18}
+  0%,${pct(g.approach * 0.35)}{opacity:.22}
+  ${pct(g.approach)},${cleanPct}{opacity:.9}
+  ${settlePct}{opacity:.45}
+  ${landPct},100%{opacity:.22}
 }
 .jdc-ha-dirt-${v}{transform-box:fill-box;transform-origin:var(--wipe-origin) center;transform:scaleX(0);animation-name:jdc-ha-wipe;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33,0,0.2,1);animation-fill-mode:both}
 .jdc-ha-glint-${v}{opacity:.5;animation:jdc-ha-glint .85s cubic-bezier(0.22,1,0.36,1) both;animation-delay:var(--glint-delay)}
@@ -467,18 +523,18 @@ function frameRule(story: HeroStory) {
   // container-query units, which left Fig. 01 at its raw viewBox size.
   const width = `min(100cqw,calc(100cqh * ${viewW} / ${viewH}))`;
   const height = `min(100cqh,calc(100cqw * ${viewH} / ${viewW}))`;
-  return `.jdc-ha-frame[data-variant="${variant}"] svg{left:50%;top:50%;bottom:auto;width:${width};height:${height};transform:translate(-50%,-50%)}`;
+  return `.jdc-ha-frame[data-variant="${variant}"] svg{left:50%;top:50%;width:${width};height:${height};transform:translate(-50%,-50%)}`;
 }
 
 export const heroMotionCss = `
 .jdc-ha-frame{container-type:size;position:relative;width:100%;height:100%;overflow:hidden}
-.jdc-ha-frame svg{position:absolute;max-width:none;display:block}
+.jdc-ha-frame svg{position:absolute;max-width:none;display:block;overflow:hidden}
 ${frameRule(desktopStory)}
 ${frameRule(mobileStory)}
 @keyframes jdc-ha-wipe{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @keyframes jdc-ha-glint{0%{opacity:0}38%{opacity:.95}100%{opacity:.48}}
 @keyframes jdc-ha-spin{to{transform:rotate(398deg)}}
-.jdc-ha-rotor{transform-box:fill-box;transform-origin:center;transform:rotate(38deg);animation-name:jdc-ha-spin;animation-duration:.09s;animation-timing-function:linear;animation-iteration-count:infinite}
+.jdc-ha-rotor{transform-box:fill-box;transform-origin:center;transform:rotate(38deg);animation-name:jdc-ha-spin;animation-duration:.22s;animation-timing-function:linear;animation-iteration-count:infinite}
 ${desktopStory.css}
 ${mobileStory.css}
 @media (prefers-reduced-motion: reduce){

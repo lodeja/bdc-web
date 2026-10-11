@@ -196,6 +196,82 @@ test("pitch, head, wheels and the walk change without hiding the operator", asyn
   }
 });
 
+test("the operator walks in the open doorway and the door shuts across frames", async ({ page }) => {
+  await page.goto("/");
+  const rows = await page.evaluate(() => {
+    const root = [...document.querySelectorAll(".jdc-ha-frame")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    if (!root) return [];
+    const overlap = (a: DOMRect, b: DOMRect) => {
+      const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+      const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      return width * height;
+    };
+    const angle = (transform: string) => {
+      const match = transform.match(/matrix\(([^)]+)\)/);
+      if (!match) return 0;
+      const parts = match[1].split(",").map((part) => Number(part.trim()));
+      return (Math.atan2(parts[1] ?? 0, parts[0] ?? 1) * 180) / Math.PI;
+    };
+    const rows: { ratio: number; ang: number; valve: number }[] = [];
+    for (let ms = 0; ms <= 12_000; ms += 50) {
+      for (const anim of document.getAnimations()) {
+        anim.pause();
+        anim.currentTime = ms;
+      }
+      const vest = root.querySelector('[data-hero="operator"]')?.getBoundingClientRect();
+      const door = root.querySelector('[data-hero="door"]')?.getBoundingClientRect();
+      const wheel = root.querySelector('[data-hero="wheel"]')?.getBoundingClientRect();
+      const valve = root.querySelector('[data-hero="valve"]')?.getBoundingClientRect();
+      if (!vest || !door || !wheel || !valve) continue;
+      const leg = getComputedStyle(root.querySelector('[data-hero="leg"]')!).transform;
+      rows.push({
+        ratio:
+          Math.max(0, Math.min(vest.right, door.right) - Math.max(vest.left, door.left)) /
+          Math.max(1, vest.width),
+        ang: angle(leg),
+        valve: Math.atan2(valve.y + valve.height / 2 - (wheel.y + wheel.height / 2), valve.x + valve.width / 2 - (wheel.x + wheel.width / 2)),
+      });
+    }
+    return rows;
+  });
+  const walking = rows.filter((row) => Math.abs(row.ang) > 18 && row.ratio < 0.25);
+  expect(walking.length).toBeGreaterThan(4);
+  expect(Math.min(...rows.map((row) => row.ang))).toBeLessThan(-20);
+  expect(Math.max(...rows.map((row) => row.ang))).toBeGreaterThan(20);
+  expect(rows.filter((row) => row.ratio > 0.22 && row.ratio < 0.82).length).toBeGreaterThan(1);
+  const valveSpread = spread(rows.map((row) => row.valve));
+  expect(valveSpread).toBeGreaterThan(0.6);
+});
+
+test("the driving van is clipped to the figure", async ({ page }) => {
+  await page.goto("/");
+  const leaked = await page.evaluate(() => {
+    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    if (!frame?.parentElement) return 1;
+    const border = frame.parentElement.getBoundingClientRect();
+    let hits = 0;
+    for (let ms = 8_000; ms <= 12_000; ms += 150) {
+      for (const anim of document.getAnimations()) {
+        anim.pause();
+        anim.currentTime = ms;
+      }
+      const van = frame.querySelector('[data-hero="van"]')?.getBoundingClientRect();
+      if (!van) continue;
+      const y = Math.min(border.bottom - 12, Math.max(border.top + 12, van.top + van.height * 0.45));
+      for (const x of [border.left - 8, border.right + 8]) {
+        const hit = document.elementFromPoint(x, y);
+        if (hit && frame.contains(hit)) hits += 1;
+      }
+    }
+    return hits;
+  });
+  expect(leaked).toBe(0);
+});
+
 test("mobile keeps the drone clear of the buttons and shows three columns", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "hero-mobile", "Composition check is for the phone viewport.");
   await page.goto("/");
