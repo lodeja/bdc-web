@@ -416,7 +416,7 @@ export const heroMotionCss = `
 .far-set,.cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%}
 @keyframes jdc-drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @keyframes jdc-clouds{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.block{position:absolute;bottom:18%;background:#143356;opacity:0.16}
+.jdc-h-block{position:absolute;bottom:18%;background:#143356;opacity:0.16}
 .cloud{position:absolute;background:#f7fbfd;border-radius:999px;opacity:0.92}
 .cloud i{position:absolute;background:inherit;border-radius:inherit}
 .ground{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg, #c5d0d8 0%, #aebac4 100%)}

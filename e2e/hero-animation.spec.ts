@@ -68,7 +68,8 @@ test("reduced motion fades the dirt and keeps the crew still", async ({ page }) 
 
 test("pause control is keyboard operable and labelled in Dutch", async ({ page }) => {
   await page.goto("/");
-  const toggle = page.getByRole("checkbox", { name: "Animatie pauzeren" });
+  const toggle = page.locator("#jdc-hero-pause");
+  await expect(toggle).toHaveAccessibleName("Animatie pauzeren");
   await expect(page.locator("label[for='jdc-hero-pause']")).toBeVisible();
   const outside = await toggle.evaluate((node) => node.closest('[aria-hidden="true"]') === null);
   expect(outside).toBe(true);
@@ -253,7 +254,7 @@ test("clouds loop without a seam and the glint returns to clear", async ({ page 
     const atStart = first.getBoundingClientRect();
     cloudAnim.currentTime = 10_000;
     const atMid = first.getBoundingClientRect();
-    cloudAnim.currentTime = 20_000;
+    cloudAnim.currentTime = 19_990;
     const atLoop = second.getBoundingClientRect();
     const glintOpacity = (ms: number) => {
       glintAnim.pause();

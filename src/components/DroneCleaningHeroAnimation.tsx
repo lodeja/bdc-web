@@ -128,11 +128,11 @@ function LanePane({ lane }: { lane: Lane }) {
 function Skyline() {
   return (
     <div className="far-set" aria-hidden="true">
-      <i className="block" style={{ left: "6%", width: "14%", height: "46%" }} />
-      <i className="block" style={{ left: "22%", width: "9%", height: "70%" }} />
-      <i className="block" style={{ left: "34%", width: "18%", height: "38%" }} />
-      <i className="block" style={{ left: "58%", width: "11%", height: "62%" }} />
-      <i className="block" style={{ left: "72%", width: "16%", height: "44%" }} />
+      <i className="jdc-h-block" style={{ left: "6%", width: "14%", height: "46%" }} />
+      <i className="jdc-h-block" style={{ left: "22%", width: "9%", height: "70%" }} />
+      <i className="jdc-h-block" style={{ left: "34%", width: "18%", height: "38%" }} />
+      <i className="jdc-h-block" style={{ left: "58%", width: "11%", height: "62%" }} />
+      <i className="jdc-h-block" style={{ left: "72%", width: "16%", height: "44%" }} />
     </div>
   );
 }
