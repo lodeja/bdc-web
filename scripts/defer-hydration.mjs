@@ -10,8 +10,9 @@
  */
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("../out/", import.meta.url);
+const root = fileURLToPath(new URL("../out/", import.meta.url));
 const mark = "data-bdc-defer-hydration";
 
 async function htmlFiles(dir) {
