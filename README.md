@@ -35,7 +35,7 @@ Logo WebPs in `/public/brand/` (transparent): `jdc-mono.webp`, `jdc-wordmark.web
 
 The public brand is Janssens Drone Cleaning (JDC). The Pages base path is `REPO_SLUG` in `src/config/repo.ts`.
 
-Confirmed services live in `src/config/services.ts`: dakreiniging, gevelreiniging, ramen- en glasreiniging, zonnepanelen reinigen, industriële reiniging. Each `slug` is a static page. Longer copy is in `src/config/service-pages.ts`. `/privacy/` is linked from the footer once `privacyPolicyPath` is set.
+Confirmed services live in `src/config/services.ts`: dakreiniging, gevelreiniging, ramen- en glasreiniging, zonnepanelen reinigen, industriële reiniging. Each `slug` is a static page. Longer copy is in `src/config/service-pages.ts`. `/privacy/` is linked from the footer once `privacyPolicyPath` is set. `/veiligheid-en-regelgeving/` explains how a job is planned. It does not claim a permit or policy until `compliance` is filled in.
 
 ## Bedrijfsgegevens invullen
 
@@ -59,6 +59,13 @@ Bestand: `src/config/business.ts`
 | `certifications` | `{ name, issuer, url }`, of `[]` | Footer. `issuer` en `url` mogen `null` |
 | `references` | `{ name, summary, url }`, of `[]` | Lijst onder Resultaten. Alleen publiceren met toestemming |
 | `privacyPolicyPath` | Pad zoals `/privacy/`, of `null` | Footerlink |
+| `compliance.uasOperatorNumber` | DGLV-exploitantnummer zonder de laatste 3 tekens, of `null` | Veiligheidspagina en footer |
+| `compliance.operationalAuthorisation` | Referentie van de DGLV-vergunning, of `null` | Veiligheidspagina en footer |
+| `compliance.authorisationRoute` | `PDRA-S01`, `SORA` of `STS-01`, of `null` | Alleen tonen als de vergunning die route noemt |
+| `compliance.aviationInsurer` | Naam van de verzekeraar, of `null` | Alleen samen met `aviationInsurance: true`. Geen bedrag |
+| `compliance.aviationInsurance` | `true` als de polis volgens 785/2004 actief is | Regel "Luchtvaartverzekering: in orde". Geen eurobedrag |
+| `compliance.liabilityInsurance` | `true` als de BA-polis actief is | Regel zonder bedrag |
+| `compliance.biocideUserRegistration` | `true` als de registratie als gebruiker bestaat | Regel op de veiligheidspagina en in de footer |
 
 `formEndpoint` ontvangt JSON `{ name, email, phone, service, message }`. Het veld `website` is een honeypot: als het gevuld is, is het een bot. Er is geen `/api`-route op GitHub Pages; gebruik een externe HTTPS-endpoint. Zolang `formEndpoint` `null` is, meldt het formulier dat de aanvraag niet verzonden is. Bestaat er wel een `email` en nog geen endpoint, dan opent `mailto:` en moet de bezoeker zelf versturen.
 

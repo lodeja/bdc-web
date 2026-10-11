@@ -66,6 +66,10 @@ test("service pages are linked from home and expose one heading", async ({ page 
       "href",
       "/#werkwijze",
     );
+    await expect(page.getByRole("link", { name: "Veiligheid en regelgeving" })).toHaveAttribute(
+      "href",
+      "/veiligheid-en-regelgeving/",
+    );
     await expect(page.getByText("Illustratie", { exact: true })).toHaveCount(1);
   }
 });
@@ -116,12 +120,42 @@ test("mobile diensten list opens from the menu button", async ({ page }, testInf
   await expect(dialog).toHaveCount(0);
 });
 
+test("safety page is linked and does not claim a held permit", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("#werkwijze").getByRole("heading", { name: "Plaatsbezoek" })).toBeVisible();
+  await expect(page.locator("#werkwijze").getByRole("heading", { name: "Opvang en afvoer" })).toBeVisible();
+  await page.getByRole("contentinfo").getByRole("link", { name: "Veiligheid" }).click();
+  await expect(page).toHaveURL(/\/veiligheid-en-regelgeving\/$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "Veilig en volgens de regels, van plaatsbezoek tot oplevering",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("We plannen een opdracht pas in wanneer de vergunning en de verzekering in orde zijn."),
+  ).toBeVisible();
+  await expect(page.getByText(/exploitantnummer/i)).toHaveCount(0);
+  await expect(page.getByText("€")).toHaveCount(0);
+  await expect(page.getByText(/biologisch afbreekbaar/i)).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "privacyverklaring" })).toHaveAttribute("href", "/privacy/");
+  await expectAccessible(page);
+
+  await page.goto("/dakreiniging/");
+  await expect(page.getByText(/biologisch afbreekbaar/i)).toHaveCount(0);
+  await page.goto("/zonnepanelen-reinigen/");
+  await expect(page.getByText("We volgen de reinigingsvoorschriften van de fabrikant van uw panelen.")).toBeVisible();
+});
+
 test("privacy page matches the empty form and is linked", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
   await expect(page).toHaveURL(/\/privacy\/$/);
   await expect(page.getByRole("heading", { level: 1, name: "Privacy" })).toBeVisible();
   await expect(page.getByText("Het verstuurt die invoer niet.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Camera van de drone" })).toBeVisible();
+  await expect(page.getByText("tenzij u daar apart mee instemt.")).toBeVisible();
   await expect(page.getByRole("link", { name: "gegevensbeschermingsautoriteit.be" })).toBeVisible();
   await expectAccessible(page);
   await page.goto("/#contact");

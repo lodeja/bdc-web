@@ -1,0 +1,21 @@
+extends: existence
+message: "Verboden of te vage claim: '%s'. Formuleer concreet, zonder een vergunning of eigenschap te claimen die niet vastligt."
+level: warning
+ignorecase: true
+tokens:
+  - milieuvriendelijk\w*
+  - ecologisch\w*
+  - \bduurzaam\b
+  - \bgroen\b
+  - \beco\b
+  - 100 ?% veilig
+  - onschadelijk
+  - niet giftig
+  - \bnatuurlijk\b
+  - zonder chemicaliën
+  - biologisch afbreekbaar\w*
+  - gecertificeerd\w*
+  - DGLV-goedgekeurd
+  - EASA-gecertificeerd
+  - volledig verzekerd
+  - verzekerd tot

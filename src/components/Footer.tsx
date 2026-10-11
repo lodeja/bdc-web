@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { business, filled, formatAddress } from "@/config/business";
+import { business, complianceFacts, filled, formatAddress } from "@/config/business";
 import { services } from "@/config/services";
 import { Logo } from "./Logo";
 
@@ -8,6 +8,7 @@ const FOOTER_LINKS = [
   ...services.map((service) => ({ href: service.href, label: service.title })),
   { href: "/#voordelen", label: "Voordelen" },
   { href: "/#werkwijze", label: "Werkwijze" },
+  { href: "/veiligheid-en-regelgeving/", label: "Veiligheid" },
   { href: "/#resultaten", label: "Resultaten" },
   { href: "/#faq", label: "FAQ" },
   { href: "/#contact", label: "Contact" },
@@ -23,8 +24,9 @@ export function Footer() {
   const kbo = filled(business.enterpriseNumber);
   const domain = filled(business.domain);
   const privacy = filled(business.privacyPolicyPath);
+  const facts = complianceFacts();
   const showFacts = Boolean(
-    legalName || email || phone || address || workArea || vat || kbo || domain || business.social.length || business.certifications.length,
+    legalName || email || phone || address || workArea || vat || kbo || domain || business.social.length || business.certifications.length || facts.length,
   );
 
   return (
@@ -105,6 +107,11 @@ export function Footer() {
                   </li>
                 ) : null,
               )}
+              {facts.map((fact) => (
+                <li key={fact.label}>
+                  {fact.label}: {fact.value}
+                </li>
+              ))}
               {business.certifications.map((item) => (
                 <li key={item.name}>
                   {item.url ? (

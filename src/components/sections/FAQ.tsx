@@ -1,10 +1,22 @@
 "use client";
 
 import { useId, useState } from "react";
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { SectionShell } from "../SectionShell";
 
-const FAQS = [
+type FaqItem = {
+  q: string;
+  a: string;
+  more?: { href: string; label: string };
+};
+
+const SAFETY_LINK = {
+  href: "/veiligheid-en-regelgeving/",
+  label: "Lees hoe we met de regels omgaan",
+} as const;
+
+const FAQS: readonly FaqItem[] = [
   {
     q: "Welke oppervlakken wassen jullie?",
     a: "Daken, gevels, ramen en glas, zonnepanelen, en wanden op een loods of bedrijfssite. Per opdracht kijken we of een drone erbij kan.",
@@ -23,9 +35,15 @@ const FAQS = [
   },
   {
     q: "Gebruiken jullie een reinigingsmiddel?",
-    a: "We wassen met osmosewater. Dat is gedemineraliseerd water. Een biologisch afbreekbaar middel gebruiken we alleen als het nodig is, en als het past bij uw materiaal.",
+    a: "We werken waar mogelijk met alleen osmosewater. Dat is gedemineraliseerd water. Is er een middel nodig, dan kiezen we een product dat in België is toegelaten voor die ondergrond, en we vertellen u vooraf welk.",
+    more: SAFETY_LINK,
   },
-] as const;
+  {
+    q: "Hebben jullie een vergunning voor de drone?",
+    a: "Reinigen met een drone valt onder de Europese categorie specifiek. Daarvoor zijn een toelating van het DGLV, een verzekering en een piloot met de gepaste opleiding nodig. We plannen een opdracht pas in wanneer de vergunning en de verzekering in orde zijn.",
+    more: SAFETY_LINK,
+  },
+];
 
 export function FAQ() {
   const baseId = useId();
@@ -73,6 +91,16 @@ export function FAQ() {
                 <p className="text-sm leading-relaxed text-jdc-slate sm:text-base">
                   {item.a}
                 </p>
+                {item.more ? (
+                  <p className="mt-3">
+                    <Link
+                      href={item.more.href}
+                      className="text-sm font-semibold text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+                    >
+                      {item.more.label}
+                    </Link>
+                  </p>
+                ) : null}
               </div>
             </div>
           );
