@@ -1,24 +1,6 @@
-"use client";
+import { DroneCleaningHeroAnimation } from "./DroneCleaningHeroAnimation";
 
-import { useEffect, useState, type ComponentType } from "react";
-
-/**
- * The illustration is client-only and starts after the first paint, so GSAP
- * is not on the heading's critical path. Reduced motion is handled inside
- * the animation module.
- */
+/** Server-rendered illustration. Motion is CSS, so it does not wait on hydration. */
 export function HeroScene() {
-  const [Scene, setScene] = useState<ComponentType | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    void import("./DroneCleaningHeroAnimation").then((mod) => {
-      if (alive) setScene(() => mod.DroneCleaningHeroAnimation);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  return Scene ? <Scene /> : null;
+  return <DroneCleaningHeroAnimation />;
 }
