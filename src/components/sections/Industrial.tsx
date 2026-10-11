@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Factory, ShieldAlert, Waves } from "lucide-react";
 import { SectionShell } from "../SectionShell";
 import { IndustrialScene } from "../IndustrialScene";
@@ -54,7 +55,12 @@ export function Industrial() {
       </div>
 
       <p className="mt-10 max-w-3xl text-sm text-white/80">
-        Vraag naar toepasbaarheid voor uw site via het offerteformulier.
+        <Link
+          href="/industriele-reiniging/"
+          className="font-semibold text-white underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+        >
+          Lees de pagina over industriële reiniging
+        </Link>
       </p>
     </SectionShell>
   );

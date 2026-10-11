@@ -34,7 +34,7 @@ Logo WebPs in `/public/brand/` (transparent): `jdc-mono.webp`, `jdc-wordmark.web
 
 The public brand is Janssens Drone Cleaning (JDC). The Pages base path is `REPO_SLUG` in `src/config/repo.ts`.
 
-Confirmed services live in `src/config/services.ts`: dakreiniging, gevelreiniging, ramen- en glasreiniging, zonnepanelen reinigen, industriële reiniging. The home page reads that list. `slug` is reserved for later per-service pages; those routes are not built yet.
+Confirmed services live in `src/config/services.ts`: dakreiniging, gevelreiniging, ramen- en glasreiniging, zonnepanelen reinigen, industriële reiniging. Each `slug` is a static page. Longer copy is in `src/config/service-pages.ts`. `/privacy/` is linked from the footer once `privacyPolicyPath` is set.
 
 ## Bedrijfsgegevens invullen
 

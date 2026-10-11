@@ -1,60 +1,67 @@
-import { AppWindow, ArrowRight, Building2, Factory, Home, PanelsTopLeft } from "lucide-react";
-import { services, type ServiceId } from "@/config/services";
+import Link from "next/link";
+import { services } from "@/config/services";
+import { ServiceFigure } from "../ServiceFigure";
 import { SectionShell } from "../SectionShell";
-
-const ICONS: Record<ServiceId, typeof Home> = {
-  dak: Home,
-  gevel: Building2,
-  ramen: AppWindow,
-  zonnepanelen: PanelsTopLeft,
-  industrie: Factory,
-};
 
 export function Services() {
   return (
     <SectionShell
       id="diensten"
       title="Diensten voor gebouw en omgeving"
-      lead="Dakreiniging, gevelreiniging, ramen- en glasreiniging, zonnepanelen reinigen en industriële reiniging — afgestemd op het oppervlak en de bereikbaarheid."
+      lead="Dak, gevel, ramen en glas, zonnepanelen en industriële oppervlakken. Per dienst leest u hoe de reiniging werkt en wanneer ze niet past."
       tone="fog"
     >
-      <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {services.map((service) => {
-          const Icon = ICONS[service.id];
+      <div className="relative">
+        <div
+          className="absolute top-3 bottom-3 left-[7px] w-px bg-jdc-navy/55"
+          aria-hidden="true"
+        />
+        <ol>
+        {services.map((service, index) => {
+          const flip = index % 2 === 1;
           return (
-            <li key={service.id}>
-              <article className="group flex h-full flex-col rounded-sm border border-jdc-navy/10 bg-white p-6 transition-[border-color,box-shadow] duration-300 hover:border-jdc-cyan/40 hover:shadow-[0_12px_40px_rgba(7,21,37,0.06)] sm:p-7">
-                <div className="flex h-11 w-11 items-center justify-center rounded-sm bg-jdc-navy-deep text-jdc-cyan">
-                  <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
-                </div>
-                <h3 className="mt-5 text-xl font-semibold tracking-tight text-jdc-navy">
-                  {service.title}
+            <li
+              key={service.id}
+              className="relative grid gap-6 border-b border-jdc-navy/10 py-10 pl-10 last:border-b-0 lg:grid-cols-12 lg:items-center lg:gap-10 lg:py-14"
+            >
+              <span
+                className="absolute top-12 left-0 h-[15px] w-[15px] rounded-full border-2 border-jdc-navy-deep bg-jdc-cyan"
+                aria-hidden="true"
+              />
+              <div className={flip ? "lg:col-span-6 lg:col-start-7" : "lg:col-span-6"}>
+                <p className="font-mono text-xs tracking-[0.18em] text-jdc-cyan-ink">
+                  0{index + 1}
+                </p>
+                <h3 className="mt-2 text-2xl font-semibold tracking-tight text-jdc-navy sm:text-3xl">
+                  <Link
+                    href={service.href}
+                    className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-jdc-cyan"
+                  >
+                    {service.title}
+                  </Link>
                 </h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-jdc-slate sm:text-base">
+                <p className="mt-3 max-w-xl text-base leading-relaxed text-jdc-slate">
                   {service.description}
                 </p>
-                <a
-                  href={service.href}
-                  className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-jdc-navy transition-colors hover:text-jdc-cyan-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
-                >
-                  {service.id === "industrie"
-                    ? "Meer over industriële reiniging"
-                    : `Offerte voor ${service.title.toLowerCase()}`}
-                  <ArrowRight
-                    className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"
-                    aria-hidden
-                  />
-                </a>
-              </article>
+              </div>
+              <div
+                className={
+                  flip
+                    ? "max-w-sm lg:col-span-5 lg:col-start-1 lg:row-start-1"
+                    : "max-w-sm lg:col-span-5 lg:col-start-8"
+                }
+              >
+                <ServiceFigure id={service.id} />
+              </div>
             </li>
           );
         })}
-      </ul>
-
-      <p className="mt-8 max-w-2xl text-sm text-jdc-slate">
+        </ol>
+      </div>
+      <p className="mt-4 max-w-2xl text-sm leading-relaxed text-jdc-slate">
         Elke opdracht start met een korte beoordeling van bereikbaarheid,
-        ondergrond en weersomstandigheden. Zo vermijden we beloftes die niet bij
-        de situatie passen.
+        ondergrond en weersomstandigheden. De lijnen bij de diensten zijn
+        tekeningen, geen foto{"'"}s van uitgevoerde werken.
       </p>
     </SectionShell>
   );

@@ -1,3 +1,5 @@
+import type { ServiceId } from "@/config/services";
+
 /**
  * Slots for real photos. Leave `src` null until a file exists.
  *
@@ -30,7 +32,13 @@ export type ImageManifest = {
   projects: PhotoSlot[];
   team: PhotoSlot;
   drone: PhotoSlot;
+  /** One surface photo per confirmed service. Null until the owner adds a file. */
+  serviceSurfaces: Record<ServiceId, PhotoSlot>;
 };
+
+function emptySlot(id: string): PhotoSlot {
+  return { id, src: null, alt: null, width: null, height: null };
+}
 
 export const images: ImageManifest = {
   hero: {
@@ -75,7 +83,18 @@ export const images: ImageManifest = {
     width: null,
     height: null,
   },
+  serviceSurfaces: {
+    dak: emptySlot("service-dak"),
+    gevel: emptySlot("service-gevel"),
+    ramen: emptySlot("service-ramen"),
+    zonnepanelen: emptySlot("service-zonnepanelen"),
+    industrie: emptySlot("service-industrie"),
+  },
 };
+
+export function serviceSurface(id: ServiceId): PhotoSlot {
+  return images.serviceSurfaces[id];
+}
 
 export function photoReady(
   slot: PhotoSlot | null | undefined,
