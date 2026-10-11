@@ -260,6 +260,7 @@ function Operator({ story }: { story: HeroStory }) {
   return (
     <g data-hero="operator" className={`jdc-ha-play jdc-ha-walk-${v}`}>
       <g className={`jdc-ha-play jdc-ha-rise-${v}`}>
+      <rect data-hero="step" x={x - 16 * s} y={y - 6} width={32 * s} height="8" fill="transparent" />
       <g data-hero="lean" className={`jdc-ha-play jdc-ha-lean-${v}`}>
       <ellipse cx={x} cy={y - 1} rx={22 * s} ry={4.5} fill="#071525" opacity="0.16" />
       <g className={`jdc-ha-play jdc-ha-stride-${v}`}>

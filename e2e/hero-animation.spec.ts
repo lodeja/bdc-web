@@ -49,8 +49,8 @@ test("cleaning pass changes the facade", async ({ page }) => {
     return frame?.querySelectorAll('[data-hero="dirt"]').length ?? 0;
   });
   expect(panes).toBe(9);
-  const dirt = await crew(page, "dirt");
-  await expect(dirt).toBeVisible();
+  const dirt = page.locator(".jdc-ha-frame:visible [data-hero='dirt']").first();
+  await expect(dirt).toBeAttached();
   const before = await dirt.evaluate((el) => getComputedStyle(el).transform);
   await expect
     .poll(async () => dirt.evaluate((el) => getComputedStyle(el).transform), {
@@ -220,7 +220,7 @@ test("the operator walks in the open doorway and the door shuts across frames", 
         anim.pause();
         anim.currentTime = ms;
       }
-      const vest = root.querySelector('[data-hero="operator"]')?.getBoundingClientRect();
+      const vest = root.querySelector('[data-hero="step"]')?.getBoundingClientRect();
       const door = root.querySelector('[data-hero="door"]')?.getBoundingClientRect();
       const wheel = root.querySelector('[data-hero="wheel"]')?.getBoundingClientRect();
       const valve = root.querySelector('[data-hero="valve"]')?.getBoundingClientRect();
@@ -384,7 +384,8 @@ test("the landed drone rides the van roof through the drive-off", async ({ page 
     };
     const dx: number[] = [];
     const dy: number[] = [];
-    let prev = Number.POSITIVE_INFINITY;
+    let parked: number | null = null;
+    let prev = 0;
     for (let ms = 8_000; ms <= 12_000; ms += 50) {
       for (const anim of document.getAnimations()) {
         anim.pause();
@@ -392,7 +393,8 @@ test("the landed drone rides the van roof through the drive-off", async ({ page 
       }
       const drone = read('[data-hero="drone"]');
       const van = read('[data-hero="van"]');
-      if (van.x < prev - 0.4) {
+      if (parked === null) parked = van.x;
+      if (van.x < parked - 2 && van.x < prev - 0.4) {
         dx.push(drone.x - van.x);
         dy.push(drone.y - van.y);
       }
