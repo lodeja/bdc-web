@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { business } from "@/config/business";
 import { withBasePath } from "@/lib/paths";
+import { absoluteUrl, siteOrigin } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -11,9 +13,17 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
+const origin = siteOrigin();
+const canonical = absoluteUrl("/");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(origin),
+  alternates: {
+    canonical,
+  },
   title: {
     default: "Janssens Drone Cleaning (JDC) | Professionele drone-reiniging",
     template: "%s | JDC",
@@ -31,11 +41,18 @@ export const metadata: Metadata = {
     "JDC",
     "Janssens Drone Cleaning",
   ],
-  authors: [{ name: "Janssens Drone Cleaning" }],
+  authors: [{ name: business.brandName }],
   openGraph: {
     type: "website",
     locale: "nl_BE",
+    url: canonical,
     siteName: "Janssens Drone Cleaning",
+    title: "Janssens Drone Cleaning (JDC)",
+    description:
+      "Professionele drone-reiniging voor daken, gevels, zonnepanelen en industriële oppervlakken.",
+  },
+  twitter: {
+    card: "summary_large_image",
     title: "Janssens Drone Cleaning (JDC)",
     description:
       "Professionele drone-reiniging voor daken, gevels, zonnepanelen en industriële oppervlakken.",

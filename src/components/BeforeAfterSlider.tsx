@@ -1,27 +1,53 @@
 "use client";
 
 import { useId, useState } from "react";
+import { images, photoReady } from "@/config/images";
+import { withBasePath } from "@/lib/paths";
 
 /**
- * Illustrative before/after for solar panels — not a real client photo.
- * TODO: swap SVG panels for licensed project photography when available.
+ * Illustrative before/after until both photos in the image manifest are set.
  */
 export function BeforeAfterSlider() {
   const [pos, setPos] = useState(52);
   const id = useId();
+  const pair = images.beforeAfter[0];
+  const before = pair && photoReady(pair.before) ? pair.before : null;
+  const after = pair && photoReady(pair.after) ? pair.after : null;
+  const usePhotos = Boolean(before && after);
+  const caption = pair?.caption ?? "Illustratie — geen echte projectfoto.";
 
   return (
     <div className="overflow-hidden rounded-sm border border-bdc-navy/10 bg-bdc-navy-deep">
       <div className="relative aspect-[16/10] w-full select-none">
-        {/* After (clean) */}
-        <SolarScene variant="after" className="absolute inset-0 h-full w-full" />
+        {usePhotos && after ? (
+          // eslint-disable-next-line @next/next/no-img-element -- static export, path via withBasePath
+          <img
+            src={withBasePath(after.src)}
+            alt={after.alt}
+            width={after.width}
+            height={after.height}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <SolarScene variant="after" className="absolute inset-0 h-full w-full" />
+        )}
 
-        {/* Before (dirty) clipped */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
         >
-          <SolarScene variant="before" className="absolute inset-0 h-full w-full" />
+          {usePhotos && before ? (
+            // eslint-disable-next-line @next/next/no-img-element -- static export, path via withBasePath
+            <img
+              src={withBasePath(before.src)}
+              alt=""
+              width={before.width}
+              height={before.height}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <SolarScene variant="before" className="absolute inset-0 h-full w-full" />
+          )}
         </div>
 
         <div
@@ -47,10 +73,8 @@ export function BeforeAfterSlider() {
           className="absolute inset-0 z-10 h-full w-full cursor-ew-resize opacity-0"
         />
       </div>
-      <p className="border-t border-white/10 px-4 py-3 text-xs text-white/55 sm:px-5">
-        Illustratie — geen echte projectfoto.{" "}
-        {/* TODO: vervang door goedgekeurde voor/na-beelden van uitgevoerde opdrachten */}
-        Echte cases volgen wanneer beschikbaar.
+      <p className="border-t border-white/10 px-4 py-3 text-xs text-white/80 sm:px-5">
+        {caption}
       </p>
     </div>
   );

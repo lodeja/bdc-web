@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { FORM_ENDPOINT } from "@/lib/contact";
+import { business, filled } from "@/config/business";
 
 type FieldErrors = Partial<
   Record<"name" | "email" | "phone" | "service" | "message" | "consent", string>
@@ -22,8 +22,31 @@ const SERVICES = [
   { value: "andere", label: "Andere / nog niet zeker" },
 ] as const;
 
+type Payload = {
+  name: string;
+  email: string;
+  phone: string;
+  service: string;
+  message: string;
+};
+
 function validateEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+function mailtoHref(payload: Payload, inbox: string) {
+  const subject = "Offerteaanvraag";
+  const body = [
+    `Naam: ${payload.name}`,
+    `E-mail: ${payload.email}`,
+    payload.phone ? `Telefoon: ${payload.phone}` : null,
+    `Dienst: ${payload.service}`,
+    "",
+    payload.message,
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+  return `mailto:${inbox}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export function QuoteForm() {
@@ -31,6 +54,8 @@ export function QuoteForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [pending, setPending] = useState(false);
+  const inbox = filled(business.email);
+  const endpoint = filled(business.formEndpoint);
 
   function validate(form: HTMLFormElement): FieldErrors {
     const data = new FormData(form);
@@ -57,6 +82,10 @@ export function QuoteForm() {
     return next;
   }
 
+  function honeypotFilled(form: HTMLFormElement) {
+    return String(new FormData(form).get("website") ?? "").trim().length > 0;
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus({ type: "idle" });
@@ -72,7 +101,7 @@ export function QuoteForm() {
     }
 
     const data = new FormData(form);
-    const payload = {
+    const payload: Payload = {
       name: String(data.get("name")).trim(),
       email: String(data.get("email")).trim(),
       phone: String(data.get("phone") ?? "").trim(),
@@ -80,19 +109,35 @@ export function QuoteForm() {
       message: String(data.get("message")).trim(),
     };
 
-    // No fake success: only claim delivery when an endpoint exists and responds OK.
-    if (!FORM_ENDPOINT) {
+    if (honeypotFilled(form)) {
+      setStatus({
+        type: "error",
+        message: "Uw aanvraag is niet verzonden.",
+      });
+      return;
+    }
+
+    if (!endpoint) {
+      if (inbox) {
+        window.location.href = mailtoHref(payload, inbox);
+        setStatus({
+          type: "unwired",
+          message:
+            "Uw aanvraag is niet verzonden via deze site. Als uw e-mailprogramma opende, verstuurt u het bericht daar zelf.",
+        });
+        return;
+      }
       setStatus({
         type: "unwired",
         message:
-          "Het formulier is gevalideerd, maar e-mailintegratie is nog niet geconfigureerd. Uw gegevens zijn niet verzonden. Neem contact op via de vermelde kanalen zodra die beschikbaar zijn, of vraag ons de koppeling (Resend / Formspree / API) te activeren.",
+          "Uw aanvraag is niet verzonden. Online aanvragen openen binnenkort.",
       });
       return;
     }
 
     setPending(true);
     try {
-      const res = await fetch(FORM_ENDPOINT, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload),
@@ -115,13 +160,19 @@ export function QuoteForm() {
   }
 
   const fieldClass =
-    "mt-1.5 w-full rounded-sm border border-bdc-navy/15 bg-white px-3.5 py-2.5 text-sm text-bdc-ink outline-none transition-[border-color,box-shadow] placeholder:text-bdc-slate/50 focus:border-bdc-cyan focus:shadow-[0_0_0_3px_rgba(0,194,232,0.2)]";
+    "mt-1.5 w-full rounded-sm border border-bdc-navy/15 bg-white px-3.5 py-2.5 text-sm text-bdc-ink outline-none transition-[border-color,box-shadow] placeholder:text-bdc-slate focus:border-bdc-cyan focus:shadow-[0_0_0_3px_rgba(0,194,232,0.2)]";
+
+  const notice = endpoint
+    ? null
+    : inbox
+      ? `Online verzenden is nog niet gekoppeld. Een geldige aanvraag opent een e-mail naar ${inbox}; u verstuurt die zelf.`
+      : "Online aanvragen openen binnenkort. Dit formulier controleert uw gegevens, maar verstuurt ze nog niet.";
 
   return (
     <form
       onSubmit={onSubmit}
       noValidate
-      className="rounded-sm border border-bdc-navy/10 bg-white p-6 sm:p-8"
+      className="relative rounded-sm border border-bdc-navy/10 bg-white p-6 sm:p-8"
       aria-labelledby={`${formId}-title`}
     >
       <h3 id={`${formId}-title`} className="text-xl font-semibold text-bdc-navy">
@@ -131,6 +182,23 @@ export function QuoteForm() {
         Velden met * zijn verplicht. We gebruiken uw gegevens enkel om deze
         aanvraag te beantwoorden.
       </p>
+      {notice ? (
+        <p id={`${formId}-notice`} className="mt-3 text-sm text-bdc-navy">
+          {notice}
+        </p>
+      ) : null}
+
+      <div className="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
+        <label htmlFor={`${formId}-website`}>Website</label>
+        <input
+          id={`${formId}-website`}
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          defaultValue=""
+        />
+      </div>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-1">
@@ -246,7 +314,7 @@ export function QuoteForm() {
               aria-invalid={Boolean(errors.consent)}
             />
             <span>
-              Ik ga akkoord dat JDC mij contacteert over deze offerteaanvraag. *
+              Ik ga akkoord dat {business.shortName} mij contacteert over deze offerteaanvraag. *
             </span>
           </label>
           {errors.consent ? (
@@ -255,7 +323,7 @@ export function QuoteForm() {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-6">
         <button
           type="submit"
           disabled={pending}
@@ -263,10 +331,6 @@ export function QuoteForm() {
         >
           {pending ? "Bezig…" : "Verstuur aanvraag"}
         </button>
-        <p className="text-xs text-bdc-slate">
-          {/* TODO: koppel FORM_ENDPOINT in src/lib/contact.ts (Resend, Formspree, of /api/quote) */}
-          Integratie: nog niet gekoppeld aan een mail-/API-endpoint.
-        </p>
       </div>
 
       <div className="mt-4" aria-live="polite">

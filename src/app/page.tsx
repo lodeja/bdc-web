@@ -8,6 +8,7 @@ import { Process } from "@/components/sections/Process";
 import { Results } from "@/components/sections/Results";
 import { FAQ } from "@/components/sections/FAQ";
 import { Contact } from "@/components/sections/Contact";
+import { LocalBusinessJsonLd } from "@/components/LocalBusinessJsonLd";
 
 export default function Home() {
   return (
@@ -18,8 +19,9 @@ export default function Home() {
         className="pointer-events-none absolute top-0 left-0 h-px w-px"
         aria-hidden="true"
       />
+      <LocalBusinessJsonLd />
       <Header />
-      <main id="main" className="flex-1">
+      <main id="main" tabIndex={-1} className="flex-1 outline-none">
         <Hero />
         <Services />
         <Industrial />

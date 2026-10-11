@@ -1,5 +1,7 @@
+import { images, photoReady } from "@/config/images";
+import { withBasePath } from "@/lib/paths";
 import { Logo } from "./Logo";
-import { DroneCleaningHeroAnimation } from "./DroneCleaningHeroAnimation";
+import { HeroScene } from "./HeroScene";
 
 export function Hero() {
   return (
@@ -7,18 +9,6 @@ export function Hero() {
       className="relative -mt-[var(--header-height)] flex min-h-[100dvh] flex-col justify-end overflow-hidden bdc-hero-atmosphere pt-[var(--header-height)]"
       aria-labelledby="hero-heading"
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[100dvh] max-h-full overflow-hidden">
-        <DroneCleaningHeroAnimation />
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-bdc-navy-deep/90 via-bdc-navy-deep/35 to-transparent sm:via-bdc-navy-deep/12 sm:to-transparent"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-bdc-navy-deep/30 to-transparent"
-          aria-hidden="true"
-        />
-      </div>
-
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="max-w-xl lg:max-w-2xl">
           <div className="mb-8 text-white sm:mb-10" translate="no">
@@ -27,7 +17,6 @@ export function Hero() {
               className="h-28 w-auto sm:h-32 md:h-36"
               variant="wordmark"
               idSuffix="hero"
-              priority
             />
           </div>
 
@@ -65,6 +54,29 @@ export function Hero() {
             </a>
           </div>
         </div>
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[100dvh] max-h-full overflow-hidden">
+        {photoReady(images.hero) ? (
+          // eslint-disable-next-line @next/next/no-img-element -- static export, path via withBasePath
+          <img
+            src={withBasePath(images.hero.src)}
+            alt={images.hero.alt}
+            width={images.hero.width}
+            height={images.hero.height}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <HeroScene />
+        )}
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-bdc-navy-deep/90 via-bdc-navy-deep/35 to-transparent sm:via-bdc-navy-deep/12 sm:to-transparent"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-bdc-navy-deep/30 to-transparent"
+          aria-hidden="true"
+        />
       </div>
     </section>
   );
