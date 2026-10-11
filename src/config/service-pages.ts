@@ -4,8 +4,11 @@ import { services, type Service, type ServiceId } from "@/config/services";
  * Page copy for the five confirmed services. Belgian Dutch (nl-BE), u + we.
  *
  * The owner confirmed these methods, so the page copy may name them:
- * plaatsbezoek, testzone, osmosewater, gedemineraliseerd water,
- * biologisch afbreekbaar middel, opleverrapport.
+ * plaatsbezoek, testzone, osmosewater, gedemineraliseerd water, opleverrapport.
+ * Do not sell "biologisch afbreekbaar" as a feature. Biodegradability of
+ * surfactants is already required for detergents. If a product is needed,
+ * say it is authorised in Belgium for that surface and that the customer
+ * is told which product beforehand. No generic green claims.
  *
  * Owner to confirm before any of these appear in visible copy.
  * `methodNotes` stays null until then, and the page hides a null note.
@@ -54,7 +57,7 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
     howTitle: "Zo pakken we uw dak aan",
     how: [
       "De drone vliegt boven uw dak en wast met osmosewater. Zo hoeft er bijna niemand over uw pannen of leien te lopen.",
-      "Mos en groene aanslag halen we weg waar de dakbedekking dat verdraagt. Volstaat water alleen niet, dan gebruiken we een biologisch afbreekbaar middel.",
+      "Mos en groene aanslag halen we weg waar de dakbedekking dat verdraagt. Volstaat water alleen niet, dan gebruiken we een product dat in België is toegelaten voor die ondergrond. U weet vooraf welk.",
       "Bij twijfel over de pannen of leien starten we met een kleine testzone. Dit is een wasbeurt, geen herstelling.",
     ],
     limits: [
@@ -90,7 +93,7 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
     howTitle: "Zo pakken we uw gevel aan",
     how: [
       "De drone wast uw gevel vanop afstand, met osmosewater. Ook waar een stelling veel plaats en opbouwtijd vraagt.",
-      "Groene aanslag en de grijze sluier kunnen wijken als de afwerking dat verdraagt. Een biologisch afbreekbaar middel gebruiken we pas als water niet volstaat.",
+      "Groene aanslag en de grijze sluier kunnen wijken als de afwerking dat verdraagt. Is een middel nodig, dan kiezen we een product dat in België is toegelaten voor die ondergrond, en we vertellen u vooraf welk.",
       "Is de afwerking delicaat, dan starten we met een testzone. Een VME of syndicus kan zo een appartementsgebouw laten wassen.",
     ],
     limits: [
@@ -163,8 +166,8 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
     how: [
       "Stof, stuifmeel en groene aanslag leggen een sluier op het paneel.",
       "We wassen de panelen met osmosewater, zonder erover te lopen.",
+      "We volgen de reinigingsvoorschriften van de fabrikant van uw panelen.",
       "Hoeveel meer de panelen daarna opbrengen, kunnen we niet op voorhand zeggen. Een cijfer verzinnen we niet.",
-      "Een biologisch afbreekbaar middel gebruiken we alleen als de fabrikant dat toelaat.",
     ],
     limits: [
       "Beschadigde of losse panelen wassen we niet wanneer dat het risico vergroot.",
@@ -201,7 +204,7 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
       "Op een bedrijfssite wegen hoogte en bereikbaarheid vaak zwaarder dan bij een woning.",
       "Een drone kan wanden, tanks of een loods bereiken zonder een volledige stelling. Dat kan een KMO zijn, of een grotere site.",
       "We wassen met osmosewater waar het materiaal dat verdraagt. Een onbekende coating starten we met een testzone.",
-      "Een biologisch afbreekbaar middel gebruiken we alleen als uw site dat toelaat.",
+      "Is een middel nodig, dan gebruiken we een product dat in België is toegelaten voor die ondergrond, en alleen als uw site dat toelaat. U weet vooraf welk.",
     ],
     limits: [
       "Zones met explosiegevaar, hete vlakken of een lopend proces dat geen vlucht toelaat, vallen buiten een gewone opdracht.",

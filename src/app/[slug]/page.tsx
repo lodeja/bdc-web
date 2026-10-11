@@ -108,12 +108,18 @@ export default async function ServicePage({
           </h2>
           <div className="max-w-2xl">
             <p className="text-base leading-relaxed text-jdc-ink">{page.approach}</p>
-            <p className="mt-4">
+            <p className="mt-4 flex flex-col gap-3">
               <Link
                 href="/#werkwijze"
                 className="font-semibold text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
               >
                 Bekijk de werkwijze
+              </Link>
+              <Link
+                href="/veiligheid-en-regelgeving/"
+                className="font-semibold text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+              >
+                Veiligheid en regelgeving
               </Link>
             </p>
             {page.related ? (

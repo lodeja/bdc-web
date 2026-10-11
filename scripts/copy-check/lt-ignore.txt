@@ -20,3 +20,7 @@ ontmossen
 ontmossing
 dakbetreding
 dakbedekking
+DGLV
+Droneguide
+AVG
+GDPR

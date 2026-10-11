@@ -132,6 +132,32 @@ export default function PrivacyPage() {
           )}
         </section>
 
+        <section className="mt-12 border-t border-jdc-navy/10 pt-8" aria-labelledby="camera-heading">
+          <h2 id="camera-heading" className="text-2xl font-semibold tracking-tight text-jdc-navy">
+            Camera van de drone
+          </h2>
+          <p className="mt-4 text-base leading-relaxed text-jdc-ink">
+            Tijdens een opdracht filmt de drone om veilig te vliegen en het
+            resultaat vast te leggen. Die beelden vallen onder de AVG. Het is
+            geen bewakingscamera.
+          </p>
+          <p className="mt-4 text-base leading-relaxed text-jdc-ink">
+            We richten de camera op het gebouw, niet op de buren of op mensen
+            op straat. Foto&apos;s horen bij uw opleverrapport. We tonen ze niet
+            als referentie, tenzij u daar apart mee instemt.
+          </p>
+          <p className="mt-4 text-base leading-relaxed text-jdc-ink">
+            Meer over de vlucht leest u bij{" "}
+            <Link
+              href="/veiligheid-en-regelgeving/"
+              className="font-medium text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+            >
+              veiligheid en regelgeving
+            </Link>
+            .
+          </p>
+        </section>
+
         <section className="mt-12 border-t border-jdc-navy/10 pt-8" aria-labelledby="rechten-heading">
           <h2 id="rechten-heading" className="text-2xl font-semibold tracking-tight text-jdc-navy">
             Uw rechten
