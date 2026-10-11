@@ -306,10 +306,13 @@ function buildStory(g: Geom): HeroStory {
   const trackStart = g.van.frontAxle + g.van.wheelR + trackPad;
   const trackEnd = g.van.rearAxle - g.van.wheelR - trackPad;
   const trackW = Math.max(48, trackEnd - trackStart);
+  const doorW = Math.min(68, Math.max(52, trackW * 0.54));
+  // Closed door sits at the rear of the track. It slides toward the cab to open,
+  // so the gap faces the operator and the panel never crosses a wheel.
   const door = {
-    x: trackStart,
+    x: trackEnd - doorW,
     y: 3,
-    w: Math.min(72, Math.max(52, trackW * 0.56)),
+    w: doorW,
     h: g.van.axleY - 4,
   };
   const cargo = {
@@ -392,9 +395,9 @@ function buildStory(g: Geom): HeroStory {
   const v = g.variant;
   const wheelDeg = (Math.abs(g.van.travel) / (2 * Math.PI * g.van.wheelR)) * 360;
   const wheelSign = g.van.travel < 0 ? -1 : 1;
-  const walk = g.van.x + door.x + door.w * 0.5 - g.operator.x;
-  // Sprinter slider parks toward the rear (positive X; the cab is at low X).
-  const slide = Math.min(door.w * 0.92, Math.max(12, trackEnd - door.x - door.w));
+  const walk = g.van.x + door.x + door.w * 0.72 - g.operator.x;
+  // Negative X parks the panel toward the cab. The gap stays on the rear side.
+  const slide = -Math.min(door.w * 0.9, Math.max(12, door.x - trackStart));
   const landLook = lookDeg(neck, g.droneLand);
   const bobCycles = Math.max(4, Math.round((landEnd / 1.15) * 2) / 2);
   const span = Math.max(0.4, arrive - walkStart);

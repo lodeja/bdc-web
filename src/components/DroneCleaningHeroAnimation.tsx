@@ -55,9 +55,9 @@ function Scene({ story, className }: { story: HeroStory; className: string }) {
           </clipPath>
           <clipPath id={`${v}-door-track`} clipPathUnits="userSpaceOnUse">
             <rect
-              x={story.door.x - 2}
+              x={story.van.frontAxle + story.van.wheelR + 2}
               y={story.door.y - 4}
-              width={story.van.rearAxle - story.van.wheelR - story.door.x}
+              width={story.van.rearAxle - story.van.frontAxle - story.van.wheelR * 2 - 6}
               height={story.door.h + 10}
             />
           </clipPath>
@@ -409,11 +409,11 @@ function VanDoor({ story }: { story: HeroStory }) {
   return (
     <g>
       <rect x={x} y={y} width={w} height={h} fill="#2A3038" />
-      <rect x={x} y={y} width={edge} height={h} fill="#D5DDE4" />
-      <rect x={x + w - 2.4} y={y} width="2.4" height={h} fill="#0C0E12" />
-      <rect x={x + w * 0.16} y={y + h * 0.08} width={w * 0.66} height={h * 0.36} rx="1.4" fill="#1C242C" />
-      <rect x={x + w * 0.2} y={y + h * 0.12} width={w * 0.58} height={h * 0.28} fill="#8FCBE2" opacity="0.72" />
-      <rect x={x + edge + 2.5} y={y + h * 0.52} width="3.2" height={h * 0.2} rx="1.2" fill="#D5DDE4" />
+      <rect x={x + w - edge} y={y} width={edge} height={h} fill="#D5DDE4" />
+      <rect x={x} y={y} width="2.4" height={h} fill="#0C0E12" />
+      <rect x={x + w * 0.14} y={y + h * 0.08} width={w * 0.62} height={h * 0.36} rx="1.4" fill="#1C242C" />
+      <rect x={x + w * 0.18} y={y + h * 0.12} width={w * 0.54} height={h * 0.28} fill="#8FCBE2" opacity="0.72" />
+      <rect x={x + w - edge - 6} y={y + h * 0.52} width="3.2" height={h * 0.2} rx="1.2" fill="#D5DDE4" />
     </g>
   );
 }
