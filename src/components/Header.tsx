@@ -156,8 +156,8 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-jdc-navy-deep">
-      <div className="mx-auto flex h-[var(--header-height)] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 box-border h-[var(--header-height)] border-b border-white/10 bg-jdc-navy-deep">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
           className="relative z-10 flex shrink-0 items-center rounded-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"

@@ -1,4 +1,3 @@
-import { preload } from "react-dom";
 import { withBasePath } from "@/lib/paths";
 import {
   HERO_RUNTIME,
@@ -13,24 +12,18 @@ import {
 const LABEL =
   "Illustratie. Een operator, van achteren gezien, met witte helm en fluovest, stuurt vanaf de voorgrond een drone. De drone maakt de vuile gevel ruit per ruit schoon. Daarna draait de operator zich om, loopt naar de zwarte bestelwagen, stapt via het bestuurdersportier in en rijdt weg.";
 
-const FACADE_AVIF = "/hero/facade.avif";
-
 /**
  * Full-bleed cleaning story. The opening frame is in the HTML and plays
  * once. The pause control is a checkbox, so it works before hydration.
  * Figures are cut-out renders, not hand-drawn shapes.
+ * The facade is not preloaded: the headline stays the LCP text.
  */
 export function DroneCleaningHeroAnimation() {
-  preload(withBasePath(FACADE_AVIF), {
-    as: "image",
-    type: "image/avif",
-    fetchPriority: "high",
-  });
   return (
-    <div id="jdc-hero">
+    <>
       <style dangerouslySetInnerHTML={{ __html: heroMotionCss }} />
       <input id="jdc-hero-pause" className="jdc-hero-pause" type="checkbox" />
-      <figure className="jdc-hero-figure" aria-labelledby="jdc-hero-caption">
+      <figure className="jdc-hero-figure">
         <figcaption id="jdc-hero-caption" className="sr-only">
           {LABEL}
         </figcaption>
@@ -38,13 +31,13 @@ export function DroneCleaningHeroAnimation() {
           <Scene spec={mobileSpec} />
           <Scene spec={desktopSpec} />
         </div>
+        <label className="jdc-hero-toggle" htmlFor="jdc-hero-pause">
+          <span className="is-pause">Animatie pauzeren</span>
+          <span className="is-play">Animatie afspelen</span>
+        </label>
       </figure>
-      <label className="jdc-hero-toggle" htmlFor="jdc-hero-pause">
-        <span className="is-pause">Animatie pauzeren</span>
-        <span className="is-play">Animatie afspelen</span>
-      </label>
       <script dangerouslySetInnerHTML={{ __html: HERO_RUNTIME }} />
-    </div>
+    </>
   );
 }
 
@@ -69,7 +62,7 @@ function Cutout({
         alt=""
         draggable={false}
         loading={loading}
-        fetchPriority={priority ? "high" : "auto"}
+        fetchPriority={priority ? "high" : "low"}
       />
     </picture>
   );
@@ -108,12 +101,7 @@ function Scene({ spec, loading = "lazy" }: { spec: HeroSpec; loading?: "eager" |
         }}
       />
       <div className="bldg" data-hero="tower" style={{ left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` }}>
-        <Cutout
-          name="facade"
-          className="jdc-facade"
-          priority={spec.variant === "mobile"}
-          loading={spec.variant === "mobile" ? "eager" : loading}
-        />
+        <Cutout name="facade" className="jdc-facade" loading="eager" />
         <div className="jdc-sheen jdc-idle jdc-anim" />
       </div>
       {spec.lanes.map((lane) => (

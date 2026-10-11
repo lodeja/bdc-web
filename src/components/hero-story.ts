@@ -63,7 +63,7 @@ const desktopGeom: Geom = {
   variant: "desktop",
   aspectW: 12,
   aspectH: 5,
-  building: { x: 17.41, y: 6, w: 65.19, h: 86 },
+  building: { x: 40, y: 17, w: 56.82, h: 75 },
   van: { x: 1.2, y: 80.7, w: 11.19, h: 11.3 },
   door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
   operator: { x: 70.5, y: 11, w: 23.8, h: 150 },
@@ -77,12 +77,12 @@ const mobileGeom: Geom = {
   variant: "mobile",
   aspectW: 8,
   aspectH: 9,
-  building: { x: -35.96, y: 4, w: 171.92, h: 84 },
-  van: { x: 0.6, y: 76.97, w: 29.5, h: 11.03 },
+  building: { x: -17.5, y: 22, w: 135, h: 66 },
+  van: { x: 1.2, y: 79.33, w: 23.21, h: 8.67 },
   door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
-  operator: { x: 34, y: 36, w: 56.6, h: 132 },
-  drone: { w: 8.66, h: 2.67 },
-  start: { x: 18, y: 72 },
+  operator: { x: 58, y: 46, w: 17.95, h: 42 },
+  drone: { w: 6.81, h: 2.1 },
+  start: { x: 12, y: 60 },
   ground: 88,
   travel: -36,
 };
@@ -176,11 +176,11 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const returnEnd = droneLeave + 0.5;
   const turnStart = cleanEnd;
   const fadeEnd = turnStart + 0.32;
-  // Yaw through edge-on, then hand off. A full-size opacity blend of the
-  // back view and the profile is two semi-transparent people. The swap is
-  // a single step while both poses are a sliver, so no frame shows both.
-  const edge = turnStart + 0.08;
-  const swapEnd = edge + 0.02;
+  // One step away, then a cut onto the walking pose. A scaleX stripe reads
+  // as a glitch, and a long blend of the two poses reads as two people.
+  // The back view settles onto the walker's helmet, then the picture swaps.
+  const stepEnd = turnStart + 0.1;
+  const cut = stepEnd + 0.016;
   const arrive = fadeEnd + 2.3;
   const hold = arrive + 0.1;
   const stepIn = hold + 0.36;
@@ -239,7 +239,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const walk: { t: number; x: number; y: number; s: number }[] = [
     { t: 0, x: g.operator.x, y: g.operator.y, s: 1 },
     { t: turnStart, x: g.operator.x, y: g.operator.y, s: 1 },
-    { t: edge, x: g.operator.x - 0.9, y: g.operator.y, s: 0.98 },
+    { t: stepEnd, x: g.operator.x - 1.1, y: g.operator.y, s: 0.94 },
     { t: fadeEnd, x: g.operator.x, y: g.operator.y, s: 1 },
   ];
   const walkSamples = 16;
@@ -294,7 +294,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     .join("");
   const lookKf = droneBeats
     .map((b, i) => {
-      const deg = b.t >= arrive - 0.12 ? 0 : b.t >= turnStart ? 3 : lookAt(b.x, b.y);
+      const deg = b.t >= turnStart ? 0 : lookAt(b.x, b.y);
       const ease = b.t >= turnStart ? EASE_OUT : droneBeats[i + 1]?.ease ?? EASE_OUT;
       return `${pOf(b.t)}%{transform:rotate(${num(deg)}deg);animation-timing-function:${ease}}`;
     })
@@ -349,11 +349,11 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   ].join("");
   const armKf = [
     `0%,${pOf(turnStart)}%{transform:rotate(-8deg);animation-timing-function:${EASE_OUT}}`,
-    `${pOf(fadeEnd)}%,100%{transform:rotate(0deg)}`,
+    `${pOf(stepEnd)}%,100%{transform:rotate(0deg)}`,
   ].join("");
   const turnKf = [
     `0%,${pOf(turnStart)}%{transform:rotate(0deg);animation-timing-function:linear}`,
-    `${pOf(edge)}%{transform:rotate(-5deg);animation-timing-function:linear}`,
+    `${pOf(stepEnd)}%{transform:rotate(-3deg);animation-timing-function:linear}`,
     `${pOf(fadeEnd)}%,100%{transform:rotate(0deg)}`,
   ].join("");
   const bobAt: number[] = [];
@@ -372,12 +372,22 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const mistFull = pOf(RISE_END);
   const mistOut = pOf(cleanEnd);
   const mistGone = pOf(Math.min(STORY_S, cleanEnd + 0.45));
-  // Pivot through the shoulder line so the helmet stays on one axis.
-  const upperPivot = v === "mobile" ? 45 : 33;
-  const restTf = "translateX(-50%) scaleX(1)";
-  const thinTf = "translateX(-50%) scaleX(0.07)";
-  const upperKf = `0%,${pOf(turnStart)}%{opacity:1;transform:${restTf};transform-origin:50% ${upperPivot}%;animation-timing-function:linear}${pOf(edge)}%{opacity:1;transform:${thinTf};transform-origin:50% ${upperPivot}%;animation-timing-function:step-end}${pOf(swapEnd)}%,100%{opacity:0;transform:${thinTf};transform-origin:50% ${upperPivot}%}`;
-  const walkInKf = `0%,${pOf(edge)}%{opacity:0;transform:scaleX(0.07);transform-origin:50% 24%;animation-timing-function:step-end}${pOf(swapEnd)}%{opacity:1;transform:scaleX(0.07);transform-origin:50% 24%;animation-timing-function:linear}${pOf(fadeEnd)}%,100%{opacity:1;transform:scaleX(1);transform-origin:50% 24%}`;
+  // Match the walker's helmet with one uniform scale. scaleX would draw a stripe.
+  const upperHelmet = 0.111;
+  const upperShoulder = 0.407;
+  const walkHelmet = 0.062;
+  const walkShoulder = 0.238;
+  const alignH = (walkShoulder - walkHelmet) / (upperShoulder - upperHelmet);
+  const alignTop = walkHelmet - upperHelmet * alignH;
+  const restH = v === "mobile" ? 0.53 : 0.72;
+  const alignScale = alignH / restH;
+  const boxAspect = (g.operator.w * (g.aspectW / g.aspectH)) / g.operator.h;
+  const restW = (restH * (687 / 900)) / boxAspect;
+  const helmetShift = (0.459 - ((1 - restW) / 2 + 0.45 * restW)) / restW;
+  const restTf = "translateX(-50%)";
+  const alignTf = `translate(${num(-50 + helmetShift * 100)}%,${num((alignTop / restH) * 100)}%) scale(${num(alignScale)})`;
+  const upperKf = `0%,${pOf(turnStart)}%{opacity:1;transform:${restTf};animation-timing-function:linear}${pOf(stepEnd)}%{opacity:1;transform:${alignTf};animation-timing-function:step-end}${pOf(cut)}%,100%{opacity:0;transform:${alignTf}}`;
+  const walkInKf = `0%,${pOf(stepEnd)}%{opacity:0;animation-timing-function:step-end}${pOf(cut)}%,100%{opacity:1}`;
   const bobKf = [
     `0%,${pOf(fadeEnd)}%{transform:translate(0%,0%) rotate(0deg);animation-timing-function:ease-in-out}`,
     ...bobAt.map((t, i) => {
@@ -467,24 +477,30 @@ export const heroMotionCss = `
   inherits: false;
   initial-value: 0%;
 }
-.jdc-hero{position:relative}
-.jdc-hero-figure{margin:0}
-.jdc-hero-stage{position:relative;width:100%;overflow:hidden;background:#d5e4ee}
-.stage{position:relative;width:100%;overflow:hidden}
-.stage-mobile{aspect-ratio:8 / 9}
-.stage-desktop{display:none;aspect-ratio:12 / 5}
+.jdc-hero-figure{position:absolute;inset:0;z-index:1;container-type:size;margin:0}
+@media (max-width: 1023px){
+  .jdc-hero-figure{position:relative;inset:auto;flex:1 1 auto;min-height:0;order:1}
+}
+@media (max-width: 1023px) and (max-height: 760px){
+  .jdc-hero-lead p{display:none}
+}
+.jdc-hero-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:linear-gradient(180deg,#7ea4bf 0%,#a9c6d6 28%,#d5e6ef 62%,#e7eef2 100%)}
+@media (max-width: 1023px){
+  .jdc-hero-stage{align-items:flex-end}
+}
+.stage{position:relative;overflow:hidden;flex:none}
+.stage-mobile{width:min(100cqw, calc(100cqh * 8 / 9));height:min(100cqh, calc(100cqw * 9 / 8))}
+.stage-desktop{display:none;width:min(100cqw, calc(100cqh * 12 / 5));height:min(100cqh, calc(100cqw * 5 / 12))}
 @media (min-width: 1024px){
   .stage-mobile{display:none}
   .stage-desktop{display:block}
 }
 .layer{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none}
-.sky{position:absolute;inset:0;background:
-  radial-gradient(46% 42% at 8% 0%, rgba(255,236,206,0.9), transparent 58%),
-  linear-gradient(180deg, #6d94b0 0%, #9ec0d4 26%, #d7e7f0 58%, #e8eef2 100%)}
-.cloud-track{position:absolute;left:0;top:3%;display:flex;width:200%;height:32%;animation:jdc-clouds ${CLOUD_S}s linear infinite}
-.cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%;overflow:hidden}
+.sky{position:absolute;inset:0;background:linear-gradient(180deg,#7ea4bf 0%,#a9c6d6 28%,#d5e6ef 62%,#e7eef2 100%)}
+.cloud-track{position:absolute;left:0;top:2%;display:flex;width:200%;height:42%;overflow:visible;animation:jdc-clouds ${CLOUD_S}s linear infinite}
+.cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%;overflow:visible}
 @keyframes jdc-clouds{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.jdc-cloud-img{position:absolute;left:0;top:6%;width:100%;height:88%;object-fit:cover;object-position:center;opacity:0.78;display:block;pointer-events:none}
+.jdc-cloud-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0.92;display:block;pointer-events:none}
 .ground{position:absolute;left:0;right:0;bottom:0;background:
   linear-gradient(180deg, #d5dde3 0 2px, #c3ccd4 2px, #b7c1ca 18%, #aeb8c2 100%)}
 .curb{position:absolute;left:0;right:0;height:2px;background:#8b99a4}
@@ -546,10 +562,10 @@ export const heroMotionCss = `
 .leg{position:absolute;left:46%;top:72%;width:8%;height:22%;transform-origin:50% 0%;opacity:0}
 .op-shadow{position:absolute;left:18%;right:18%;bottom:-1%;height:3.2%;border-radius:50%;background:rgba(7,21,37,0.28)}
 .jdc-hero-pause{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.jdc-hero-toggle{position:absolute;z-index:8;top:calc(var(--header-height) + 0.6rem);left:0.6rem;display:inline-flex;align-items:center;min-height:44px;padding:0.35rem 0.8rem;border:1px solid rgba(11,31,58,0.28);background:rgba(244,247,251,0.94);color:#0b1f3a;font-size:0.8rem;font-weight:600;line-height:1.2;cursor:pointer}
-.jdc-hero-pause:focus-visible ~ .jdc-hero-toggle{outline:2px solid #0b1f3a;outline-offset:3px}
-.jdc-hero-pause:not(:checked) ~ .jdc-hero-toggle .is-play{display:none}
-.jdc-hero-pause:checked ~ .jdc-hero-toggle .is-pause{display:none}
+.jdc-hero-toggle{position:absolute;z-index:8;right:0.55rem;bottom:0.55rem;display:inline-flex;align-items:center;min-height:44px;padding:0.2rem 0.55rem;border:1px solid rgba(11,31,58,0.22);background:rgba(244,247,251,0.88);color:#0b1f3a;font-size:0.72rem;font-weight:600;line-height:1.2;cursor:pointer}
+.jdc-hero-pause:focus-visible ~ .jdc-hero-figure .jdc-hero-toggle{outline:2px solid #0b1f3a;outline-offset:3px}
+.jdc-hero-pause:not(:checked) ~ .jdc-hero-figure .jdc-hero-toggle .is-play{display:none}
+.jdc-hero-pause:checked ~ .jdc-hero-figure .jdc-hero-toggle .is-pause{display:none}
 #jdc-hero-pause:checked ~ .jdc-hero-figure .jdc-anim,
 #jdc-hero[data-hold] .jdc-anim,
 #jdc-hero[data-ambient="off"] .jdc-idle{animation-play-state:paused !important}

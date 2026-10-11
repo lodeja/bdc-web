@@ -229,6 +229,10 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       baseGap: Math.abs(tower.b - ground.y),
       towerTaller: tower.h > vanBeside.h * 4,
       cropped: operatorStart.b > stageStart.height + stageStart.height * 0.2 && operatorStart.y < stageStart.height * 0.5,
+      stageW: stageStart.width,
+      stageH: stageStart.height,
+      operatorTop: operatorStart.y,
+      operatorBottom: operatorStart.b,
       logoWide: logo.w >= (stageStart.width > 700 ? 40 : 22),
       logoOnPanel: logo.x >= doorParked.r - 2 && logo.r <= vanParked.r + 1,
       besideRatio: operatorBeside.h / vanBeside.h,
@@ -259,7 +263,12 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
   expect(story?.face).toBe(false);
   expect(story?.baseGap ?? 9).toBeLessThan(2);
   expect(story?.towerTaller).toBe(true);
-  expect(story?.cropped).toBe(true);
+  if ((story?.stageW ?? 0) > 700) {
+    expect(story?.cropped).toBe(true);
+  } else {
+    expect(story?.operatorTop ?? -1).toBeGreaterThanOrEqual(-1);
+    expect(story?.operatorBottom ?? 9999).toBeLessThanOrEqual((story?.stageH ?? 0) + 1);
+  }
   expect(story?.logoWide).toBe(true);
   expect(story?.logoOnPanel).toBe(true);
   expect(story?.besideRatio ?? 0).toBeGreaterThan(0.55);
@@ -316,20 +325,38 @@ test("clouds loop without a seam and the glint returns to clear", async ({ page 
   expect(loop?.glintEnd ?? 1).toBeLessThan(0.05);
 });
 
-test("mobile keeps the drone below the buttons", async ({ page }, testInfo) => {
+test("mobile keeps the scene clear of the headline and the buttons", async ({ page }, testInfo) => {
   test.skip(
     testInfo.project.name !== "hero-mobile" && testInfo.project.name !== "hero-iphone",
     "Composition check is for the phone viewport.",
   );
   await page.goto("/");
-  const cta = page.getByRole("link", { name: "Ontdek onze diensten" });
-  const ctaBox = await cta.boundingBox();
-  expect(ctaBox?.height ?? 0).toBeGreaterThan(20);
-  const drone = await box(page, "drone");
-  expect(drone.y).toBeGreaterThan((ctaBox?.y ?? 0) + (ctaBox?.height ?? 0) + 8);
-  const pause = page.getByRole("checkbox", { name: "Animatie pauzeren" });
+  const viewport = page.viewportSize();
+  const h1 = await page.locator("#hero-heading").boundingBox();
+  const cta = await page.getByRole("link", { name: "Ontdek onze diensten" }).boundingBox();
+  expect(h1?.height ?? 0).toBeGreaterThan(20);
+  expect(cta?.height ?? 0).toBeGreaterThan(20);
+  const overlaps = (
+    a: { x: number; y: number; width: number; height: number },
+    b: { x: number; y: number; width: number; height: number } | null,
+  ) => {
+    if (!b) return true;
+    return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+  };
+  for (const name of ["tower", "drone", "van"] as const) {
+    const target = await box(page, name);
+    expect(overlaps(target, h1), name).toBe(false);
+    expect(overlaps(target, cta), name).toBe(false);
+    expect(target.y, name).toBeGreaterThanOrEqual(-2);
+    expect(target.y + target.height, name).toBeLessThanOrEqual((viewport?.height ?? 844) - 40);
+  }
+  const pause = page.locator("label[for='jdc-hero-pause']");
   const pauseBox = await pause.boundingBox();
-  expect(pauseBox?.y ?? 0).toBeGreaterThan((ctaBox?.y ?? 0) + (ctaBox?.height ?? 0));
+  const band = await page.locator("#jdc-hero").boundingBox();
+  expect(pauseBox).not.toBeNull();
+  expect(band).not.toBeNull();
+  expect((pauseBox?.x ?? 0) + (pauseBox?.width ?? 0)).toBeGreaterThan((band?.x ?? 0) + (band?.width ?? 0) * 0.6);
+  expect((pauseBox?.y ?? 0) + (pauseBox?.height ?? 0)).toBeLessThanOrEqual((band?.y ?? 0) + (band?.height ?? 0) + 1);
 });
 
 test("story replays on reload and keeps playing through history", async ({ page }) => {
@@ -380,6 +407,113 @@ test("homepage scripts and styles stay on the same origin", async ({ page }, tes
   for (const url of urls) {
     expect(new URL(url).origin).toBe(new URL(page.url()).origin);
   }
+});
+
+test("hero cut-outs show the scene through transparent pixels", async ({ page, browserName }) => {
+  await page.goto("/");
+  const layers = [
+    { name: "operator-upper", at: 400 },
+    { name: "operator-walk", at: 9300 },
+    { name: "drone", at: 400 },
+    { name: "van-body", at: 400 },
+    { name: "van-wheel-front", at: 400 },
+    { name: "van-wheel-rear", at: 400 },
+    { name: "van-door", at: 400 },
+  ];
+  const sharp = (await import("sharp")).default;
+  const read = async (x: number, y: number) => {
+    const png = await page.screenshot({ type: "png", clip: { x: Math.max(0, x), y: Math.max(0, y), width: 8, height: 8 } });
+    const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const cx = Math.floor(info.width / 2);
+    const cy = Math.floor(info.height / 2);
+    const i = (cy * info.width + cx) * info.channels;
+    return [data[i], data[i + 1], data[i + 2]] as const;
+  };
+  for (const layer of layers) {
+    const spot = await page.evaluate((layer) => {
+      for (const anim of document.getAnimations()) {
+        anim.pause();
+        anim.currentTime = layer.at;
+      }
+      const stage = [...document.querySelectorAll(".stage")].find((node) => node.getBoundingClientRect().width > 0);
+      if (!stage) return null;
+      const img = [...stage.querySelectorAll("img")].find((node) => (node.currentSrc || node.src).includes(layer.name));
+      if (!img) return null;
+      img.scrollIntoView({ block: "center", inline: "nearest" });
+      const box = img.getBoundingClientRect();
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return null;
+      ctx.drawImage(img, 0, 0);
+      const px = ctx.getImageData(2, 2, 1, 1).data;
+      const upper = stage.querySelector(".jdc-op-upper");
+      const walk = stage.querySelector(".jdc-op-walk");
+      const pose =
+        layer.name.startsWith("operator")
+          ? {
+              upper: Number(getComputedStyle(upper!).opacity),
+              walk: Number(getComputedStyle(walk!).opacity),
+              upperScale: new DOMMatrix(getComputedStyle(upper!).transform).a,
+              walkScale: getComputedStyle(walk!).transform === "none" ? 1 : new DOMMatrix(getComputedStyle(walk!).transform).a,
+            }
+          : null;
+      const vx = box.x + (4 / img.naturalWidth) * box.width;
+      const vy = box.y + (4 / img.naturalHeight) * box.height;
+      return {
+        src: img.currentSrc,
+        x: vx,
+        y: vy,
+        w: box.width,
+        h: box.height,
+        alpha: px[3],
+        rgb: [px[0], px[1], px[2]],
+        pose,
+      };
+    }, layer);
+    expect(spot, layer.name).not.toBeNull();
+    expect(spot!.w).toBeGreaterThan(8);
+    expect(spot!.h).toBeGreaterThan(8);
+    if (browserName === "chromium") expect(spot!.src).toContain(".avif");
+    if (layer.name === "van-door") {
+      expect(spot!.alpha).toBeGreaterThan(200);
+      expect(Math.max(...spot!.rgb)).toBeGreaterThan(20);
+      continue;
+    }
+    expect(spot!.alpha, `${layer.name} decoded alpha`).toBeLessThan(16);
+    const shown = await read(spot!.x - 4, spot!.y - 4);
+    // A missing alpha plane paints this corner black. The scene behind is sky, glass or ground.
+    expect(Math.max(...shown), `${layer.name} corner ${shown.join(",")}`).toBeGreaterThan(12);
+  }
+  const pose = await page.evaluate(() => {
+    const stage = [...document.querySelectorAll(".stage")].find((node) => node.getBoundingClientRect().width > 0)!;
+    const at = (ms: number) => {
+      for (const anim of document.getAnimations()) {
+        anim.pause();
+        anim.currentTime = ms;
+      }
+      const upper = stage.querySelector(".jdc-op-upper")!;
+      const walk = stage.querySelector(".jdc-op-walk")!;
+      const matrix = (node: Element) => {
+        const t = getComputedStyle(node).transform;
+        return t === "none" ? 1 : new DOMMatrix(t).a;
+      };
+      return {
+        upper: Number(getComputedStyle(upper).opacity),
+        walk: Number(getComputedStyle(walk).opacity),
+        upperScale: matrix(upper),
+        walkScale: matrix(walk),
+      };
+    };
+    return { at9000: at(9000), at9100: at(9100) };
+  });
+  expect(pose.at9000.upper).toBeGreaterThan(0.9);
+  expect(pose.at9000.walk).toBeLessThan(0.05);
+  expect(pose.at9000.upperScale).toBeGreaterThan(0.55);
+  expect(pose.at9100.walk).toBeGreaterThan(0.9);
+  expect(pose.at9100.upper).toBeLessThan(0.05);
+  expect(pose.at9100.walkScale).toBeGreaterThan(0.85);
 });
 
 test("homepage has no axe violations", async ({ page }, testInfo) => {
