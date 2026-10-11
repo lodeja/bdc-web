@@ -17,7 +17,7 @@ export function BeforeAfterSlider() {
   const caption = pair?.caption ?? "Illustratie — geen echte projectfoto.";
 
   return (
-    <div className="overflow-hidden rounded-sm border border-bdc-navy/10 bg-bdc-navy-deep">
+    <div className="overflow-hidden rounded-sm border border-jdc-navy/10 bg-jdc-navy-deep">
       <div className="relative aspect-[16/10] w-full select-none">
         {usePhotos && after ? (
           // eslint-disable-next-line @next/next/no-img-element -- static export, path via withBasePath
@@ -51,11 +51,11 @@ export function BeforeAfterSlider() {
         </div>
 
         <div
-          className="pointer-events-none absolute inset-y-0 z-[1] w-0.5 bg-bdc-cyan shadow-[0_0_12px_rgba(0,194,232,0.5)]"
+          className="pointer-events-none absolute inset-y-0 z-[1] w-0.5 bg-jdc-cyan shadow-[0_0_12px_rgba(0,194,232,0.5)]"
           style={{ left: `${pos}%` }}
           aria-hidden
         >
-          <div className="absolute top-1/2 left-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-bdc-cyan bg-bdc-navy-deep text-xs font-semibold text-bdc-cyan">
+          <div className="absolute top-1/2 left-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-jdc-cyan bg-jdc-navy-deep text-xs font-semibold text-jdc-cyan">
             ↔
           </div>
         </div>

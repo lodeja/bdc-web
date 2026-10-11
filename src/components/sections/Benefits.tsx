@@ -61,17 +61,17 @@ export function Benefits() {
           return (
             <li
               key={item.title}
-              className={`rounded-sm border border-bdc-navy/10 bg-bdc-fog/80 p-6 sm:p-7 ${item.span}`}
+              className={`rounded-sm border border-jdc-navy/10 bg-jdc-fog/80 p-6 sm:p-7 ${item.span}`}
             >
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-bdc-navy-deep text-bdc-cyan">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-jdc-navy-deep text-jdc-cyan">
                   <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold tracking-tight text-bdc-navy">
+                  <h3 className="text-lg font-semibold tracking-tight text-jdc-navy">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-bdc-slate sm:text-[0.95rem]">
+                  <p className="mt-2 text-sm leading-relaxed text-jdc-slate sm:text-[0.95rem]">
                     {item.text}
                   </p>
                 </div>

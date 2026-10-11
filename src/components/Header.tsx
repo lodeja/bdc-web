@@ -65,11 +65,11 @@ export function Header() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-bdc-navy-deep">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-jdc-navy-deep">
       <div className="mx-auto flex h-[var(--header-height)] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="#top"
-          className="relative z-10 flex shrink-0 items-center rounded-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+          className="relative z-10 flex shrink-0 items-center rounded-sm text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
           onClick={(e) => {
             setOpen(false);
             e.preventDefault();
@@ -88,7 +88,7 @@ export function Header() {
             <a
               key={link.href}
               href={link.href}
-              className="rounded-sm px-2.5 py-2 text-sm font-medium text-white/90 transition-colors duration-300 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+              className="rounded-sm px-2.5 py-2 text-sm font-medium text-white/90 transition-colors duration-300 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
             >
               {link.label}
             </a>
@@ -98,11 +98,11 @@ export function Header() {
         <div className="flex items-center gap-2">
           <a
             href="#contact"
-            className="group hidden items-center gap-2 rounded-sm bg-bdc-cyan px-4 py-2.5 text-sm font-semibold text-bdc-navy-deep transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-bdc-cyan-bright active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan sm:inline-flex"
+            className="group hidden items-center gap-2 rounded-sm bg-jdc-cyan px-4 py-2.5 text-sm font-semibold text-jdc-navy-deep transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-jdc-cyan-bright active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan sm:inline-flex"
           >
             Offerte aanvragen
             <span
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bdc-navy-deep/10 text-xs transition-transform duration-300 group-hover:translate-x-0.5"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-jdc-navy-deep/10 text-xs transition-transform duration-300 group-hover:translate-x-0.5"
               aria-hidden="true"
             >
               →
@@ -112,7 +112,7 @@ export function Header() {
           <button
             ref={toggleRef}
             type="button"
-            className="inline-flex items-center justify-center rounded-sm p-2 text-white transition-colors duration-300 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan lg:hidden"
+            className="inline-flex items-center justify-center rounded-sm p-2 text-white transition-colors duration-300 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan lg:hidden"
             aria-expanded={open}
             aria-controls={menuId}
             aria-label={open ? "Menu sluiten" : "Menu openen"}
@@ -134,7 +134,7 @@ export function Header() {
           role="dialog"
           aria-modal="true"
           aria-label="Mobiel menu"
-          className="border-t border-white/10 bg-bdc-navy-deep px-4 py-4 sm:px-6 lg:hidden"
+          className="border-t border-white/10 bg-jdc-navy-deep px-4 py-4 sm:px-6 lg:hidden"
         >
           <nav aria-label="Mobiel menu">
             <ul className="flex flex-col gap-1">
@@ -142,7 +142,7 @@ export function Header() {
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="block rounded-sm px-3 py-3 text-base font-medium text-white/90 transition-colors duration-300 hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                    className="block rounded-sm px-3 py-3 text-base font-medium text-white/90 transition-colors duration-300 hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                     onClick={() => setOpen(false)}
                   >
                     {link.label}
@@ -152,7 +152,7 @@ export function Header() {
               <li className="pt-2">
                 <a
                   href="#contact"
-                  className="flex w-full items-center justify-center gap-2 rounded-sm bg-bdc-cyan px-4 py-3 text-sm font-semibold text-bdc-navy-deep transition-colors duration-300 hover:bg-bdc-cyan-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                  className="flex w-full items-center justify-center gap-2 rounded-sm bg-jdc-cyan px-4 py-3 text-sm font-semibold text-jdc-navy-deep transition-colors duration-300 hover:bg-jdc-cyan-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                   onClick={() => setOpen(false)}
                 >
                   Offerte aanvragen

@@ -78,7 +78,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <a href="#main" className="bdc-skip-link">
+        <a href="#main" className="jdc-skip-link">
           Ga naar inhoud
         </a>
         {children}

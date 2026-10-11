@@ -16,22 +16,22 @@ function ContactLine({
 }) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-bdc-navy-deep text-bdc-cyan">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-jdc-navy-deep text-jdc-cyan">
         <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
       </div>
       <div>
-        <p className="text-xs font-semibold tracking-wide text-bdc-slate uppercase">
+        <p className="text-xs font-semibold tracking-wide text-jdc-slate uppercase">
           {label}
         </p>
         {href ? (
           <a
             href={href}
-            className="mt-0.5 block text-sm font-medium text-bdc-navy hover:text-bdc-cyan-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+            className="mt-0.5 block text-sm font-medium text-jdc-navy hover:text-jdc-cyan-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
           >
             {value}
           </a>
         ) : (
-          <p className="mt-0.5 text-sm font-medium text-bdc-navy">{value}</p>
+          <p className="mt-0.5 text-sm font-medium text-jdc-navy">{value}</p>
         )}
       </div>
     </div>
@@ -78,8 +78,8 @@ export function Contact() {
           ) : null}
           {address ? <ContactLine icon={MapPin} label="Adres" value={address} /> : null}
           {workArea ? <ContactLine icon={MapPin} label="Werkgebied" value={workArea} /> : null}
-          {vat ? <p className="text-sm font-medium text-bdc-navy">BTW {vat}</p> : null}
-          {kbo ? <p className="text-sm font-medium text-bdc-navy">KBO {kbo}</p> : null}
+          {vat ? <p className="text-sm font-medium text-jdc-navy">BTW {vat}</p> : null}
+          {kbo ? <p className="text-sm font-medium text-jdc-navy">KBO {kbo}</p> : null}
         </div>
 
         <div className="lg:col-span-3">

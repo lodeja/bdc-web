@@ -36,18 +36,18 @@ export function Process() {
           <li key={step.n} className="relative">
             {i < STEPS.length - 1 ? (
               <div
-                className="pointer-events-none absolute top-8 left-[calc(50%+2rem)] hidden h-px w-[calc(100%-1rem)] bg-bdc-navy/15 lg:block"
+                className="pointer-events-none absolute top-8 left-[calc(50%+2rem)] hidden h-px w-[calc(100%-1rem)] bg-jdc-navy/15 lg:block"
                 aria-hidden
               />
             ) : null}
-            <div className="relative rounded-sm border border-bdc-navy/10 bg-white p-6">
-              <span className="font-mono text-sm font-semibold tracking-wider text-bdc-cyan-ink">
+            <div className="relative rounded-sm border border-jdc-navy/10 bg-white p-6">
+              <span className="font-mono text-sm font-semibold tracking-wider text-jdc-cyan-ink">
                 {step.n}
               </span>
-              <h3 className="mt-3 text-lg font-semibold text-bdc-navy">
+              <h3 className="mt-3 text-lg font-semibold text-jdc-navy">
                 {step.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-bdc-slate">
+              <p className="mt-2 text-sm leading-relaxed text-jdc-slate">
                 {step.text}
               </p>
             </div>

@@ -1,26 +1,25 @@
 @import "tailwindcss";
 
-/* JDC design tokens — deep navy, anthracite, electric cyan
-   (CSS custom property prefix remains --bdc-* for stability) */
+/* JDC design tokens — deep navy, anthracite, electric cyan. */
 :root {
-  --bdc-navy: #0b1f3a;
-  --bdc-navy-deep: #071525;
-  --bdc-navy-mid: #143356;
-  --bdc-anthracite: #1c222c;
-  --bdc-anthracite-soft: #2a3340;
-  --bdc-cyan: #00c2e8;
-  --bdc-cyan-bright: #33d6f0;
-  --bdc-cyan-dim: #009bb8;
+  --jdc-navy: #0b1f3a;
+  --jdc-navy-deep: #071525;
+  --jdc-navy-mid: #143356;
+  --jdc-anthracite: #1c222c;
+  --jdc-anthracite-soft: #2a3340;
+  --jdc-cyan: #00c2e8;
+  --jdc-cyan-bright: #33d6f0;
+  --jdc-cyan-dim: #009bb8;
   /* Text cyan on white/fog. #009bb8 is 3.29:1; #0e7490 clears 4.5:1. */
-  --bdc-cyan-ink: #0e7490;
-  --bdc-white: #ffffff;
-  --bdc-fog: #f4f7fb;
-  --bdc-mist: #e4ebf4;
-  --bdc-slate: #5a6578;
-  --bdc-ink: #0e1624;
+  --jdc-cyan-ink: #0e7490;
+  --jdc-white: #ffffff;
+  --jdc-fog: #f4f7fb;
+  --jdc-mist: #e4ebf4;
+  --jdc-slate: #5a6578;
+  --jdc-ink: #0e1624;
 
-  --background: var(--bdc-fog);
-  --foreground: var(--bdc-ink);
+  --background: var(--jdc-fog);
+  --foreground: var(--jdc-ink);
 
   --header-height: 4.25rem;
   --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
@@ -29,20 +28,20 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-bdc-navy: var(--bdc-navy);
-  --color-bdc-navy-deep: var(--bdc-navy-deep);
-  --color-bdc-navy-mid: var(--bdc-navy-mid);
-  --color-bdc-anthracite: var(--bdc-anthracite);
-  --color-bdc-anthracite-soft: var(--bdc-anthracite-soft);
-  --color-bdc-cyan: var(--bdc-cyan);
-  --color-bdc-cyan-bright: var(--bdc-cyan-bright);
-  --color-bdc-cyan-dim: var(--bdc-cyan-dim);
-  --color-bdc-cyan-ink: var(--bdc-cyan-ink);
-  --color-bdc-white: var(--bdc-white);
-  --color-bdc-fog: var(--bdc-fog);
-  --color-bdc-mist: var(--bdc-mist);
-  --color-bdc-slate: var(--bdc-slate);
-  --color-bdc-ink: var(--bdc-ink);
+  --color-jdc-navy: var(--jdc-navy);
+  --color-jdc-navy-deep: var(--jdc-navy-deep);
+  --color-jdc-navy-mid: var(--jdc-navy-mid);
+  --color-jdc-anthracite: var(--jdc-anthracite);
+  --color-jdc-anthracite-soft: var(--jdc-anthracite-soft);
+  --color-jdc-cyan: var(--jdc-cyan);
+  --color-jdc-cyan-bright: var(--jdc-cyan-bright);
+  --color-jdc-cyan-dim: var(--jdc-cyan-dim);
+  --color-jdc-cyan-ink: var(--jdc-cyan-ink);
+  --color-jdc-white: var(--jdc-white);
+  --color-jdc-fog: var(--jdc-fog);
+  --color-jdc-mist: var(--jdc-mist);
+  --color-jdc-slate: var(--jdc-slate);
+  --color-jdc-ink: var(--jdc-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -68,42 +67,42 @@ body {
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--bdc-cyan) 35%, white);
-  color: var(--bdc-navy-deep);
+  background: color-mix(in oklab, var(--jdc-cyan) 35%, white);
+  color: var(--jdc-navy-deep);
 }
 
 :focus-visible {
-  outline: 2px solid var(--bdc-cyan);
+  outline: 2px solid var(--jdc-cyan);
   outline-offset: 3px;
 }
 
-.bdc-skip-link {
+.jdc-skip-link {
   position: absolute;
   left: 1rem;
   top: 0;
   z-index: 100;
   transform: translateY(-120%);
   border-radius: 0.25rem;
-  background: var(--bdc-cyan);
-  color: var(--bdc-navy-deep);
+  background: var(--jdc-cyan);
+  color: var(--jdc-navy-deep);
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;
   transition: transform 0.35s var(--ease-premium);
 }
 
-.bdc-skip-link:focus {
+.jdc-skip-link:focus {
   transform: translateY(0.75rem);
 }
 
-.bdc-hero-atmosphere {
+.jdc-hero-atmosphere {
   background:
     radial-gradient(80% 55% at 78% 22%, rgba(168, 212, 240, 0.55) 0%, transparent 55%),
     linear-gradient(165deg, #0b1f3a 0%, #1a4a72 52%, #5a9bcf 100%);
 }
 
-.bdc-section-placeholder {
-  border-top: 1px solid color-mix(in oklab, var(--bdc-navy) 10%, transparent);
+.jdc-section-placeholder {
+  border-top: 1px solid color-mix(in oklab, var(--jdc-navy) 10%, transparent);
 }
 
 @media (pointer: fine) {
@@ -112,7 +111,7 @@ body {
   }
 }
 
-@keyframes bdcFadeUp {
+@keyframes jdcFadeUp {
   from {
     opacity: 0;
     transform: translateY(12px);
@@ -123,12 +122,12 @@ body {
   }
 }
 
-.bdc-fade-up {
-  animation: bdcFadeUp 0.45s var(--ease-premium) both;
+.jdc-fade-up {
+  animation: jdcFadeUp 0.45s var(--ease-premium) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bdc-fade-up {
+  .jdc-fade-up {
     animation: none;
   }
 }

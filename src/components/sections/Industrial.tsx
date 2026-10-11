@@ -36,7 +36,7 @@ export function Industrial() {
             const Icon = point.icon;
             return (
               <li key={point.title} className="flex gap-4">
-                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-white/5 text-bdc-cyan">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-white/5 text-jdc-cyan">
                   <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
                 </div>
                 <div>

@@ -16,7 +16,7 @@ function ReadyPhoto({
       alt={slot.alt}
       width={slot.width}
       height={slot.height}
-      className="h-auto w-full rounded-sm border border-bdc-navy/10"
+      className="h-auto w-full rounded-sm border border-jdc-navy/10"
       loading="lazy"
       decoding="async"
     />
@@ -41,10 +41,10 @@ export function Results() {
           <BeforeAfterSlider />
         </div>
         <div className="lg:col-span-2">
-          <h3 className="text-lg font-semibold text-bdc-navy">
+          <h3 className="text-lg font-semibold text-jdc-navy">
             Zonnepanelen & gevels
           </h3>
-          <p className="mt-3 text-sm leading-relaxed text-bdc-slate sm:text-base">
+          <p className="mt-3 text-sm leading-relaxed text-jdc-slate sm:text-base">
             Aanslag, pollen en fijnstof verminderen de lichtinval. Een zachte
             reiniging kan dat verbeteren — het effect verschilt per installatie
             en seizoen.
@@ -55,16 +55,16 @@ export function Results() {
                 const summary = filled(item.summary);
                 const url = filled(item.url);
                 return (
-                  <li key={item.name} className="text-sm leading-relaxed text-bdc-slate">
+                  <li key={item.name} className="text-sm leading-relaxed text-jdc-slate">
                     {url ? (
                       <a
                         href={url}
-                        className="font-semibold text-bdc-navy hover:text-bdc-cyan-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                        className="font-semibold text-jdc-navy hover:text-jdc-cyan-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                       >
                         {item.name}
                       </a>
                     ) : (
-                      <span className="font-semibold text-bdc-navy">{item.name}</span>
+                      <span className="font-semibold text-jdc-navy">{item.name}</span>
                     )}
                     {summary ? <span> — {summary}</span> : null}
                   </li>
@@ -74,7 +74,7 @@ export function Results() {
           ) : null}
           <a
             href="#contact"
-            className="mt-8 inline-flex items-center justify-center rounded-sm bg-bdc-navy-deep px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-bdc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+            className="mt-8 inline-flex items-center justify-center rounded-sm bg-jdc-navy-deep px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-jdc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
           >
             Vraag een beoordeling van uw project
           </a>

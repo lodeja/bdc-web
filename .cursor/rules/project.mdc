@@ -6,7 +6,7 @@ alwaysApply: true
 # Janssens Drone Cleaning
 
 - Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, static `output: "export"`. Read `node_modules/next/dist/docs/` before using Next APIs. `LayoutProps` is generated: run `next typegen` before a bare `tsc` (`npm run typecheck` does this).
-- The public brand is Janssens Drone Cleaning (JDC). The GitHub Pages basePath is `/${REPO_SLUG}` from `src/config/repo.ts`. Change that constant to `jdc-web` when the GitHub repository is renamed. The `--bdc-*` CSS prefix is an internal token.
+- The public brand is Janssens Drone Cleaning (JDC). The GitHub Pages basePath is `/${REPO_SLUG}` from `src/config/repo.ts`. Change that constant to `jdc-web` when the GitHub repository is renamed. Design tokens use the `--jdc-*` prefix.
 - Never invent business facts: extra services, locations, prices, certifications, testimonials, phone, email, VAT, KBO, or permits. Contact and company fields live in `src/config/business.ts` and stay null or empty until the owner fills them in. Hide a null field. Do not render TODO text.
 - The five confirmed services are the list in `src/config/services.ts` (dak, gevel, ramen en glas, zonnepanelen, industrie). Do not add another service. Do not add per-service pages unless asked; `slug` is reserved for that follow-up.
 - Photos use the slots in `src/config/images.ts`. Until `src` is set, keep the site illustrations. No third-party stock photos.

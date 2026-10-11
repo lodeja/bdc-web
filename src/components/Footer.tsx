@@ -26,12 +26,12 @@ export function Footer() {
   );
 
   return (
-    <footer className="border-t border-white/10 bg-bdc-navy-deep text-white/80">
+    <footer className="border-t border-white/10 bg-jdc-navy-deep text-white/80">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:px-8 lg:py-16">
         <div className="lg:col-span-5">
           <a
             href="#top"
-            className="inline-flex rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+            className="inline-flex rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
           >
             <Logo className="h-11 w-auto" variant="mono" idSuffix="ftr" />
           </a>
@@ -50,7 +50,7 @@ export function Footer() {
               <li key={link.href}>
                 <a
                   href={link.href}
-                  className="text-sm text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                  className="text-sm text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                 >
                   {link.label}
                 </a>
@@ -71,7 +71,7 @@ export function Footer() {
                 <li>
                   <a
                     href={`mailto:${email}`}
-                    className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                    className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                   >
                     {email}
                   </a>
@@ -81,7 +81,7 @@ export function Footer() {
                 <li>
                   <a
                     href={`tel:${phone.replace(/\s/g, "")}`}
-                    className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                    className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                   >
                     {phone}
                   </a>
@@ -96,7 +96,7 @@ export function Footer() {
                   <li key={link.href}>
                     <a
                       href={link.href}
-                      className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                      className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                     >
                       {link.label}
                     </a>
@@ -108,7 +108,7 @@ export function Footer() {
                   {item.url ? (
                     <a
                       href={item.url}
-                      className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                      className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                     >
                       {item.name}
                     </a>
@@ -130,7 +130,7 @@ export function Footer() {
           {privacy ? (
             <a
               href={privacy}
-              className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+              className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
             >
               Privacy
             </a>

@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../out/", import.meta.url));
-const mark = "data-bdc-defer-hydration";
+const mark = "data-jdc-defer-hydration";
 
 async function htmlFiles(dir) {
   const entries = await readdir(dir, { withFileTypes: true });

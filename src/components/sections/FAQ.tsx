@@ -38,7 +38,7 @@ export function FAQ() {
       lead="Korte antwoorden — zonder absolute beloftes over prijs, snelheid of veiligheid in elke context."
       tone="fog"
     >
-      <div className="mx-auto max-w-3xl divide-y divide-bdc-navy/10 rounded-sm border border-bdc-navy/10 bg-white">
+      <div className="mx-auto max-w-3xl divide-y divide-jdc-navy/10 rounded-sm border border-jdc-navy/10 bg-white">
         {FAQS.map((item, i) => {
           const panelId = `${baseId}-panel-${i}`;
           const btnId = `${baseId}-btn-${i}`;
@@ -51,12 +51,12 @@ export function FAQ() {
                   id={btnId}
                   aria-expanded={isOpen}
                   aria-controls={panelId}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-base font-semibold text-bdc-navy transition-colors hover:bg-bdc-fog/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-bdc-cyan sm:px-6"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-base font-semibold text-jdc-navy transition-colors hover:bg-jdc-fog/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-jdc-cyan sm:px-6"
                   onClick={() => setOpen(isOpen ? null : i)}
                 >
                   {item.q}
                   <ChevronDown
-                    className={`h-5 w-5 shrink-0 text-bdc-slate transition-transform duration-300 ${
+                    className={`h-5 w-5 shrink-0 text-jdc-slate transition-transform duration-300 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                     aria-hidden
@@ -70,7 +70,7 @@ export function FAQ() {
                 hidden={!isOpen}
                 className="px-5 pb-5 sm:px-6"
               >
-                <p className="text-sm leading-relaxed text-bdc-slate sm:text-base">
+                <p className="text-sm leading-relaxed text-jdc-slate sm:text-base">
                   {item.a}
                 </p>
               </div>
