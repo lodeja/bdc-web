@@ -149,10 +149,24 @@ function Facade() {
   );
 }
 
+/** Bottom lane runs from facade y=0.47 through the plinth. Glass ends at 0.76. */
+const GLASS_END = 54.72;
+const DOOR_TOP = 62.26;
+
 function LanePane({ lane }: { lane: Lane }) {
   const bottom = lane.id.includes("-pane-3-");
-  const col = Number(lane.id.slice(-1));
-  const shift = (col % 3) * 8;
+  const col = Number(lane.id.at(-1));
+  const glassBottom = bottom ? GLASS_END : 100;
+  const streakCount = 2 + (col % 3);
+  const streakX = [16, 39, 62, 84];
+  const specks = [
+    [18, 22],
+    [48, 41],
+    [71, 16],
+    [34, 58],
+  ];
+  const door = col === 2 ? { x: 30, w: 70 } : col === 3 ? { x: 0, w: 70 } : null;
+  const maskId = `${lane.id}-door`;
   return (
     <div
       className="lane"
@@ -167,21 +181,52 @@ function LanePane({ lane }: { lane: Lane }) {
     >
       <div className="dirt jdc-anim jdc-story jdc-dirt" data-hero="dirt">
         <svg viewBox="0 0 100 100" className="jdc-grime" preserveAspectRatio="none">
-          <rect width="100" height="100" fill="#6e624f" opacity="0.7" />
-          <path
-            d={`M${12 + shift} 6 C${40 + shift} 24 ${18 + shift} 58 ${10 + shift} 98 L${24 + shift} 96 C${46 + shift} 54 ${52 + shift} 22 ${20 + shift} 4 Z`}
-            fill="#3c332b"
-            opacity="0.62"
+          <rect width="100" height={glassBottom} fill="#6b6256" opacity="0.7" />
+          <rect width="5" height={glassBottom} fill="#3c342c" opacity="0.42" />
+          <rect x="95" width="5" height={glassBottom} fill="#3c342c" opacity="0.42" />
+          <rect width="100" height="3.4" fill="#3c342c" opacity="0.38" />
+          {Array.from({ length: streakCount }, (_, i) => (
+            <rect
+              key={`streak-${i}`}
+              x={streakX[i] + (col % 2) * 3}
+              width="1.5"
+              height={glassBottom * (0.46 + ((col + i) % 3) * 0.14)}
+              fill="#3a322b"
+              opacity="0.78"
+            />
+          ))}
+          {specks.map(([x, y], i) => (
+            <rect
+              key={`speck-${i}`}
+              x={(x + col * 6) % 90}
+              y={(y + col * 5) % Math.max(12, glassBottom - 12)}
+              width="1.6"
+              height="1.6"
+              fill="#3a322b"
+              opacity="0.72"
+            />
+          ))}
+          <rect
+            y={glassBottom - (bottom ? 4.4 : 6.2)}
+            width="100"
+            height={bottom ? 4.4 : 6.2}
+            fill="#6a7560"
+            opacity="0.78"
           />
-          <path
-            d={`M${68 - shift} 0 C${86 - shift} 36 ${60 - shift} 70 ${78 - shift} 100 L${90 - shift} 96 C${70 - shift} 62 ${96 - shift} 30 ${82 - shift} 2 Z`}
-            fill="#3c332b"
-            opacity="0.4"
-          />
-          {bottom ? <rect y="70" width="100" height="30" fill="#667348" opacity="0.62" /> : null}
+          {bottom && door ? (
+            <mask id={maskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
+              <rect width="100" height="100" fill="#ffffff" />
+              <rect x={door.x} y={DOOR_TOP} width={door.w} height={100 - DOOR_TOP} fill="#000000" />
+            </mask>
+          ) : null}
+          {bottom ? (
+            <g mask={door ? `url(#${maskId})` : undefined}>
+              <rect y={GLASS_END} width="100" height={100 - GLASS_END} fill="#6b6256" opacity="0.52" />
+              <rect y="94" width="100" height="6" fill="#6a7560" opacity="0.7" />
+            </g>
+          ) : null}
         </svg>
       </div>
-      <span className="dirt-edge jdc-anim" />
     </div>
   );
 }

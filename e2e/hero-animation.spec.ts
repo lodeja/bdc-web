@@ -225,7 +225,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       operatorTop: operatorStart.y,
       operatorBottom: operatorStart.b,
       waist: upper.bottom - stageStart.top,
-      logoWide: logo.w >= (stageStart.width > 700 ? 40 : 22),
+      logoWide: logo.w >= (stageStart.width > 700 ? 40 : stageStart.width * 0.06),
       logoOnPanel: logo.x >= doorParked.r - 2 && logo.r <= vanParked.r + 1,
       besideRatio: operatorBeside.h / vanBeside.h,
       feetGap: Math.abs(operatorBeside.b - groundBeside.y),

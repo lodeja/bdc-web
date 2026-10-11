@@ -68,7 +68,7 @@ const desktopGeom: Geom = {
   van: { x: 33, y: 80.7, w: 11.19, h: 11.3 },
   door: { ox: 0.3, oy: 0.22, w: 0.11, h: 0.5 },
   operator: { x: 62, y: 54, w: 12.5, h: 70 },
-  drone: { w: 3.05, h: 3.46 },
+  drone: { w: 5.85, h: 6.62 },
   start: { x: 26, y: 76 },
   ground: 92,
   travel: -50,
@@ -77,12 +77,12 @@ const desktopGeom: Geom = {
 const mobileGeom: Geom = {
   variant: "mobile",
   aspectW: 8,
-  aspectH: 9,
-  building: { x: -17.5, y: 22, w: 135, h: 66 },
-  van: { x: 14, y: 79.33, w: 23.21, h: 8.67 },
+  aspectH: 10,
+  building: { x: -17.5, y: 30, w: 135, h: 58 },
+  van: { x: 14, y: 79.33, w: 24.24, h: 8.67 },
   door: { ox: 0.3, oy: 0.22, w: 0.11, h: 0.5 },
-  operator: { x: 64, y: 75, w: 20.2, h: 42 },
-  drone: { w: 6.2, h: 2.6 },
+  operator: { x: 64, y: 75, w: 22.4, h: 42 },
+  drone: { w: 13.05, h: 4.92 },
   start: { x: 12, y: 60 },
   ground: 88,
   travel: -46,
@@ -514,24 +514,47 @@ const bobCount = Math.max(4, Math.round((HERO_DELAY_S + STORY_S) / 1.05));
 const spinCount = Math.max(8, Math.ceil((HERO_DELAY_S + STORY_S) / 0.2));
 
 export const heroMotionCss = `
-@property --pane-hole {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
 .jdc-hero-figure{position:absolute;inset:0;z-index:1;container-type:size;margin:0}
 @media (max-width: 1023px){
-  .jdc-hero-figure{position:relative;inset:auto;flex:1 1 auto;min-height:0;order:1}
+  .jdc-hero-figure{position:relative;inset:auto;flex:0 0 57svh;height:57svh;min-height:0;order:1}
 }
 @media (max-width: 1023px) and (max-height: 760px){
-  .jdc-hero-lead p{display:none}
+  .jdc-hero-figure{flex-basis:55svh;height:55svh}
+}
+@media (min-width: 1024px){
+  .jdc-hero-copy::before{
+    content:"";
+    position:absolute;
+    z-index:-1;
+    pointer-events:none;
+    left:-8%;
+    top:-14%;
+    right:-68%;
+    bottom:-85%;
+    background:radial-gradient(ellipse 66% 58% at 22% 24%, rgba(244,247,251,0.95) 0%, rgba(244,247,251,0.76) 34%, rgba(244,247,251,0.26) 60%, rgba(244,247,251,0) 76%);
+  }
+  .jdc-hero-lead h1,
+  .jdc-hero-lead p{text-shadow:0 0 16px rgba(244,247,251,0.72)}
+}
+@media (max-width: 1023px){
+  .jdc-hero-lead::before{
+    content:"";
+    position:absolute;
+    z-index:-1;
+    pointer-events:none;
+    left:0;
+    right:0;
+    top:0;
+    bottom:-1.6rem;
+    background:linear-gradient(180deg, rgba(244,247,251,0.92) 0%, rgba(244,247,251,0.5) 50%, rgba(244,247,251,0) 100%);
+  }
 }
 .jdc-hero-stage{position:absolute;inset:0;z-index:1;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent}
 @media (max-width: 1023px){
   .jdc-hero-stage{align-items:flex-end}
 }
 .stage{position:relative;z-index:2;overflow:hidden;flex:none}
-.stage-mobile{width:min(100cqw, calc(100cqh * 8 / 9));height:min(100cqh, calc(100cqw * 9 / 8))}
+.stage-mobile{width:min(100cqw, calc(100cqh * 8 / 10));height:min(100cqh, calc(100cqw * 10 / 8))}
 .stage-desktop{display:none;width:min(100cqw, calc(100cqh * 12 / 5));height:min(100cqh, calc(100cqw * 5 / 12))}
 @media (min-width: 1024px){
   .stage-mobile{display:none}
@@ -539,7 +562,7 @@ export const heroMotionCss = `
 }
 .layer{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none}
 .sky{position:absolute;inset:0;background:transparent}
-.cloud-track{position:absolute;left:0;top:0;z-index:1;display:flex;width:200%;height:calc(100cqh - min(100cqh, 100cqw * 9 / 8) * 0.8);overflow:visible;pointer-events:none;animation:jdc-clouds ${CLOUD_S}s linear infinite}
+.cloud-track{position:absolute;left:0;top:0;z-index:1;display:flex;width:200%;height:calc(100cqh - min(100cqh, 100cqw * 10 / 8) * 0.8);overflow:visible;pointer-events:none;animation:jdc-clouds ${CLOUD_S}s linear infinite}
 @media (min-width: 1024px){
   .cloud-track{height:calc(100cqh - min(100cqh, 100cqw * 5 / 12) * 0.86)}
 }
@@ -562,11 +585,9 @@ export const heroMotionCss = `
 .jdc-contact{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(180deg, rgba(7,21,37,0.42), rgba(7,21,37,0.08) 55%, transparent)}
 .jdc-cast{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(90deg, rgba(7,21,37,0.16), rgba(7,21,37,0.02) 75%, transparent)}
 .lane{position:absolute;z-index:3;overflow:hidden}
-.dirt{position:absolute;inset:0;opacity:1;--pane-hole:0%;-webkit-mask-image:radial-gradient(circle at 50% 22%, transparent var(--pane-hole), #000 calc(var(--pane-hole) + 18%));mask-image:radial-gradient(circle at 50% 22%, transparent var(--pane-hole), #000 calc(var(--pane-hole) + 18%));-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation-name:jdc-pane;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
+.dirt{position:absolute;inset:0;opacity:1;animation-name:jdc-pane;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
 .jdc-grime{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
-.dirt-edge{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(circle at 50% 22%, rgba(255,255,255,0.72), rgba(214,232,228,0.26) 34%, transparent 64%);animation:jdc-edge var(--wipe-dur) ease-out var(--wipe-delay) both}
-@keyframes jdc-edge{0%{opacity:0}24%{opacity:0.9}100%{opacity:0}}
-@keyframes jdc-pane{0%{opacity:1;--pane-hole:0%}100%{opacity:0;--pane-hole:130%}}
+@keyframes jdc-pane{from{opacity:1}to{opacity:0}}
 .glint-clip{position:absolute;z-index:4;overflow:hidden;pointer-events:none}
 .glint-bar{position:absolute;top:-20%;bottom:-20%;width:18%;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.72) 50%, rgba(255,255,255,0.08) 80%, transparent);transform:translateX(-140%) skewX(-16deg);opacity:0;animation:jdc-glint 8.5s ease-in-out infinite;animation-delay:${HERO_DELAY_S + STORY_S}s}
 @keyframes jdc-glint{0%{transform:translateX(-140%) skewX(-16deg);opacity:0}14%{opacity:0.8}48%{opacity:0.45}72%,100%{transform:translateX(520%) skewX(-16deg);opacity:0}}
@@ -635,10 +656,7 @@ ${mobileBuilt.css}
     animation-fill-mode:both !important;
     animation-iteration-count:1 !important;
     transform:none !important;
-    -webkit-mask-image:none !important;
-    mask-image:none !important;
   }
-  .dirt-edge{opacity:0;animation:none !important}
 }
 @keyframes jdc-soft-clean{from{opacity:1}to{opacity:0}}
 `;
