@@ -67,7 +67,11 @@ export type BusinessConfig = {
   social: SocialLink[];
   certifications: Certification[];
   references: ClientReference[];
-  /** Site path such as "/privacy/" once that page exists. */
+  /**
+   * Site path of the privacy page.
+   * OWNER/LEGAL: review `src/app/privacy/page.tsx` before `formEndpoint` is
+   * set. That page is a draft of what the site does, not a signed policy.
+   */
   privacyPolicyPath: string | null;
 };
 
@@ -90,7 +94,7 @@ export const business: BusinessConfig = {
   social: [],
   certifications: [],
   references: [],
-  privacyPolicyPath: null,
+  privacyPolicyPath: "/privacy/",
 };
 
 export function filled(value: string | null | undefined): string | null {

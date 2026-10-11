@@ -111,6 +111,26 @@ body {
   }
 }
 
+.jdc-flight-rule {
+  position: relative;
+  height: 1px;
+  background: color-mix(in oklab, var(--jdc-navy) 35%, transparent);
+}
+
+.jdc-flight-rule::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  height: 3px;
+  width: 2.5rem;
+  background: var(--jdc-cyan);
+}
+
+.jdc-flight-rule-on-dark {
+  background: color-mix(in oklab, white 28%, transparent);
+}
+
 @keyframes jdcFadeUp {
   from {
     opacity: 0;
