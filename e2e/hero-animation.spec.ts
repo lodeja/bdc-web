@@ -160,23 +160,9 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       seek(ms);
       legSpread = Math.max(legSpread, Math.abs(angle('[data-hero="leg"]')));
     }
-    let coveredWhileVisible = 0;
-    let stuckOut = 0;
-    for (let ms = clocks.door0; ms <= clocks.door1; ms += 40) {
-      seek(ms);
-      const door = rect('[data-hero="door"]');
-      const op = rect('[data-hero="operator"]');
-      const crew = Number(getComputedStyle(stage.querySelector('[data-hero="crew"]')!).opacity);
-      const shut = scaleX('[data-hero="door"]') > 0.92;
-      if (!shut || crew < 0.9) continue;
-      const inside =
-        op.x >= door.x - 1.5 &&
-        op.y >= door.y - 1.5 &&
-        op.r <= door.r + 1.5 &&
-        op.b <= door.b + 1.5;
-      if (inside) coveredWhileVisible += 1;
-      else stuckOut += 1;
-    }
+    seek(clocks.door0);
+    const crewShut = Number(getComputedStyle(stage.querySelector('[data-hero="crew"]')!).opacity);
+    const shutDoor = scaleX('[data-hero="door"]');
     const valves: number[] = [];
     const ride: { dx: number; dy: number }[] = [];
     let parked: number | null = null;
@@ -204,7 +190,9 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     seek(clocks.beside);
     const operatorBeside = rect('[data-hero="operator"]');
     const vanBeside = rect('[data-hero="van"]');
+    const doorBeside = rect('[data-hero="door"]');
     const groundBeside = rect('[data-hero="ground"]');
+    const opCenter = operatorBeside.x + operatorBeside.w / 2;
     seek(clocks.end);
     const stageBox = stage.getBoundingClientRect();
     const vanEnd = rect('[data-hero="van"]');
@@ -226,8 +214,8 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       lookStart,
       lookHigh,
       legSpread,
-      coveredWhileVisible,
-      stuckOut,
+      crewShut,
+      shutDoor,
       valveSpread: span(valves),
       ride: ride.length,
       rideX: ride.length ? span(ride.map((item) => item.dx)) : 999,
@@ -251,6 +239,8 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       logoOnPanel: logo.x >= doorParked.r - 2 && logo.r <= vanParked.r + 1,
       besideRatio: operatorBeside.h / vanBeside.h,
       feetGap: Math.abs(operatorBeside.b - groundBeside.y),
+      atFrontDoor: opCenter > vanBeside.x - 6 && opCenter < vanBeside.x + vanBeside.w * 0.48,
+      onDoor: opCenter > doorBeside.x - 10 && opCenter < doorBeside.r + 10,
     };
   }, clocks);
 
@@ -262,8 +252,10 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
   expect(story?.maxTilt ?? 99).toBeLessThanOrEqual(12);
   expect((story?.lookStart ?? 0) - (story?.lookHigh ?? 0)).toBeGreaterThan(8);
   expect(story?.legSpread ?? 0).toBeGreaterThan(12);
-  expect(story?.coveredWhileVisible ?? 0).toBeGreaterThan(2);
-  expect(story?.stuckOut ?? 1).toBe(0);
+  expect(story?.crewShut ?? 1).toBeLessThan(0.08);
+  expect(story?.shutDoor ?? 0).toBeGreaterThan(0.92);
+  expect(story?.atFrontDoor).toBe(true);
+  expect(story?.onDoor).toBe(true);
   expect(story?.valveSpread ?? 0).toBeGreaterThan(0.5);
   expect(story?.ride ?? 0).toBeGreaterThan(4);
   expect(story?.rideX ?? 999).toBeLessThan(16);

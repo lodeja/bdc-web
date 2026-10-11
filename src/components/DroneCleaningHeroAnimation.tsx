@@ -7,7 +7,7 @@ import {
   type Lane,
 } from "./hero-story";
 import { droneArt, logoArt, upperArt, walkArt, type Art } from "./hero-art";
-import { VAN_DOOR, VAN_VIEW, VAN_WHEEL, VanShape, vanLogoBox, wheelBox } from "./van-flat";
+import { VAN_DOOR, VAN_VIEW, VAN_WHEEL, VanDoorShape, VanShape, vanLampBox, vanLogoBox, wheelBox } from "./van-flat";
 
 const LABEL =
   "Illustratie. Een operator, van achteren gezien, met witte helm en fluovest, stuurt vanaf de voorgrond een drone. De drone maakt de vuile gevel ruit per ruit schoon. Daarna draait de operator zich om, loopt naar de zwarte bestelwagen, stapt via het bestuurdersportier in en rijdt weg.";
@@ -73,7 +73,7 @@ function Scene({ spec }: { spec: HeroSpec }) {
         data-hero="tower"
         style={{ left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` }}
       >
-        <Facade />
+        {v === "mobile" ? <MobileFacade /> : <Facade />}
       </div>
       {spec.lanes.map((lane) => (
         <LanePane key={lane.id} lane={lane} />
@@ -94,9 +94,7 @@ function Scene({ spec }: { spec: HeroSpec }) {
           style={{ left: `${spec.door.x}%`, top: `${spec.door.y}%`, width: `${spec.door.w}%`, height: `${spec.door.h}%` }}
         >
           <svg viewBox={`0 0 ${VAN_DOOR.w} ${VAN_DOOR.h}`} className="jdc-trace" preserveAspectRatio="none">
-            <rect width={VAN_DOOR.w} height={VAN_DOOR.h} fill="#141416" />
-            <rect x="14" y="16" width={VAN_DOOR.w - 28} height="72" fill="#8fb4c6" />
-            <rect x={VAN_DOOR.w - 22} y="124" width="8" height="28" fill="#d5d8dc" />
+            <VanDoorShape />
           </svg>
         </div>
       </div>
@@ -150,14 +148,59 @@ function Facade() {
   );
 }
 
-/** Bottom lane runs from facade y=0.47 through the plinth. Glass ends at 0.76. */
-const GLASS_END = 54.72;
-const DOOR_TOP = 62.26;
+/** Portrait tower: four bays, six floors. The ground floor keeps the entrance. */
+function MobileFacade() {
+  const cols = 4;
+  const rows = [
+    { y: 0, h: 150 },
+    { y: 150, h: 150 },
+    { y: 300, h: 150 },
+    { y: 450, h: 150 },
+    { y: 600, h: 150 },
+    { y: 750, h: 110 },
+  ];
+  return (
+    <svg viewBox="0 0 400 1000" className="jdc-trace" preserveAspectRatio="none">
+      <rect width="400" height="1000" fill="#d7d1c4" />
+      <rect y="860" width="400" height="140" fill="#c9c2b4" />
+      <rect y="860" width="400" height="8" fill="#a79f91" />
+      {Array.from({ length: 6 }, (_, i) => (
+        <rect key={i} x={i * 70} y="868" width="2" height="132" fill="#b3ab9d" opacity="0.7" />
+      ))}
+      <rect x="130" y="888" width="140" height="112" fill="#1a2330" />
+      <rect x="146" y="904" width="48" height="42" fill="#8fb4c6" opacity="0.85" />
+      <rect x="206" y="904" width="48" height="42" fill="#8fb4c6" opacity="0.85" />
+      {rows.map((row) =>
+        Array.from({ length: cols }, (_, col) => {
+          const x = col * 100;
+          return (
+            <g key={`${row.y}-${col}`}>
+              <rect x={x + 8} y={row.y + 10} width="84" height={row.h - 20} fill="#b9d6e4" />
+              <path
+                d={`M${x + 16} ${row.y + row.h - 16} L${x + 78} ${row.y + 18}`}
+                stroke="#ffffff"
+                strokeWidth="8"
+                opacity="0.38"
+              />
+            </g>
+          );
+        }),
+      )}
+      {Array.from({ length: cols + 1 }, (_, i) => (
+        <rect key={`v${i}`} x={i * 100 - 3} width="8" height="860" fill="#0b1f3a" />
+      ))}
+      {rows.map((row) => (
+        <rect key={`h${row.y}`} y={row.y} width="400" height="8" fill="#0b1f3a" />
+      ))}
+      <rect y="852" width="400" height="12" fill="#0b1f3a" />
+    </svg>
+  );
+}
 
 function LanePane({ lane }: { lane: Lane }) {
-  const bottom = lane.id.includes("-pane-3-");
-  const col = Number(lane.id.at(-1));
-  const glassBottom = bottom ? GLASS_END : 100;
+  const bottom = lane.plinth;
+  const col = lane.col;
+  const glassBottom = lane.glassEnd;
   const streakCount = 2 + (col % 3);
   const streakX = [16, 39, 62, 84];
   const specks = [
@@ -166,7 +209,7 @@ function LanePane({ lane }: { lane: Lane }) {
     [71, 16],
     [34, 58],
   ];
-  const door = col === 2 ? { x: 30, w: 70 } : col === 3 ? { x: 0, w: 70 } : null;
+  const door = lane.door;
   const maskId = `${lane.id}-door`;
   return (
     <div
@@ -217,12 +260,12 @@ function LanePane({ lane }: { lane: Lane }) {
           {bottom && door ? (
             <mask id={maskId} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
               <rect width="100" height="100" fill="#ffffff" />
-              <rect x={door.x} y={DOOR_TOP} width={door.w} height={100 - DOOR_TOP} fill="#000000" />
+              <rect x={door.x} y={lane.doorTop} width={door.w} height={100 - lane.doorTop} fill="#000000" />
             </mask>
           ) : null}
           {bottom ? (
             <g mask={door ? `url(#${maskId})` : undefined}>
-              <rect y={GLASS_END} width="100" height={100 - GLASS_END} fill="#6b6256" opacity="0.52" />
+              <rect y={glassBottom} width="100" height={100 - glassBottom} fill="#6b6256" opacity="0.52" />
               <rect y="94" width="100" height="6" fill="#6a7560" opacity="0.7" />
             </g>
           ) : null}
@@ -315,6 +358,19 @@ function Van({ spec }: { spec: HeroSpec }) {
             }}
           >
             <use href="#jdc-logo" width="560" height="362" />
+          </svg>
+          <svg
+            viewBox="0 0 92 68"
+            className="van-lamp jdc-anim jdc-story"
+            data-hero="lamp"
+            style={{
+              left: `${vanLampBox.left}%`,
+              top: `${vanLampBox.top}%`,
+              width: `${vanLampBox.width}%`,
+              height: `${vanLampBox.height}%`,
+            }}
+          >
+            <polygon points="6,40 72,4 88,30 20,62" fill="#f4f7fb" />
           </svg>
           <Wheel cx={VAN_WHEEL.front} front />
           <Wheel cx={VAN_WHEEL.rear} />
