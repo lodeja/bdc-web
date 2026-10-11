@@ -1,648 +1,603 @@
 /**
- * One-shot hero timeline. CSS drives it so the story starts with first paint,
- * including when hydration is deferred. GSAP stays on the industrial scene.
- *
- * After a one-second hold the drone cleans every floor in a serpentine,
- * eases back to the operator, and the Sprinter drives off. The un-animated
- * transforms are the reduced-motion still: clean facade, drone, operator, van.
+ * One-shot hero, drawn in the first HTML response.
+ * Motion is CSS on HTML boxes (not SVG transforms) so it starts without
+ * hydration and stays compatible with WebKit. The permanent cloud drift and
+ * glass glint are separate loops. prefers-reduced-motion keeps a short fade
+ * from dirty to clean and leaves the crew in place.
  */
 
 export const HERO_DELAY_S = 1;
+export const STORY_S = 13.2;
+export const SOFT_S = 3.4;
+export const CLOUD_S = 20;
 
-export type Win = {
+export type Box = { x: number; y: number; w: number; h: number };
+
+export type Lane = Box & {
   id: string;
-  col: number;
-  row: number;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  cx: number;
-  cy: number;
+  delay: number;
+  dur: number;
 };
 
-type Point = { x: number; y: number };
+export type HeroSpec = {
+  variant: "desktop" | "mobile";
+  aspectW: number;
+  aspectH: number;
+  building: Box;
+  /** Glass only, for the glint. The lowest panes continue over the plinth. */
+  glass: Box;
+  lanes: Lane[];
+  van: Box;
+  door: Box;
+  hole: Box;
+  operator: Box;
+  drone: { w: number; h: number };
+  /** Reduced-motion hover, in stage percent. Full motion starts on the ground. */
+  hover: { x: number; y: number };
+  ground: number;
+};
 
 type Geom = {
-  variant: "desktop" | "mobile";
-  viewW: number;
-  viewH: number;
-  cols: number;
-  rows: number;
-  tower: {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-    padX: number;
-    padY: number;
-    padBottom: number;
-    gapX: number;
-    gapY: number;
-  };
-  droneLand: Point;
-  operator: Point;
-  /** Figure scale. Neck sits this far above the feet, in figure pixels. */
-  figure: number;
-  van: {
-    x: number;
-    y: number;
-    travel: number;
-    length: number;
-    rearAxle: number;
-    frontAxle: number;
-    axleY: number;
-    wheelR: number;
-  };
-  approach: number;
-  lane: number;
-  drop: number;
-  settle: number;
-  land: number;
-  board: number;
-  drive: number;
-  bob: number;
+  variant: HeroSpec["variant"];
+  aspectW: number;
+  aspectH: number;
+  building: Box;
+  van: Box;
+  /** Cab door, as fractions of the van box. */
+  door: { ox: number; oy: number; w: number; h: number };
+  operator: Box;
+  drone: { w: number; h: number };
+  start: { x: number; y: number };
+  ground: number;
+  /** How far the van travels, in stage percent. Negative drives left. */
+  travel: number;
 };
 
-export type HeroStory = {
-  variant: Geom["variant"];
-  viewW: number;
-  viewH: number;
-  tower: Geom["tower"];
-  windows: Win[];
-  operator: Point;
-  neck: Point;
-  figure: number;
-  van: Geom["van"];
-  /** Door panel in van-local pixels. The operator walks into it and stays opaque. */
-  door: { x: number; y: number; w: number; h: number };
-  /** Where the drone tucks into the cargo, in viewBox pixels. */
-  cargo: Point;
-  /** How far the operator steps up into the van, in viewBox pixels. */
-  sink: number;
-  droneLand: Point;
-  duration: number;
-  wipeDur: number;
-  wipeDelay: Map<string, number>;
-  wipeOrigin: Map<string, "left" | "right">;
-  glintDelay: Map<string, number>;
-  spins: number;
-  css: string;
-};
-
-const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
-const EASE_LANE = "cubic-bezier(0.42, 0.02, 0.18, 1)";
-const EASE_DROP = "cubic-bezier(0.45, 0, 0.55, 1)";
-const EASE_VAN = "cubic-bezier(0.55, 0.04, 0.82, 0.22)";
-
+/**
+ * The facade photo is the scale. One window band is a 3.2 m storey.
+ * Sprinter height 2.8 m, drone span 1.3 m, person 1.8 m.
+ * Building bottom is the ground line. Van travel clears the rear bumper.
+ * The operator box is the full walking figure; at rest the waist sits on the frame.
+ */
 const desktopGeom: Geom = {
   variant: "desktop",
-  viewW: 853,
-  viewH: 640,
-  cols: 3,
-  rows: 3,
-  tower: {
-    x: 386.5,
-    y: 24,
-    w: 340,
-    h: 490,
-    padX: 14,
-    padY: 14,
-    padBottom: 56,
-    gapX: 10,
-    gapY: 8,
-  },
-  droneLand: { x: 336.5, y: 478 },
-  operator: { x: 534.5, y: 620 },
-  figure: 0.82,
-  van: {
-    x: 122.5,
-    y: 528,
-    travel: -460,
-    length: 300,
-    rearAxle: 236.8,
-    frontAxle: 70.6,
-    axleY: 73.5,
-    wheelR: 18,
-  },
-  approach: 0.85,
-  lane: 1.22,
-  drop: 0.36,
-  settle: 0.3,
-  land: 0.75,
-  board: 2.65,
-  drive: 1.9,
-  bob: 5,
+  aspectW: 12,
+  aspectH: 5,
+  building: { x: 17.41, y: 6, w: 65.19, h: 86 },
+  van: { x: 1.2, y: 80.7, w: 11.19, h: 11.3 },
+  door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
+  operator: { x: 70.5, y: 11, w: 23.8, h: 150 },
+  drone: { w: 3.29, h: 2.73 },
+  start: { x: 26, y: 76 },
+  ground: 92,
+  travel: -18,
 };
 
 const mobileGeom: Geom = {
   variant: "mobile",
-  viewW: 773,
-  viewH: 580,
-  cols: 3,
-  rows: 3,
-  tower: {
-    x: 230.5,
-    y: 18,
-    w: 312,
-    h: 400,
-    padX: 10,
-    padY: 10,
-    padBottom: 22,
-    gapX: 8,
-    gapY: 6,
-  },
-  droneLand: { x: 374.5, y: 430 },
-  operator: { x: 518.5, y: 568 },
-  figure: 0.72,
-  van: {
-    x: 220.5,
-    y: 464,
-    travel: -340,
-    length: 248,
-    rearAxle: 195.7,
-    frontAxle: 58.4,
-    axleY: 60.8,
-    wheelR: 13.4,
-  },
-  approach: 0.7,
-  lane: 1.02,
-  drop: 0.28,
-  settle: 0.2,
-  land: 0.65,
-  board: 2.55,
-  drive: 1.55,
-  bob: 4,
+  aspectW: 8,
+  aspectH: 9,
+  building: { x: -35.96, y: 4, w: 171.92, h: 84 },
+  van: { x: 0.6, y: 76.97, w: 29.5, h: 11.03 },
+  door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
+  operator: { x: 34, y: 36, w: 56.6, h: 132 },
+  drone: { w: 8.66, h: 2.67 },
+  start: { x: 18, y: 72 },
+  ground: 88,
+  travel: -36,
 };
 
-function buildWindows(g: Geom): Win[] {
-  const t = g.tower;
-  const cellW = (t.w - t.padX * 2 - t.gapX * (g.cols - 1)) / g.cols;
-  const cellH = (t.h - t.padY - t.padBottom - t.gapY * (g.rows - 1)) / g.rows;
-  const list: Win[] = [];
-  for (let row = 0; row < g.rows; row++) {
-    for (let col = 0; col < g.cols; col++) {
-      const x = t.x + t.padX + col * (cellW + t.gapX);
-      const y = t.y + t.padY + row * (cellH + t.gapY);
-      list.push({
-        id: `${g.variant}-w${row}${col}`,
-        col,
-        row,
-        x,
-        y,
-        w: cellW,
-        h: cellH,
-        cx: x + cellW / 2,
-        cy: y + cellH / 2,
-      });
-    }
-  }
-  return list;
-}
-
-function aim(w: Win, dir: 1 | -1): Point {
-  return {
-    x: dir > 0 ? w.x + w.w * 0.28 : w.x + w.w * 0.72,
-    y: w.cy - w.h * 0.08,
-  };
-}
+const COLS = 6;
+const HOVER = 0.2;
+const MOVE = 0.1;
+const STEP = HOVER + MOVE;
+const FADE = 0.64;
+const RISE_END = 0.42;
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-/**
- * Pitch into the travel direction, then level off while spraying.
- * The craft points right. Positive is nose-down. Capped near 11° so the
- * nozzle stays on the glass. Bank is only the short roll at a lane change.
- */
-function attitude(
-  a: Point,
-  b: Point,
-  prev: { dx: number; dy: number } | null,
-): { rot: number; bank: number } {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  if (Math.hypot(dx, dy) < 8) return { rot: 0, bank: 0 };
-  const vertical = Math.abs(dy) > Math.abs(dx) * 0.75;
-  if (vertical) {
-    const turn = prev && Math.abs(prev.dx) > Math.abs(prev.dy) ? prev.dx : dx;
-    // Bank and pitch are both in-plane rotates, so they add. Keep the sum ≤ 12°.
-    return {
-      rot: clamp(Math.sign(dy || 1) * 7, -12, 12),
-      bank: clamp(Math.sign(turn || 1) * 5, -5, 5),
-    };
-  }
-  const continuing =
-    prev &&
-    Math.abs(prev.dy) <= Math.abs(prev.dx) * 0.75 &&
-    Math.sign(prev.dx) === Math.sign(dx);
-  if (continuing) return { rot: 0, bank: 0 };
-  return { rot: clamp(Math.sign(dx || 1) * 11, -12, 12), bank: 0 };
-}
-
-function lookDeg(neck: Point, drone: Point) {
-  const rise = neck.y - drone.y;
-  const side = drone.x - neck.x;
-  const deg = -6 - rise * 0.09 + side * 0.008;
-  return clamp(deg, -50, 10);
-}
-
 function num(n: number) {
-  return Number(n.toFixed(2)).toString();
+  return (Math.round(n * 100) / 100).toString();
 }
 
-type Key = { t: number; x: number; y: number; rot: number; bank: number; ease: string };
+function pct(n: number) {
+  return `${num(n)}%`;
+}
 
-function buildStory(g: Geom): HeroStory {
-  const windows = buildWindows(g);
-  const neck = {
-    x: g.operator.x + 6 * g.figure,
-    y: g.operator.y - 78 * g.figure,
+type Beat = { t: number; x: number; y: number; rot: number; ease: string };
+
+const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
+const EASE_LANE = "cubic-bezier(0.33, 0, 0.2, 1)";
+const EASE_DROP = "cubic-bezier(0.45, 0, 0.55, 1)";
+
+/** Four storeys of facade-clean. Each stop covers two neighbouring bays, six stops across. The last row includes the plinth. */
+const BANDS = [
+  { y0: 0, y1: 0.17, fly: 0.09 },
+  { y0: 0.17, y1: 0.32, fly: 0.245 },
+  { y0: 0.32, y1: 0.47, fly: 0.39 },
+  { y0: 0.47, y1: 1, fly: 0.62 },
+];
+
+function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
+  const lanes: Lane[] = [];
+  const beats: Beat[] = [];
+  const dw = g.drone.w;
+  const dh = g.drone.h;
+  const order: { row: number; col: number }[] = [];
+  for (let row = 0; row < BANDS.length; row++) {
+    const cols = row % 2 === 0 ? [...Array(COLS).keys()] : [...Array(COLS).keys()].reverse();
+    for (const col of cols) order.push({ row, col });
+  }
+  const droneAt = (row: number, col: number) => ({
+    x: g.building.x + g.building.w * ((col + 0.5) / COLS) - dw / 2,
+    y: g.building.y + g.building.h * BANDS[row].fly - dh / 2,
+  });
+
+  const push = (t: number, x: number, y: number, rot: number, ease: string) => {
+    beats.push({ t, x, y, rot: clamp(rot, -10, 10), ease });
   };
-  const visits: { w: Win; t: number; dir: 1 | -1; at: Point }[] = [];
-  let cursor = g.approach;
-  for (let row = 0; row < g.rows; row++) {
-    const dir: 1 | -1 = row % 2 === 0 ? 1 : -1;
-    const line = windows.filter((w) => w.row === row).sort((a, b) => a.col - b.col);
-    const ordered = dir > 0 ? line : [...line].reverse();
-    ordered.forEach((w, i) => {
-      const span = ordered.length === 1 ? 0 : (i / (ordered.length - 1)) * g.lane;
-      visits.push({ w, t: cursor + span, dir, at: aim(w, dir) });
+
+  push(0, g.start.x, g.start.y, 0, EASE_OUT);
+  push(0.14, g.start.x, g.start.y - 1.2, -8, EASE_OUT);
+  const firstPane = droneAt(order[0].row, order[0].col);
+  push(RISE_END, firstPane.x, firstPane.y, 8, EASE_OUT);
+
+  for (let i = 0; i < order.length; i++) {
+    const { row, col } = order[i];
+    const at = RISE_END + i * STEP;
+    const here = droneAt(row, col);
+    const tilt = row % 2 === 0 ? 8 : -8;
+    const band = BANDS[row];
+    push(at, here.x, here.y, tilt * 0.4, "linear");
+    if (i < order.length - 1) {
+      push(at + HOVER * 0.4, here.x, here.y, tilt, EASE_LANE);
+      push(at + HOVER, here.x, here.y, tilt, EASE_LANE);
+      const next = droneAt(order[i + 1].row, order[i + 1].col);
+      push(at + STEP, next.x, next.y, tilt * 0.45, EASE_DROP);
+    } else {
+      push(at + FADE * 0.72, here.x, here.y, 0, EASE_OUT);
+    }
+    lanes.push({
+      id: `${g.variant}-pane-${row}-${col}`,
+      x: g.building.x + g.building.w * (col / COLS),
+      y: g.building.y + g.building.h * band.y0,
+      w: g.building.w / COLS,
+      h: g.building.h * (band.y1 - band.y0),
+      delay: HERO_DELAY_S + at,
+      dur: FADE,
     });
-    cursor += g.lane;
-    if (row < g.rows - 1) cursor += g.drop;
-  }
-  const cleanEnd = cursor;
-  const settleEnd = cleanEnd + g.settle;
-  const landEnd = settleEnd + g.land;
-  const boardEnd = landEnd + g.board;
-  const duration = boardEnd + g.drive;
-  const last = visits[visits.length - 1];
-  const spins = Math.max(24, Math.round((HERO_DELAY_S + landEnd) / 0.09));
-  const wipeDur = 0.42;
-  const wipeDelay = new Map<string, number>();
-  const wipeOrigin = new Map<string, "left" | "right">();
-  const glintDelay = new Map<string, number>();
-  for (const visit of visits) {
-    wipeDelay.set(visit.w.id, HERO_DELAY_S + Math.max(0, visit.t - 0.06));
-    wipeOrigin.set(visit.w.id, visit.dir > 0 ? "right" : "left");
-    glintDelay.set(visit.w.id, HERO_DELAY_S + visit.t + wipeDur * 0.55);
   }
 
-  const keys: Key[] = [];
-  const push = (t: number, x: number, y: number, ease: string) => {
-    const prev = keys[keys.length - 1];
-    if (prev && Math.abs(prev.t - t) < 0.02) {
-      prev.x = x;
-      prev.y = y;
-      prev.ease = ease;
-      return;
-    }
-    keys.push({ t, x, y, rot: 0, bank: 0, ease });
+  const lastArrive = RISE_END + (order.length - 1) * STEP;
+  const cleanEnd = lastArrive + FADE;
+  const droneLeave = lastArrive + FADE * 0.72;
+  const returnEnd = droneLeave + 0.5;
+  const turnStart = cleanEnd;
+  const fadeEnd = turnStart + 0.32;
+  // Yaw through edge-on, then hand off. A full-size opacity blend of the
+  // back view and the profile is two semi-transparent people. The swap is
+  // a single step while both poses are a sliver, so no frame shows both.
+  const edge = turnStart + 0.08;
+  const swapEnd = edge + 0.02;
+  const arrive = fadeEnd + 2.3;
+  const hold = arrive + 0.1;
+  const stepIn = hold + 0.36;
+  const shutEnd = stepIn + 0.28;
+  const driveStart = shutEnd + 0.2;
+  const roof = {
+    x: g.van.x + g.van.w * 0.48 - dw / 2,
+    y: g.van.y - dh * 0.62,
   };
+  push(returnEnd, roof.x, roof.y, 0, EASE_OUT);
+  push(driveStart, roof.x, roof.y, 0, "linear");
 
-  const trackPad = 6;
-  const trackStart = g.van.frontAxle + g.van.wheelR + trackPad;
-  const trackEnd = g.van.rearAxle - g.van.wheelR - trackPad;
-  const trackW = Math.max(48, trackEnd - trackStart);
-  const doorW = Math.min(68, Math.max(52, trackW * 0.54));
-  // Closed door sits at the rear of the track. It slides toward the cab to open,
-  // so the gap faces the operator and the panel never crosses a wheel.
-  const door = {
-    x: trackEnd - doorW,
-    y: 3,
-    w: doorW,
-    h: g.van.axleY + 10,
-  };
-  const roof = 4 * (g.van.length / 408);
-  const cargo = {
-    x: g.van.x + door.x + door.w * 0.5,
-    y: g.van.y + roof - 2.2,
-  };
-  // Boots rise onto the sill. Negative Y is up. The door then slides shut over him.
-  const sink = -8;
-
-  push(0, g.droneLand.x, g.droneLand.y, EASE_OUT);
-  for (const visit of visits) push(visit.t, visit.at.x, visit.at.y, EASE_LANE);
-  push(settleEnd, last.at.x, last.at.y, EASE_OUT);
-  push(landEnd, g.droneLand.x, g.droneLand.y, EASE_OUT);
-  push(boardEnd, cargo.x, cargo.y, EASE_VAN);
-  push(duration, cargo.x + g.van.travel, cargo.y, EASE_VAN);
-
-  keys[0].rot = 0;
-  keys[0].bank = 0;
-  for (let i = 0; i < keys.length - 1; i++) {
-    const prev =
-      i > 0
-        ? { dx: keys[i].x - keys[i - 1].x, dy: keys[i].y - keys[i - 1].y }
-        : null;
-    const pose = attitude(keys[i], keys[i + 1], prev);
-    keys[i + 1].rot = pose.rot;
-    keys[i + 1].bank = pose.bank;
-    if (keys[i + 1].t > cleanEnd && keys[i + 1].t <= landEnd + 0.02) keys[i].ease = EASE_OUT;
-    else if (Math.abs(keys[i + 1].y - keys[i].y) > 18 && Math.abs(keys[i + 1].x - keys[i].x) < 80) {
-      keys[i].ease = EASE_DROP;
-    }
-  }
-  for (const key of keys) {
-    if (key.t >= landEnd - 0.01) {
-      key.rot = 0;
-      key.bank = 0;
-    }
+  const driveMarks = [0, 0.14, 0.32, 0.52, 0.72, 0.88, 1];
+  const driveEase = (u: number) => Math.pow(u, 1.65);
+  for (const mark of driveMarks) {
+    if (mark === 0) continue;
+    push(driveStart + (STORY_S - driveStart) * mark, roof.x + g.travel * driveEase(mark), roof.y, 0, "linear");
   }
 
-  const pct = (t: number) => `${((t / duration) * 100).toFixed(3)}%`;
-  const bodyScale = g.van.length / 408;
-  const pivot = { x: g.van.x + g.van.length * 0.22, y: g.van.y + 121 * bodyScale };
-  const squatAt = (p: number) => {
-    const marks = [
-      { p: 0, a: 0 },
-      { p: 0.16, a: 1.6 },
-      { p: 0.42, a: 0.35 },
-      { p: 1, a: 0 },
-    ];
-    let i = 0;
-    while (i < marks.length - 1 && p > marks[i + 1].p) i += 1;
-    const a = marks[i];
-    const b = marks[Math.min(marks.length - 1, i + 1)];
-    const span = b.p - a.p || 1;
-    const u = Math.min(1, Math.max(0, (p - a.p) / span));
-    return a.a + (b.a - a.a) * u;
+  const hover = droneAt(1, 2);
+  const door: Box = {
+    x: g.van.x + g.van.w * g.door.ox,
+    y: g.van.y + g.van.h * g.door.oy,
+    w: g.van.w * g.door.w,
+    h: g.van.h * g.door.h,
   };
-  const rideAt = (dist: number, angleDeg: number) => {
-    const rad = (angleDeg * Math.PI) / 180;
-    const c = Math.cos(rad);
-    const s = Math.sin(rad);
-    const dx = cargo.x - pivot.x;
-    const dy = cargo.y - pivot.y;
-    return {
-      x: pivot.x + dx * c + dy * s + g.van.travel * dist,
-      y: pivot.y - dx * s + dy * c,
-    };
+  const glass: Box = {
+    x: g.building.x,
+    y: g.building.y + g.building.h * 0.02,
+    w: g.building.w,
+    h: g.building.h * 0.75,
   };
-  const driveMarks = [
-    { p: 0, dist: 0 },
-    { p: 0.18, dist: 0.04 },
-    { p: 0.4, dist: 0.16 },
-    { p: 0.62, dist: 0.4 },
-    { p: 0.82, dist: 0.7 },
-    { p: 1, dist: 1 },
+  const hole: Box = {
+    x: ((door.x - g.van.x) / g.van.w) * 100,
+    y: ((door.y - g.van.y) / g.van.h) * 100,
+    w: (door.w / g.van.w) * 100,
+    h: (door.h / g.van.h) * 100,
+  };
+
+  // Scale origin is the feet. He walks back into the scene, shrinking onto
+  // the ground beside the van, then ducks into the open door. The last pose
+  // sits inside the door before opacity hits 0, otherwise he pops.
+  const personH = g.van.h * (1.8 / 2.8);
+  const standScale = personH / g.operator.h;
+  // The cab door is a thin slice of the van. He ducks until the scaled
+  // figure sits inside that slice, then the opacity drops.
+  const endScale = Math.min((door.h * 0.84) / g.operator.h, (door.w * 0.78) / g.operator.w);
+  const endX = door.x + door.w / 2 - g.operator.w / 2;
+  const endY = door.y + door.h * 0.96 - g.operator.h;
+  const standY = g.ground - g.operator.h;
+  const personW = g.operator.w * standScale;
+  const standCenter = door.x + door.w + personW * 0.65;
+  const standX = standCenter - g.operator.w / 2;
+  const lerp = (a: number, b: number, u: number) => a + (b - a) * u;
+  const easeOut = (t: number) => 1 - Math.pow(1 - t, 2.4);
+  const walk: { t: number; x: number; y: number; s: number }[] = [
+    { t: 0, x: g.operator.x, y: g.operator.y, s: 1 },
+    { t: turnStart, x: g.operator.x, y: g.operator.y, s: 1 },
+    { t: edge, x: g.operator.x - 0.9, y: g.operator.y, s: 0.98 },
+    { t: fadeEnd, x: g.operator.x, y: g.operator.y, s: 1 },
   ];
-  const posKf = [
-    ...keys
-      .filter((k) => k.t < boardEnd - 0.01)
-      .map(
-        (k) =>
-          `${pct(k.t)}{transform:translate(${num(k.x)}px,${num(k.y)}px);animation-timing-function:${k.ease}}`,
-      ),
-    ...driveMarks.map((mark) => {
-      const at = rideAt(mark.dist, squatAt(mark.p));
-      return `${pct(boardEnd + g.drive * mark.p)}{transform:translate(${num(at.x)}px,${num(at.y)}px);animation-timing-function:linear}`;
-    }),
-  ].join("");
-  const tiltKf = keys
-    .map(
-      (k) =>
-        `${pct(k.t)}{transform:rotate(${num(k.rot)}deg);animation-timing-function:${k.ease}}`,
-    )
-    .join("");
-  const lookKf = keys
-    .map((k) => {
-      const deg = lookDeg(neck, k);
-      return `${pct(k.t)}{transform:rotate(${num(deg)}deg);animation-timing-function:${EASE_OUT}}`;
+  const walkSamples = 16;
+  for (let i = 1; i <= walkSamples; i++) {
+    const t = i / walkSamples;
+    const u = easeOut(t);
+    const s = lerp(1, standScale, u);
+    const bulge = Math.sin(Math.PI * u) * 5.5 * s;
+    walk.push({
+      t: fadeEnd + (arrive - fadeEnd) * t,
+      x: lerp(g.operator.x, standX, u) + bulge,
+      y: lerp(g.operator.y, standY, u),
+      s,
+    });
+  }
+  walk.push(
+    { t: hold, x: standX, y: standY, s: standScale },
+    { t: stepIn, x: endX, y: endY, s: endScale },
+    { t: shutEnd, x: endX, y: endY, s: endScale },
+    { t: STORY_S, x: endX, y: endY, s: endScale },
+  );
+
+  const headY = g.operator.y + g.operator.h * 0.1;
+  const lookAt = (x: number, y: number) => {
+    const rise = headY - (y + dh * 0.3);
+    return clamp(-rise * 0.35, -8, 8);
+  };
+  const pOf = (t: number) => num((t / STORY_S) * 100);
+  const dedupe = <T extends { t: number }>(list: T[]) => {
+    const out: T[] = [];
+    for (const item of list) {
+      const prev = out[out.length - 1];
+      if (prev && Math.abs(prev.t - item.t) < 0.03) out[out.length - 1] = item;
+      else out.push(item);
+    }
+    return out;
+  };
+  const droneBeats = dedupe(beats);
+  const v = g.variant;
+
+  const droneKf = droneBeats
+    .map((b, i) => {
+      const ease = droneBeats[i + 1]?.ease ?? "linear";
+      return `${pOf(b.t)}%{transform:translate(${pct(b.x)},${pct(b.y)});animation-timing-function:${ease}}`;
     })
     .join("");
-  const bankKf = keys
-    .map(
-      (k) =>
-        `${pct(k.t)}{transform:rotate(${num(k.bank)}deg);animation-timing-function:${k.ease}}`,
-    )
+  const tiltKf = droneBeats
+    .map((b, i) => {
+      const ease = droneBeats[i + 1]?.ease ?? "linear";
+      return `${pOf(b.t)}%{transform:rotate(${num(b.rot)}deg);animation-timing-function:${ease}}`;
+    })
+    .join("");
+  const lookKf = droneBeats
+    .map((b, i) => {
+      const deg = b.t >= arrive - 0.12 ? 0 : b.t >= turnStart ? 3 : lookAt(b.x, b.y);
+      const ease = b.t >= turnStart ? EASE_OUT : droneBeats[i + 1]?.ease ?? EASE_OUT;
+      return `${pOf(b.t)}%{transform:rotate(${num(deg)}deg);animation-timing-function:${ease}}`;
+    })
+    .join("");
+  const moveKf = walk
+    .map((b, i) => {
+      return `${pOf(b.t)}%{transform:translate(${pct(b.x)},${pct(b.y)});animation-timing-function:linear}`;
+    })
+    .join("");
+  const scaleKf = walk
+    .map((b, i) => {
+      return `${pOf(b.t)}%{transform:scale(${num(b.s)});animation-timing-function:linear}`;
+    })
     .join("");
 
-  const cleanPct = pct(cleanEnd);
-  const settlePct = pct(settleEnd);
-  const landPct = pct(landEnd);
-  const boardPct = pct(boardEnd);
-  const openAt = landEnd + 0.24;
-  const walkStart = landEnd + 0.28;
-  const arrive = boardEnd - 1.35;
-  const shut = boardEnd - 0.48;
-  const openPct = pct(openAt);
-  const arrivePct = pct(arrive);
-  const shutPct = pct(shut);
-  const mistIn = g.approach * 0.2;
-  const mistFull = g.approach + 0.55;
-  const mistOut = cleanEnd - 0.15;
-  const mistGone = cleanEnd + 0.7;
-  const v = g.variant;
-  const wheelDeg = (Math.abs(g.van.travel) / (2 * Math.PI * g.van.wheelR)) * 360;
-  const wheelSign = g.van.travel < 0 ? -1 : 1;
-  const walk = g.van.x + door.x + door.w * 0.72 - g.operator.x;
-  // Negative X parks the panel toward the cab. The gap stays on the rear side.
-  const slide = -Math.min(door.w * 0.9, Math.max(12, door.x - trackStart));
-  const landLook = lookDeg(neck, g.droneLand);
-  const bobCycles = Math.max(4, Math.round((landEnd / 1.15) * 2) / 2);
-  const span = Math.max(0.4, arrive - walkStart);
-  const stepFracs = [0.12, 0.34, 0.56, 0.78];
-  const stepX = [0.22, 0.48, 0.72, 0.9];
-  const legA = [52, -50, 48, -46];
-  const stepAt = (i: number) => walkStart + span * stepFracs[i];
-  const legKf = (angles: number[]) =>
-    [
-      `0%,${pct(walkStart)}{transform:rotate(0deg);animation-timing-function:ease-out}`,
-      ...angles.flatMap((deg, i) => {
-        const t = stepAt(i);
-        const hold = Math.min(t + 0.14, arrive - 0.08);
-        return [
-          `${pct(t)}{transform:rotate(${deg}deg);animation-timing-function:linear}`,
-          `${pct(hold)}{transform:rotate(${deg}deg);animation-timing-function:ease-in-out}`,
-        ];
-      }),
-      `${arrivePct},100%{transform:rotate(0deg)}`,
-    ].join("");
-  const strideKf = [
-    `0%,${pct(walkStart)}{transform:translate(0px,0px);animation-timing-function:ease-in-out}`,
-    ...stepFracs.map(
-      (_frac, i) =>
-        `${pct(stepAt(i))}{transform:translate(0px,${i % 2 === 0 ? -6 : 0}px);animation-timing-function:ease-in-out}`,
-    ),
-    `${arrivePct},100%{transform:translate(0px,0px)}`,
-  ].join("");
-  const markPct = (mark: { p: number }) => pct(boardEnd + g.drive * mark.p);
+  const vanSamples = driveMarks.map((mark) => ({
+    t: driveStart + (STORY_S - driveStart) * mark,
+    x: g.van.x + g.travel * driveEase(mark),
+  }));
   const vanKf = [
-    `0%,${boardPct}{transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation-timing-function:linear}`,
-    ...driveMarks.slice(1).map(
-      (mark) =>
-        `${markPct(mark)}{transform:translate(${num(g.van.x + g.van.travel * mark.dist)}px,${num(g.van.y)}px);animation-timing-function:linear}`,
-    ),
+    `0%,${pOf(driveStart)}%{transform:translate(${pct(g.van.x)},${pct(g.van.y)});animation-timing-function:linear}`,
+    ...vanSamples.slice(1).map((s) => `${pOf(s.t)}%{transform:translate(${pct(s.x)},${pct(g.van.y)});animation-timing-function:linear}`),
   ].join("");
+  const doorShiftKf = [
+    `0%,${pOf(driveStart)}%{transform:translate(0%,0%);animation-timing-function:linear}`,
+    ...vanSamples.slice(1).map((s) => `${pOf(s.t)}%{transform:translate(${pct(s.x - g.van.x)},0%);animation-timing-function:linear}`),
+  ].join("");
+
+  const wheelR = g.van.w * (72 / 1160);
+  const wheelDeg = (Math.abs(g.travel) / (2 * Math.PI * wheelR)) * 360;
+  const wheelSign = g.travel < 0 ? -1 : 1;
   const wheelKf = [
-    `0%,${boardPct}{transform:rotate(0deg);animation-timing-function:linear}`,
-    ...driveMarks.slice(1).map(
-      (mark) =>
-        `${markPct(mark)}{transform:rotate(${num(wheelSign * wheelDeg * mark.dist)}deg);animation-timing-function:linear}`,
-    ),
+    `0%,${pOf(driveStart)}%{transform:rotate(0deg);animation-timing-function:linear}`,
+    ...driveMarks.slice(1).map((mark) => {
+      const t = driveStart + (STORY_S - driveStart) * mark;
+      return `${pOf(t)}%{transform:rotate(${num(wheelSign * wheelDeg * driveEase(mark))}deg);animation-timing-function:linear}`;
+    }),
   ].join("");
-  const easeWalk = "cubic-bezier(0.42, 0, 0.58, 1)";
-  const riseAt = Math.max(walkStart + 0.05, arrive - 0.7);
-  const walkKf = [
-    `0%,${pct(walkStart)}{transform:translate(0px,0px);animation-timing-function:${easeWalk}}`,
-    ...stepX.map(
-      (portion, i) =>
-        `${pct(stepAt(i))}{transform:translate(${num(walk * portion)}px,0px);animation-timing-function:${easeWalk}}`,
-    ),
-    `${arrivePct}{transform:translate(${num(walk)}px,0px);animation-timing-function:linear}`,
-    `${boardPct}{transform:translate(${num(walk)}px,0px);animation-timing-function:linear}`,
-    ...driveMarks.slice(1).map(
-      (mark) =>
-        `${markPct(mark)}{transform:translate(${num(walk + g.van.travel * mark.dist)}px,0px);animation-timing-function:linear}`,
-    ),
-  ].join("");
-  const riseKf = [
-    `0%,${pct(riseAt)}{transform:translateY(0px);animation-timing-function:${EASE_OUT}}`,
-    `${arrivePct},100%{transform:translateY(${num(sink)}px)}`,
-  ].join("");
-  const leanKf = [
-    `0%,${pct(riseAt)}{transform:rotate(0deg);animation-timing-function:${EASE_OUT}}`,
-    `${arrivePct},100%{transform:rotate(-8deg)}`,
-  ].join("");
+
+  const doorOpen = arrive - 0.34;
+  const doorWide = arrive - 0.06;
   const doorKf = [
-    `0%,${landPct}{transform:translateX(0px);animation-timing-function:cubic-bezier(0.22,0.8,0.2,1)}`,
-    `${openPct}{transform:translateX(${num(slide)}px);animation-timing-function:linear}`,
-    `${arrivePct}{transform:translateX(${num(slide)}px);animation-timing-function:linear}`,
-    `${shutPct}{transform:translateX(0px);animation-timing-function:linear}`,
-    `${boardPct},100%{transform:translateX(0px)}`,
+    `0%,${pOf(doorOpen)}%{transform:scaleX(1);animation-timing-function:cubic-bezier(0.22, 0.8, 0.2, 1)}`,
+    `${pOf(doorWide)}%{transform:scaleX(0.16);animation-timing-function:linear}`,
+    `${pOf(stepIn)}%{transform:scaleX(0.16);animation-timing-function:cubic-bezier(0.4, 0, 0.2, 1)}`,
+    `${pOf(shutEnd)}%{transform:scaleX(1);animation-timing-function:linear}`,
+    `100%{transform:scaleX(1)}`,
   ].join("");
   const hideKf = [
-    `0%,${pct(Math.max(0, shut - 0.04))}{opacity:1;animation-timing-function:step-end}`,
-    `${shutPct},100%{opacity:0}`,
+    `0%,${pOf(shutEnd + 0.22)}%{opacity:1;animation-timing-function:linear}`,
+    `${pOf(shutEnd + 0.42)}%,100%{opacity:0}`,
   ].join("");
-  const pitchIn = pct(boardEnd + g.drive * 0.16);
-  const pitchMid = pct(boardEnd + g.drive * 0.42);
+  const armKf = [
+    `0%,${pOf(turnStart)}%{transform:rotate(-8deg);animation-timing-function:${EASE_OUT}}`,
+    `${pOf(fadeEnd)}%,100%{transform:rotate(0deg)}`,
+  ].join("");
+  const turnKf = [
+    `0%,${pOf(turnStart)}%{transform:rotate(0deg);animation-timing-function:linear}`,
+    `${pOf(edge)}%{transform:rotate(-5deg);animation-timing-function:linear}`,
+    `${pOf(fadeEnd)}%,100%{transform:rotate(0deg)}`,
+  ].join("");
+  const bobAt: number[] = [];
+  for (let t = fadeEnd + 0.25; t < arrive - 0.06; t += 0.25) bobAt.push(t);
+  const stepAt: number[] = [];
+  for (let t = fadeEnd + 0.2; t < arrive - 0.08; t += 0.25) stepAt.push(t);
+  const legKf = (sign: number) =>
+    [
+      `0%,${pOf(fadeEnd)}%{transform:rotate(0deg);animation-timing-function:ease-in-out}`,
+      ...stepAt.map((t, i) => `${pOf(t)}%{transform:rotate(${num(sign * (i % 2 === 0 ? 24 : -22))}deg);animation-timing-function:ease-in-out}`),
+      `${pOf(arrive)}%,100%{transform:rotate(0deg)}`,
+    ].join("");
+  const squatIn = pOf(driveStart + (STORY_S - driveStart) * 0.16);
+  const squatMid = pOf(driveStart + (STORY_S - driveStart) * 0.42);
+  const mistIn = pOf(RISE_END * 0.55);
+  const mistFull = pOf(RISE_END);
+  const mistOut = pOf(cleanEnd);
+  const mistGone = pOf(Math.min(STORY_S, cleanEnd + 0.45));
+  // Pivot through the shoulder line so the helmet stays on one axis.
+  const upperPivot = v === "mobile" ? 45 : 33;
+  const restTf = "translateX(-50%) scaleX(1)";
+  const thinTf = "translateX(-50%) scaleX(0.07)";
+  const upperKf = `0%,${pOf(turnStart)}%{opacity:1;transform:${restTf};transform-origin:50% ${upperPivot}%;animation-timing-function:linear}${pOf(edge)}%{opacity:1;transform:${thinTf};transform-origin:50% ${upperPivot}%;animation-timing-function:step-end}${pOf(swapEnd)}%,100%{opacity:0;transform:${thinTf};transform-origin:50% ${upperPivot}%}`;
+  const walkInKf = `0%,${pOf(edge)}%{opacity:0;transform:scaleX(0.07);transform-origin:50% 24%;animation-timing-function:step-end}${pOf(swapEnd)}%{opacity:1;transform:scaleX(0.07);transform-origin:50% 24%;animation-timing-function:linear}${pOf(fadeEnd)}%,100%{opacity:1;transform:scaleX(1);transform-origin:50% 24%}`;
+  const bobKf = [
+    `0%,${pOf(fadeEnd)}%{transform:translate(0%,0%) rotate(0deg);animation-timing-function:ease-in-out}`,
+    ...bobAt.map((t, i) => {
+      const up = i % 2 === 0;
+      const sway = up ? 1 : -1;
+      return `${pOf(t)}%{transform:translate(${num(sway * 0.9)}%,${up ? "-2.8%" : "0%"}) rotate(${num(sway * 1.8)}deg);animation-timing-function:ease-in-out}`;
+    }),
+    `${pOf(arrive)}%,100%{transform:translate(0%,0%) rotate(0deg)}`,
+  ].join("");
 
   const css = `
-.jdc-ha-drone-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(${num(g.droneLand.x)}px,${num(g.droneLand.y)}px);opacity:1;animation:jdc-ha-drone-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-drone-${v}{${posKf}}
-.jdc-ha-tilt-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-tilt-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-tilt-${v}{${tiltKf}}
-.jdc-ha-bank-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-bank-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-bank-${v}{${bankKf}}
-.jdc-ha-bob-${v}{transform-box:fill-box;transform-origin:center;transform:translateY(0px);animation:jdc-ha-bob-${v} 1.15s ease-in-out ${bobCycles} both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-bob-${v}{0%,100%{transform:translateY(0px)}50%{transform:translateY(${num(-g.bob)}px)}}
-.jdc-ha-look-${v}{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(${num(landLook)}deg);animation:jdc-ha-look-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-look-${v}{${lookKf}}
-.jdc-ha-walk-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);opacity:1;animation-name:jdc-ha-walk-${v},jdc-ha-hide-${v};animation-duration:${duration}s,${duration}s;animation-timing-function:linear,linear;animation-fill-mode:both,both;animation-delay:${HERO_DELAY_S}s,${HERO_DELAY_S}s}
-@keyframes jdc-ha-walk-${v}{${walkKf}}
-@keyframes jdc-ha-hide-${v}{${hideKf}}
-.jdc-ha-rise-${v}{transform-box:view-box;transform-origin:0 0;transform:translateY(0px);animation:jdc-ha-rise-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-rise-${v}{${riseKf}}
-.jdc-ha-lean-${v}{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(0deg);animation:jdc-ha-lean-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-lean-${v}{${leanKf}}
-.jdc-ha-stride-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);animation:jdc-ha-stride-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-stride-${v}{${strideKf}}
-.jdc-ha-leg-a-${v},.jdc-ha-leg-b-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation-duration:${duration}s;animation-timing-function:linear;animation-fill-mode:both;animation-delay:${HERO_DELAY_S}s}
-.jdc-ha-leg-a-${v}{animation-name:jdc-ha-leg-a-${v}}
-.jdc-ha-leg-b-${v}{animation-name:jdc-ha-leg-b-${v}}
-@keyframes jdc-ha-leg-a-${v}{${legKf(legA)}}
-@keyframes jdc-ha-leg-b-${v}{${legKf(legA.map((deg) => -deg))}}
-.jdc-ha-van-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation:jdc-ha-van-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-van-${v}{${vanKf}}
-.jdc-ha-pitch-${v}{transform-box:fill-box;transform-origin:22% 100%;transform:rotate(0deg);animation:jdc-ha-pitch-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-pitch-${v}{
-  0%,${boardPct}{transform:rotate(0deg);animation-timing-function:ease-out}
-  ${pitchIn}{transform:rotate(1.6deg);animation-timing-function:ease-out}
-  ${pitchMid}{transform:rotate(0.35deg)}
-  100%{transform:rotate(0deg)}
+.stage-${v} .drone-move{transform:translate(${pct(g.start.x)},${pct(g.start.y)});animation:jdc-drone-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-drone-${v}{${droneKf}}
+.stage-${v} .drone-tilt{transform:rotate(0deg);animation:jdc-tilt-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-tilt-${v}{${tiltKf}}
+.stage-${v} .op-move{transform:translate(${pct(g.operator.x)},${pct(g.operator.y)});animation:jdc-op-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-op-${v}{${moveKf}}
+.stage-${v} .op-scale{transform:scale(1);transform-origin:50% 100%;animation:jdc-scale-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-scale-${v}{${scaleKf}}
+.stage-${v} .op-fade{opacity:1;animation:jdc-hide-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-hide-${v}{${hideKf}}
+.stage-${v} .op-turn{transform:rotate(0deg);transform-origin:50% 28%;animation:jdc-turn-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-turn-${v}{${turnKf}}
+.stage-${v} .op-arms{transform:rotate(-8deg);transform-origin:58% 18%;animation:jdc-arms-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-arms-${v}{${armKf}}
+.stage-${v} .op-look{transform:rotate(${num(lookAt(g.start.x, g.start.y))}deg);transform-origin:50% 100%;animation:jdc-look-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-look-${v}{${lookKf}}
+.stage-${v} .leg-a{animation:jdc-leg-a-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+.stage-${v} .leg-b{animation:jdc-leg-b-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-leg-a-${v}{${legKf(1)}}
+@keyframes jdc-leg-b-${v}{${legKf(-1)}}
+.stage-${v} .van-move{transform:translate(${pct(g.van.x)},${pct(g.van.y)});animation:jdc-van-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-van-${v}{${vanKf}}
+.stage-${v} .van-squat{transform:rotate(0deg);transform-origin:78% 100%;animation:jdc-squat-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-squat-${v}{0%,${pOf(driveStart)}%{transform:rotate(0deg);animation-timing-function:ease-out}${squatIn}%{transform:rotate(-1.25deg);animation-timing-function:ease-out}${squatMid}%{transform:rotate(-0.25deg)}100%{transform:rotate(0deg)}}
+.stage-${v} .wheel-spin{transform:rotate(0deg);animation:jdc-wheel-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-wheel-${v}{${wheelKf}}
+.stage-${v} .door-move{transform:translate(0%,0%);animation:jdc-door-move-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-door-move-${v}{${doorShiftKf}}
+.stage-${v} .door-panel{transform:scaleX(1);transform-origin:0% 50%;animation:jdc-door-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-door-${v}{${doorKf}}
+.stage-${v} .mist{opacity:0;animation:jdc-mist-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-mist-${v}{0%,${mistIn}%{opacity:0}${mistFull}%{opacity:1}${mistOut}%{opacity:1}${mistGone}%,100%{opacity:0}}
+.stage-${v} .jdc-op-photo{animation:jdc-upper-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-upper-${v}{${upperKf}}
+.stage-${v} .jdc-op-walk{opacity:0;animation:jdc-walkin-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-walkin-${v}{${walkInKf}}
+.stage-${v} .jdc-op-bob{animation:jdc-bobwalk-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-bobwalk-${v}{${bobKf}}
+@media (prefers-reduced-motion: reduce){
+  .stage-${v} .drone-move{transform:translate(${pct(hover.x)},${pct(hover.y)}) !important}
 }
-.jdc-ha-ride-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-ride-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-ride-${v}{
-  0%,${boardPct}{transform:rotate(0deg);animation-timing-function:ease-out}
-  ${pitchIn}{transform:rotate(1.6deg);animation-timing-function:ease-out}
-  ${pitchMid}{transform:rotate(0.35deg)}
-  100%{transform:rotate(0deg)}
-}
-.jdc-ha-wheel-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-wheel-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-wheel-${v}{${wheelKf}}
-.jdc-ha-door-${v}{transform-box:view-box;transform-origin:0 0;transform:translateX(0px);animation:jdc-ha-door-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-door-${v}{${doorKf}}
-.jdc-ha-mist-${v}{opacity:0;animation:jdc-ha-mist-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-mist-${v}{
-  0%,${pct(mistIn)}{opacity:0}
-  ${pct(mistIn + 0.22)}{opacity:.4}
-  ${pct(mistFull)}{opacity:1}
-  ${pct(mistOut)}{opacity:1}
-  ${pct(mistOut + 0.28)}{opacity:.35}
-  ${pct(Math.min(duration, mistGone))},100%{opacity:0}
-}
-.jdc-ha-disc-${v}{opacity:.25;animation:jdc-ha-disc-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-disc-${v}{
-  0%,${pct(g.approach * 0.35)}{opacity:.22}
-  ${pct(g.approach)},${cleanPct}{opacity:.9}
-  ${settlePct}{opacity:.45}
-  ${landPct},100%{opacity:.22}
-}
-.jdc-ha-dirt-${v}{transform-box:fill-box;transform-origin:var(--wipe-origin) center;transform:scaleX(0);animation-name:jdc-ha-wipe;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33,0,0.2,1);animation-fill-mode:both}
-.jdc-ha-mask{transform-box:fill-box;transform-origin:0 0;transform:translateX(var(--wipe-shift));animation-name:jdc-ha-mask;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33,0,0.2,1);animation-fill-mode:both}
-.jdc-ha-glint-${v}{opacity:.5;animation:jdc-ha-glint .85s cubic-bezier(0.22,1,0.36,1) both;animation-delay:var(--glint-delay)}
 `;
 
   return {
-    variant: v,
-    viewW: g.viewW,
-    viewH: g.viewH,
-    tower: g.tower,
-    windows,
-    operator: g.operator,
-    neck,
-    figure: g.figure,
-    van: g.van,
-    door,
-    cargo,
-    sink,
-    droneLand: g.droneLand,
-    duration,
-    wipeDur,
-    wipeDelay,
-    wipeOrigin,
-    glintDelay,
-    spins,
+    spec: {
+      variant: v,
+      aspectW: g.aspectW,
+      aspectH: g.aspectH,
+      building: g.building,
+      glass,
+      lanes,
+      van: g.van,
+      door,
+      hole,
+      operator: g.operator,
+      drone: g.drone,
+      hover,
+      ground: g.ground,
+    },
     css,
   };
 }
 
-export const desktopStory = buildStory(desktopGeom);
-export const mobileStory = buildStory(mobileGeom);
+const desktopBuilt = buildSpec(desktopGeom);
+const mobileBuilt = buildSpec(mobileGeom);
 
-function frameRule(story: HeroStory) {
-  const { variant, viewW, viewH } = story;
-  // Size the SVG with lengths. Firefox drops a transform when scale() divides
-  // container-query units, which left Fig. 01 at its raw viewBox size.
-  const width = `min(100cqw,calc(100cqh * ${viewW} / ${viewH}))`;
-  const height = `min(100cqh,calc(100cqw * ${viewH} / ${viewW}))`;
-  return `.jdc-ha-frame[data-variant="${variant}"] svg{left:50%;top:50%;width:${width};height:${height};transform:translate(-50%,-50%)}`;
-}
+export const desktopSpec = desktopBuilt.spec;
+export const mobileSpec = mobileBuilt.spec;
+
+const bobCount = Math.max(4, Math.round((HERO_DELAY_S + STORY_S) / 1.05));
+const spinCount = Math.max(8, Math.ceil((HERO_DELAY_S + STORY_S) / 0.2));
 
 export const heroMotionCss = `
-.jdc-ha-frame{container-type:size;position:relative;width:100%;height:100%;overflow:hidden}
-.jdc-ha-frame svg{position:absolute;max-width:none;display:block;overflow:hidden}
-${frameRule(desktopStory)}
-${frameRule(mobileStory)}
-@keyframes jdc-ha-wipe{from,82%{transform:scaleX(1)}to{transform:scaleX(0)}}
-@keyframes jdc-ha-mask{from{transform:translateX(0)}82%,to{transform:translateX(var(--wipe-shift))}}
-@keyframes jdc-ha-glint{0%{opacity:0}38%{opacity:.95}100%{opacity:.48}}
-@keyframes jdc-ha-spin{to{transform:rotate(398deg)}}
-.jdc-ha-rotor{transform-box:fill-box;transform-origin:center;transform:rotate(38deg);animation-name:jdc-ha-spin;animation-duration:.22s;animation-timing-function:linear;animation-iteration-count:infinite}
-${desktopStory.css}
-${mobileStory.css}
+@property --pane-hole {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+.jdc-hero{position:relative}
+.jdc-hero-figure{margin:0}
+.jdc-hero-stage{position:relative;width:100%;overflow:hidden;background:#d5e4ee}
+.stage{position:relative;width:100%;overflow:hidden}
+.stage-mobile{aspect-ratio:8 / 9}
+.stage-desktop{display:none;aspect-ratio:12 / 5}
+@media (min-width: 1024px){
+  .stage-mobile{display:none}
+  .stage-desktop{display:block}
+}
+.layer{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none}
+.sky{position:absolute;inset:0;background:
+  radial-gradient(46% 42% at 8% 0%, rgba(255,236,206,0.9), transparent 58%),
+  linear-gradient(180deg, #6d94b0 0%, #9ec0d4 26%, #d7e7f0 58%, #e8eef2 100%)}
+.cloud-track{position:absolute;left:0;top:3%;display:flex;width:200%;height:32%;animation:jdc-clouds ${CLOUD_S}s linear infinite}
+.cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%;overflow:hidden}
+@keyframes jdc-clouds{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.jdc-cloud-img{position:absolute;left:0;top:6%;width:100%;height:88%;object-fit:cover;object-position:center;opacity:0.78;display:block;pointer-events:none}
+.ground{position:absolute;left:0;right:0;bottom:0;background:
+  linear-gradient(180deg, #d5dde3 0 2px, #c3ccd4 2px, #b7c1ca 18%, #aeb8c2 100%)}
+.curb{position:absolute;left:0;right:0;height:2px;background:#8b99a4}
+.bldg{position:absolute;z-index:2}
+.jdc-facade,.jdc-facade img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.jdc-sheen{position:absolute;inset:0;background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.22) 46%, transparent 58%);transform:translateX(-30%);animation:jdc-sheen 28s linear infinite;pointer-events:none}
+@keyframes jdc-sheen{from{transform:translateX(-40%)}to{transform:translateX(40%)}}
+.jdc-contact{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(180deg, rgba(7,21,37,0.42), rgba(7,21,37,0.08) 55%, transparent)}
+.jdc-cast{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(90deg, rgba(7,21,37,0.16), rgba(7,21,37,0.02) 75%, transparent)}
+.lane{position:absolute;z-index:3;overflow:hidden}
+.dirt{position:absolute;inset:0;opacity:1;--pane-hole:0%;-webkit-mask-image:radial-gradient(circle at 50% 22%, transparent var(--pane-hole), #000 calc(var(--pane-hole) + 18%));mask-image:radial-gradient(circle at 50% 22%, transparent var(--pane-hole), #000 calc(var(--pane-hole) + 18%));-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation-name:jdc-pane;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
+.jdc-grime{position:absolute;display:block;max-width:none;object-fit:fill;pointer-events:none}
+.dirt-edge{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(circle at 50% 22%, rgba(255,255,255,0.72), rgba(214,232,228,0.26) 34%, transparent 64%);animation:jdc-edge var(--wipe-dur) ease-out var(--wipe-delay) both}
+@keyframes jdc-edge{0%{opacity:0}24%{opacity:0.9}100%{opacity:0}}
+@keyframes jdc-pane{0%{opacity:1;--pane-hole:0%}100%{opacity:0;--pane-hole:130%}}
+.glint-clip{position:absolute;z-index:4;overflow:hidden;pointer-events:none}
+.glint-bar{position:absolute;top:-20%;bottom:-20%;width:18%;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.72) 50%, rgba(255,255,255,0.08) 80%, transparent);transform:translateX(-140%) skewX(-16deg);opacity:0;animation:jdc-glint 8.5s ease-in-out infinite;animation-delay:${HERO_DELAY_S + STORY_S}s}
+@keyframes jdc-glint{0%{transform:translateX(-140%) skewX(-16deg);opacity:0}14%{opacity:0.8}48%{opacity:0.45}72%,100%{transform:translateX(520%) skewX(-16deg);opacity:0}}
+.mover{position:absolute;inset:0;z-index:5;pointer-events:none}
+.van-move{z-index:3}
+.drone-move{z-index:5}
+.op-move{z-index:6}
+.door-move{z-index:7}
+.drone-tilt,.drone-bob,.drone-art{position:absolute;left:0;top:0;width:100%;height:100%}
+.jdc-drone-img,.jdc-drone-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.jdc-drone-img img{filter:drop-shadow(0 0 0.7px #071525) drop-shadow(0 0 1.4px rgba(7,21,37,0.88))}
+.drone-tilt{transform-origin:50% 45%}
+.drone-bob{animation:jdc-bob 1.05s ease-in-out ${bobCount} both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%)}}
+.rotor{position:absolute;z-index:2;width:30%;height:42%;top:22%;border-radius:50%;background:radial-gradient(ellipse at center, rgba(255,255,255,0.08), rgba(244,251,255,0.45) 55%, rgba(255,255,255,0) 72%);filter:blur(0.4px)}
+.rotor-a{left:2%}
+.rotor-b{right:2%}
+.blade{position:absolute;left:6%;top:46%;width:88%;height:8%;border-radius:999px;background:rgba(255,255,255,0.8);transform-origin:center;animation:jdc-spin 0.18s linear ${spinCount} both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-spin{to{transform:rotate(360deg)}}
+.mist{position:absolute;left:6%;width:88%;top:58%;height:780%;filter:blur(0.3px)}
+.jdc-spray{position:absolute;left:24%;width:52%;top:0;height:82%;background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(214,236,238,0.82) 24%, rgba(176,214,208,0.42) 58%, rgba(214,236,232,0) 100%);clip-path:polygon(40% 0, 60% 0, 100% 100%, 0 100%)}
+.puff{position:absolute;border-radius:50%;background:radial-gradient(circle, rgba(230,248,248,0.95), rgba(214,236,232,0) 68%)}
+.van-art{position:absolute;left:0;top:0}
+.van-shadow{position:absolute;left:4%;right:6%;bottom:-3%;height:12%;border-radius:50%;background:rgba(7,21,37,0.34)}
+.van-body{position:absolute;inset:0}
+.jdc-van-body,.jdc-van-body img,.jdc-door-img,.jdc-door-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.van-logo{position:absolute;left:42%;top:30%;width:27%;height:34%;object-fit:contain;object-position:center;opacity:0.92;pointer-events:none;z-index:2;filter:saturate(0.82) contrast(0.96)}
+.wheel{position:absolute;z-index:3}
+.wheel-front{left:10.17%;top:69.67%;width:12.41%;height:29.51%}
+.wheel-rear{left:73.1%;top:69.67%;width:12.41%;height:29.51%}
+.wheel-spin{position:absolute;inset:0}
+.wheel-spin img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.valve{position:absolute;left:44%;top:6%;width:12%;height:12%;border-radius:50%;background:#d7dde2}
+.door-panel{position:absolute}
+.op-scale{position:absolute;left:0;top:0;transform-origin:50% 100%}
+.op-fade,.op-turn{position:absolute;inset:0}
+.jdc-op-walk{position:absolute;inset:0;opacity:0;transform-origin:50% 24%}
+.jdc-op-bob{position:absolute;inset:0}
+.jdc-op-bob picture,.jdc-op-bob img{width:100%;height:100%;object-fit:fill;display:block}
+.jdc-op-upper{position:absolute;left:50%;top:0;height:72%;transform:translateX(-50%);transform-origin:50% 0}
+.stage-mobile .jdc-op-upper{height:53%}
+.jdc-op-upper picture,.jdc-op-upper img{height:100%;width:auto;max-width:none;aspect-ratio:687 / 900;display:block}
+.op-look{height:100%;transform-origin:50% 100%}
+.leg{position:absolute;left:46%;top:72%;width:8%;height:22%;transform-origin:50% 0%;opacity:0}
+.op-shadow{position:absolute;left:18%;right:18%;bottom:-1%;height:3.2%;border-radius:50%;background:rgba(7,21,37,0.28)}
+.jdc-hero-pause{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.jdc-hero-toggle{position:absolute;z-index:8;top:calc(var(--header-height) + 0.6rem);left:0.6rem;display:inline-flex;align-items:center;min-height:44px;padding:0.35rem 0.8rem;border:1px solid rgba(11,31,58,0.28);background:rgba(244,247,251,0.94);color:#0b1f3a;font-size:0.8rem;font-weight:600;line-height:1.2;cursor:pointer}
+.jdc-hero-pause:focus-visible ~ .jdc-hero-toggle{outline:2px solid #0b1f3a;outline-offset:3px}
+.jdc-hero-pause:not(:checked) ~ .jdc-hero-toggle .is-play{display:none}
+.jdc-hero-pause:checked ~ .jdc-hero-toggle .is-pause{display:none}
+#jdc-hero-pause:checked ~ .jdc-hero-figure .jdc-anim,
+#jdc-hero[data-hold] .jdc-anim,
+#jdc-hero[data-ambient="off"] .jdc-idle{animation-play-state:paused !important}
+html[data-hero-hold] .jdc-story{animation-delay:-40s !important}
+${desktopBuilt.css}
+${mobileBuilt.css}
 @media (prefers-reduced-motion: reduce){
-  .jdc-ha-play,.jdc-ha-rotor{animation:none !important}
+  .jdc-story:not(.jdc-dirt),
+  .jdc-idle,
+  .jdc-rotor,
+  .jdc-glint{animation-name:none !important}
+  .jdc-dirt{
+    animation-name:jdc-soft-clean !important;
+    animation-duration:${SOFT_S}s !important;
+    animation-delay:${HERO_DELAY_S}s !important;
+    animation-timing-function:cubic-bezier(0.4, 0, 0.2, 1) !important;
+    animation-fill-mode:both !important;
+    animation-iteration-count:1 !important;
+    transform:none !important;
+    -webkit-mask-image:none !important;
+    mask-image:none !important;
+  }
+  .dirt-edge{opacity:0;animation:none !important}
 }
-html[data-hero-hold] .jdc-ha-play{
-  animation-delay:-60s !important;
-  animation-iteration-count:1 !important;
-  animation-fill-mode:forwards !important;
-  animation-play-state:paused !important;
-}
-html[data-hero-hold] .jdc-ha-rotor{animation:none !important}
+@keyframes jdc-soft-clean{from{opacity:1}to{opacity:0}}
 `;
+
+export const HERO_RUNTIME = `(function(){
+  var root = document.getElementById("jdc-hero");
+  if (!root) return;
+  function offscreen(){
+    var r = root.getBoundingClientRect();
+    if (r.height < 2) return false;
+    return r.bottom <= 0 || r.top >= (window.innerHeight || 0);
+  }
+  function ambient(){
+    if (offscreen()) root.setAttribute("data-ambient", "off");
+    else root.removeAttribute("data-ambient");
+  }
+  document.addEventListener("visibilitychange", function(){
+    if (document.hidden) root.setAttribute("data-hold", "");
+    else root.removeAttribute("data-hold");
+    ambient();
+  });
+  window.addEventListener("pageshow", function(e){
+    if (e.persisted) document.documentElement.setAttribute("data-hero-hold", "");
+  });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(ambient, { threshold: 0 }).observe(root);
+  }
+})();`;
