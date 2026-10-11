@@ -154,7 +154,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     }
     let coveredWhileVisible = 0;
     let stuckOut = 0;
-    for (let ms = 9800; ms <= 10400; ms += 40) {
+    for (let ms = 9900; ms <= 10700; ms += 40) {
       seek(ms);
       const door = rect('[data-hero="door"]');
       const op = rect('[data-hero="operator"]');
@@ -172,7 +172,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     const valves: number[] = [];
     const ride: { dx: number; dy: number }[] = [];
     let parked: number | null = null;
-    for (let ms = 10200; ms <= 11800; ms += 80) {
+    for (let ms = 10200; ms <= 12800; ms += 80) {
       seek(ms);
       const wheel = rect('[data-hero="wheel"]');
       const valve = rect('[data-hero="valve"]');
@@ -184,11 +184,28 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
         ride.push({ dx: drone.x - van.x, dy: drone.y - van.y });
       }
     }
-    seek(11800);
+    seek(200);
+    const tower = rect('[data-hero="tower"]');
+    const ground = rect('[data-hero="ground"]');
+    const operatorStart = rect('[data-hero="operator"]');
+    const logo = rect('[data-hero="logo"]');
+    const stageStart = stage.getBoundingClientRect();
+    seek(9460);
+    const operatorBeside = rect('[data-hero="operator"]');
+    const vanBeside = rect('[data-hero="van"]');
+    const groundBeside = rect('[data-hero="ground"]');
+    seek(12800);
     const stageBox = stage.getBoundingClientRect();
     const vanEnd = rect('[data-hero="van"]');
     const droneEnd = rect('[data-hero="drone"]');
+    const logoEnd = rect('[data-hero="logo"]');
+    const doorEnd = rect('[data-hero="door"]');
+    const wheels = [...stage.querySelectorAll('[data-hero="wheel"]')].map((node) => {
+      const b = node.getBoundingClientRect();
+      return b.right - stageBox.left;
+    });
     const crewEnd = Number(getComputedStyle(stage.querySelector('[data-hero="crew"]')!).opacity);
+    const face = stage.querySelector('[data-hero="eye"]');
     const span = (values: number[]) => Math.max(...values) - Math.min(...values);
     return {
       panes: dirtStart.length,
@@ -204,9 +221,19 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       ride: ride.length,
       rideX: ride.length ? span(ride.map((item) => item.dx)) : 999,
       rideY: ride.length ? span(ride.map((item) => item.dy)) : 999,
-      vanOff: vanEnd.r < 1,
-      droneOff: droneEnd.r < stageBox.width * 0.02,
+      vanOff: vanEnd.r < -4,
+      droneOff: droneEnd.r < -4,
+      logoOff: logoEnd.r < -4,
+      doorOff: doorEnd.r < -4,
+      wheelsOff: wheels.every((right) => right < -4),
       crewEnd,
+      face: face !== null,
+      baseGap: Math.abs(tower.b - ground.y),
+      towerTaller: tower.h > vanBeside.h * 4,
+      cropped: operatorStart.b > stageStart.height + stageStart.height * 0.2 && operatorStart.y < stageStart.height * 0.5,
+      logoWide: logo.w >= (stageStart.width > 700 ? 88 : 64),
+      besideRatio: operatorBeside.h / vanBeside.h,
+      feetGap: Math.abs(operatorBeside.b - groundBeside.y),
     };
   });
 
@@ -226,7 +253,18 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
   expect(story?.rideY ?? 999).toBeLessThan(16);
   expect(story?.vanOff).toBe(true);
   expect(story?.droneOff).toBe(true);
+  expect(story?.logoOff).toBe(true);
+  expect(story?.doorOff).toBe(true);
+  expect(story?.wheelsOff).toBe(true);
   expect(story?.crewEnd ?? 1).toBeLessThan(0.05);
+  expect(story?.face).toBe(false);
+  expect(story?.baseGap ?? 9).toBeLessThan(2);
+  expect(story?.towerTaller).toBe(true);
+  expect(story?.cropped).toBe(true);
+  expect(story?.logoWide).toBe(true);
+  expect(story?.besideRatio ?? 0).toBeGreaterThan(0.55);
+  expect(story?.besideRatio ?? 9).toBeLessThan(0.8);
+  expect(story?.feetGap ?? 99).toBeLessThan(6);
 });
 
 test("clouds loop without a seam and the glint returns to clear", async ({ page }) => {
@@ -264,9 +302,9 @@ test("clouds loop without a seam and the glint returns to clear", async ({ page 
     return {
       moved: Math.abs(atMid.x - atStart.x),
       seam: Math.abs(atLoop.x - atStart.x) + Math.abs(atLoop.y - atStart.y),
-      glintStart: glintOpacity(11_800),
-      glintMid: glintOpacity(11_800 + 4_200),
-      glintEnd: glintOpacity(11_800 + 8_500),
+      glintStart: glintOpacity(12_600),
+      glintMid: glintOpacity(12_600 + 4_200),
+      glintEnd: glintOpacity(12_600 + 8_500),
       unused: place(cloudAnim, 0, first).width,
     };
   });

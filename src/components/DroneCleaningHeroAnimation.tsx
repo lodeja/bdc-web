@@ -9,7 +9,7 @@ import {
 } from "./hero-story";
 
 const LABEL =
-  "Illustratie. Een operator met witte helm en fluovest stuurt vanaf de voorgrond een drone. De drone maakt de vuile gevel baan per baan schoon. Daarna stapt de operator via het bestuurdersportier in de zwarte bestelwagen en rijdt die weg.";
+  "Illustratie. Een operator, van achteren gezien, met witte helm en fluovest, stuurt vanaf de voorgrond een drone. De drone maakt de vuile gevel baan per baan schoon. Daarna stapt de operator via het bestuurdersportier in de zwarte bestelwagen en rijdt die weg.";
 
 /**
  * Full-bleed cleaning story. CSS paints the opening frame and plays the
@@ -64,26 +64,52 @@ function Scene({ spec }: { spec: HeroSpec }) {
       <div className="ground" style={{ top: `${spec.ground}%` }} data-hero="ground" />
       <div className="curb" style={{ top: `${spec.ground}%` }} />
       <div
-        className="bldg-shadow"
+        className="jdc-contact"
         style={{
-          left: `${b.x + b.w * 0.1}%`,
-          top: `${spec.ground - 1}%`,
-          width: `${b.w * 0.9}%`,
-          height: "4%",
+          left: `${b.x + b.w * 0.02}%`,
+          top: `${spec.ground - 0.15}%`,
+          width: `${b.w * 0.96}%`,
+          height: "2.6%",
+        }}
+      />
+      <div
+        className="jdc-cast"
+        style={{
+          left: `${b.x + b.w * 0.35}%`,
+          top: `${spec.ground}%`,
+          width: `${b.w * 0.85}%`,
+          height: "3.2%",
         }}
       />
       <div className="bldg" data-hero="tower" style={{ left: `${b.x}%`, top: `${b.y}%`, width: `${b.w}%`, height: `${b.h}%` }}>
-        <div className="bldg-side" />
         <div className="bldg-face">
           <div className="cornice" />
+          <div className="jdc-shade" />
           <div className="plinth" />
         </div>
       </div>
       {spec.lanes.map((lane) => (
         <LanePane key={lane.id} lane={lane} />
       ))}
-      <div className="mullion" style={{ left: `${glass.x + glass.w * 0.34}%`, top: `${glass.y}%`, width: "0.35%", height: `${glass.h}%` }} />
-      <div className="mullion" style={{ left: `${glass.x + glass.w * 0.67}%`, top: `${glass.y}%`, width: "0.35%", height: `${glass.h}%` }} />
+      {[0.2, 0.4, 0.6, 0.8].map((at) => (
+        <div
+          key={at}
+          className="mullion"
+          style={{ left: `${glass.x + glass.w * at}%`, top: `${glass.y}%`, width: "0.38%", height: `${glass.h}%` }}
+        />
+      ))}
+      <div
+        className="jdc-entrance"
+        style={{
+          left: `${b.x + b.w * 0.46}%`,
+          top: `${b.y + b.h * 0.84}%`,
+          width: `${b.w * 0.11}%`,
+          height: `${b.h * 0.16}%`,
+        }}
+      >
+        <i />
+        <span className="jdc-step" />
+      </div>
       <div className="glint-clip" style={{ left: `${glass.x}%`, top: `${glass.y}%`, width: `${glass.w}%`, height: `${glass.h}%` }}>
         <div className="glint-bar jdc-glint jdc-idle jdc-anim" data-hero="glint" />
       </div>
@@ -108,6 +134,7 @@ function LanePane({ lane }: { lane: Lane }) {
   return (
     <div className="lane" style={{ left: `${lane.x}%`, top: `${lane.y}%`, width: `${lane.w}%`, height: `${lane.h}%` }}>
       <div className="glass" />
+      <div className="jdc-reflect" />
       <div className="glass-sheen" />
       <div
         className="dirt jdc-anim jdc-story jdc-dirt"
@@ -119,6 +146,7 @@ function LanePane({ lane }: { lane: Lane }) {
           ["--wipe-dur" as string]: `${lane.dur}s`,
         }}
       >
+        <span className="jdc-moss" />
         <span className="dirt-edge" />
       </div>
     </div>
@@ -167,9 +195,10 @@ function Drone({ spec }: { spec: HeroSpec }) {
         <div className="drone-bob jdc-idle jdc-anim">
           <div className="drone-art" data-hero="drone">
             <div className="mist jdc-anim jdc-story" data-hero="mist">
-              <i className="puff" style={{ left: "8%", top: "10%", width: "46%", height: "70%" }} />
-              <i className="puff" style={{ left: "40%", top: "0", width: "36%", height: "60%" }} />
-              <i className="puff" style={{ left: "62%", top: "24%", width: "28%", height: "50%" }} />
+              <i className="jdc-spray" />
+              <i className="puff" style={{ left: "6%", top: "28%", width: "42%", height: "48%" }} />
+              <i className="puff" style={{ left: "34%", top: "18%", width: "36%", height: "42%" }} />
+              <i className="puff" style={{ left: "58%", top: "36%", width: "30%", height: "36%" }} />
             </div>
             <span className="rotor rotor-a">
               <i className="disc" />
@@ -209,17 +238,7 @@ function Van({ spec }: { spec: HeroSpec }) {
       >
         <div className="van-shadow" />
         <div className="van-body jdc-anim jdc-story van-squat" data-hero="squat">
-          <svg viewBox="0 0 400 150" aria-hidden="true">
-            <path
-              d="M18 118 L18 78 Q18 70 28 66 L78 34 Q98 16 128 16 H372 Q388 16 388 32 V118 Z"
-              fill="#16191e"
-            />
-            <path d="M128 18 H370" stroke="#3a414a" strokeWidth="3" />
-            <path d="M36 78 L78 42 Q96 26 124 24 H132 V92 H44 Z" fill="#6f93a8" />
-            <path d="M48 62 L70 40" stroke="#e7f4f8" strokeWidth="3" opacity="0.7" />
-            <rect x="148" y="28" width="52" height="40" rx="2" fill="#24343c" />
-            <path d="M214 22 V108" stroke="#0c0e12" strokeWidth="3" />
-          </svg>
+          <Sprinter id={spec.variant} />
           <div
             className="van-hole"
             style={{
@@ -229,7 +248,7 @@ function Van({ spec }: { spec: HeroSpec }) {
               height: `${spec.hole.h}%`,
             }}
           />
-          <img className="van-logo" src={logo} alt="" width={160} height={90} />
+          <img className="van-logo" data-hero="logo" src={logo} alt="" width={560} height={362} />
         </div>
         <Wheel front />
         <Wheel />
@@ -246,6 +265,56 @@ function Wheel({ front }: { front?: boolean }) {
         {front ? <i className="valve" data-hero="valve" /> : null}
       </div>
     </div>
+  );
+}
+
+function Sprinter({ id }: { id: string }) {
+  const paint = `jdc-paint-${id}`;
+  const glass = `jdc-glass-${id}`;
+  return (
+    <svg viewBox="0 0 700 280" aria-hidden="true">
+      <defs>
+        <linearGradient id={paint} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3a424c" />
+          <stop offset="0.16" stopColor="#2c333c" />
+          <stop offset="0.42" stopColor="#16191e" />
+          <stop offset="1" stopColor="#0e1115" />
+        </linearGradient>
+        <linearGradient id={glass} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#d5eaf2" />
+          <stop offset="0.45" stopColor="#7eabbf" />
+          <stop offset="1" stopColor="#3d6d84" />
+        </linearGradient>
+      </defs>
+      <path
+        fill={`url(#${paint})`}
+        d="M22 196 L14 168 Q12 148 34 140 L62 128 L98 102 L132 70 L178 36 Q202 20 232 18 L640 18 Q668 18 678 40 L678 168 L694 182 L694 214 L652 222 L590 222 C574 222 560 196 546 186 C524 170 500 186 492 210 L478 222 L196 222 C180 222 166 196 152 186 C130 170 106 186 98 210 L84 222 L48 216 Q28 208 22 196 Z"
+      />
+      <path d="M232 22 H640" stroke="#4a545f" strokeWidth="3" fill="none" />
+      <path d="M48 150 C90 118 140 78 186 40" stroke="#2a313a" strokeWidth="8" fill="none" />
+      <path d="M108 96 L176 40 L248 36 L236 108 Z" fill={`url(#${glass})`} />
+      <path d="M124 78 L168 48" stroke="#f4fbfd" strokeWidth="3" opacity="0.75" />
+      <path d="M168 48 L214 112 L188 124 L126 96 Z" fill="#21485c" opacity="0.35" />
+      <path d="M26 150 L58 138 L70 168 L34 186 Z" fill="#d7e6ee" />
+      <path d="M32 156 L52 148 L60 166 L38 176 Z" fill="#9fd4e6" />
+      <path d="M18 158 H40 M18 168 H44 M20 178 H40" stroke="#0c0e12" strokeWidth="3" />
+      <path d="M248 40 H300 V112 H236 Z" fill={`url(#${glass})`} />
+      <path d="M258 52 H290" stroke="#f4fbfd" strokeWidth="2" opacity="0.65" />
+      <path d="M300 28 V200" stroke="#07090c" strokeWidth="3" />
+      <path d="M312 36 H430" stroke="#07090c" strokeWidth="4" />
+      <path d="M318 36 V198" stroke="#07090c" strokeWidth="3" />
+      <path d="M448 36 V198" stroke="#07090c" strokeWidth="3" />
+      <path d="M392 118 H418" stroke="#8b949e" strokeWidth="3" />
+      <path d="M248 150 H300" stroke="#8b949e" strokeWidth="3" />
+      <rect x="332" y="48" width="100" height="36" fill="#243840" opacity="0.85" />
+      <path d="M640 40 V188" stroke="#07090c" strokeWidth="3" />
+      <path d="M668 48 V150" stroke="#8d1e24" strokeWidth="8" />
+      <path d="M668 48 V78" stroke="#f2f5f7" strokeWidth="3" />
+      <path d="M40 196 H90" stroke="#5c6770" strokeWidth="4" />
+      <path d="M200 208 H460" stroke="#2a3038" strokeWidth="6" />
+      <ellipse cx="113" cy="241" rx="52" ry="36" fill="none" stroke="#2c333b" strokeWidth="3" />
+      <ellipse cx="526" cy="241" rx="52" ry="36" fill="none" stroke="#2c333b" strokeWidth="3" />
+    </svg>
   );
 }
 
@@ -268,41 +337,39 @@ function Operator({ spec }: { spec: HeroSpec }) {
                 <Leg fill="#243044" />
               </div>
               <div className="torso">
-                <svg viewBox="0 0 140 120" aria-hidden="true">
-                  <path d="M18 28 L8 108 H132 L122 28 Q70 12 18 28 Z" fill="#d6ee2a" />
-                  <path d="M24 34 L16 70 H124 L116 34 Q70 24 24 34 Z" fill="#e7f56a" />
-                  <rect x="22" y="48" width="96" height="10" fill="#f7fafc" />
-                  <rect x="26" y="78" width="88" height="8" fill="#f7fafc" opacity="0.85" />
-                  <path d="M70 20 V104" stroke="#b6cc12" strokeWidth="6" />
+                <svg viewBox="0 0 160 180" aria-hidden="true">
+                  <path d="M18 28 L8 168 H152 L142 28 Q80 8 18 28 Z" fill="#d6ee2a" />
+                  <path d="M28 36 L20 78 H140 L132 36 Q80 22 28 36 Z" fill="#e4f25a" />
+                  <path d="M16 70 H144" stroke="#f7fafc" strokeWidth="12" />
+                  <path d="M14 70 H146" stroke="#c5ced6" strokeWidth="2" />
+                  <path d="M18 118 H142" stroke="#f7fafc" strokeWidth="11" />
+                  <path d="M16 118 H144" stroke="#c5ced6" strokeWidth="2" />
+                  <path d="M80 24 V164" stroke="#b6cc12" strokeWidth="5" />
                 </svg>
               </div>
               <div className="op-arms jdc-anim jdc-story">
-                <svg viewBox="0 0 200 160" aria-hidden="true">
-                  <path d="M46 28 L18 78 L34 90 L62 48 Z" fill="#1c2430" />
-                  <path d="M154 28 L182 78 L166 90 L138 48 Z" fill="#243044" />
-                  <rect x="48" y="86" width="104" height="34" rx="8" fill="#14181e" />
-                  <rect x="58" y="94" width="38" height="18" rx="3" fill="#0e7490" />
-                  <circle cx="78" cy="103" r="5" fill="#d7e2ea" />
-                  <circle cx="146" cy="103" r="5" fill="#d7e2ea" />
-                  <ellipse cx="40" cy="96" rx="16" ry="12" fill="#c48b6a" />
-                  <ellipse cx="160" cy="96" rx="16" ry="12" fill="#c48b6a" />
-                  <path d="M28 90 Q24 100 36 104" stroke="#a87458" strokeWidth="3" fill="none" />
-                  <path d="M172 90 Q176 100 164 104" stroke="#a87458" strokeWidth="3" fill="none" />
+                <svg viewBox="0 0 220 180" aria-hidden="true">
+                  <path d="M118 36 L86 78 L104 92 L132 52 Z" fill="#1c2430" />
+                  <path d="M168 34 L196 70 L178 84 L154 48 Z" fill="#243044" />
+                  <path d="M96 84 L28 102 L36 124 L108 104 Z" fill="#1c2430" />
+                  <path d="M186 78 L150 108 L162 124 L198 96 Z" fill="#243044" />
+                  <rect x="8" y="96" width="58" height="36" rx="6" fill="#14181e" />
+                  <rect x="16" y="104" width="22" height="14" rx="2" fill="#0e7490" />
+                  <circle cx="22" cy="128" r="3.5" fill="#d7e2ea" />
+                  <circle cx="52" cy="128" r="3.5" fill="#d7e2ea" />
+                  <path d="M64 108 L78 102 L82 116 L68 122 Z" fill="#2c3542" />
                 </svg>
               </div>
               <div className="head">
                 <div className="op-look jdc-anim jdc-story" data-hero="look">
-                  <svg viewBox="0 0 120 110" aria-hidden="true">
-                    <path d="M48 96 L44 110 H76 L72 96 Z" fill="#d6ee2a" />
-                    <path d="M22 58 Q18 18 60 12 Q102 16 100 58 Q96 86 60 90 Q26 86 22 58 Z" fill="#f7f8f6" />
-                    <path d="M28 52 Q34 28 58 24 Q40 36 36 62 Z" fill="#e6e9e4" />
-                    <path d="M34 64 Q28 78 46 84 Q58 70 50 58 Q42 56 34 64 Z" fill="#c48b6a" />
-                    <path d="M26 48 Q60 40 96 50" stroke="#d0d5d2" strokeWidth="5" fill="none" />
-                    <path d="M70 18 Q86 22 90 40" stroke="#00c2e8" strokeWidth="4" fill="none" strokeLinecap="round" />
+                  <svg viewBox="0 0 120 140" aria-hidden="true">
+                    <path d="M46 108 L42 132 H78 L74 108 Z" fill="#d6ee2a" />
+                    <path d="M24 70 Q18 22 60 14 Q102 20 98 70 Q94 108 60 112 Q28 108 24 70 Z" fill="#f7f8f6" />
+                    <path d="M60 18 V102" stroke="#e0e4e0" strokeWidth="4" />
+                    <path d="M34 48 Q60 36 88 50" stroke="#d0d5d2" strokeWidth="5" fill="none" />
+                    <path d="M72 22 Q90 28 92 48" stroke="#00c2e8" strokeWidth="4" fill="none" strokeLinecap="round" />
+                    <path d="M40 78 Q60 70 82 80" stroke="#d8ddd8" strokeWidth="4" fill="none" />
                   </svg>
-                  <span className="eye-white">
-                    <i className="op-eye jdc-anim jdc-story" data-hero="eye" />
-                  </span>
                 </div>
               </div>
             </div>
@@ -316,8 +383,8 @@ function Operator({ spec }: { spec: HeroSpec }) {
 function Leg({ fill }: { fill: string }) {
   return (
     <svg viewBox="0 0 80 160" aria-hidden="true">
-      <path d="M28 4 L18 90 L14 148 H58 L52 90 L48 4 Z" fill={fill} />
-      <path d="M12 124 L8 152 H64 L58 122 Z" fill="#e7edf2" />
+      <path d="M24 2 L16 86 L12 148 H52 L48 86 L42 2 Z" fill={fill} />
+      <path d="M10 128 L6 158 H58 L52 126 Z" fill="#e7edf2" />
     </svg>
   );
 }
