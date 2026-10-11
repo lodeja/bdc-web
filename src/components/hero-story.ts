@@ -7,7 +7,7 @@
  */
 
 export const HERO_DELAY_S = 1;
-export const STORY_S = 11.6;
+export const STORY_S = 13.2;
 export const SOFT_S = 3.4;
 export const CLOUD_S = 20;
 
@@ -17,7 +17,6 @@ export type Lane = Box & {
   id: string;
   delay: number;
   dur: number;
-  origin: "left" | "right";
 };
 
 export type HeroSpec = {
@@ -25,7 +24,7 @@ export type HeroSpec = {
   aspectW: number;
   aspectH: number;
   building: Box;
-  /** Glass only, for the glint. The last dirt lane continues over the plinth. */
+  /** Glass only, for the glint. The lowest panes continue over the plinth. */
   glass: Box;
   lanes: Lane[];
   van: Box;
@@ -88,9 +87,12 @@ const mobileGeom: Geom = {
   travel: -36,
 };
 
-const LANE_DUR = 1.12;
-const DROP = 0.16;
-const RISE_END = 0.9;
+const COLS = 6;
+const HOVER = 0.2;
+const MOVE = 0.1;
+const STEP = HOVER + MOVE;
+const FADE = 0.64;
+const RISE_END = 0.42;
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -110,11 +112,11 @@ const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
 const EASE_LANE = "cubic-bezier(0.33, 0, 0.2, 1)";
 const EASE_DROP = "cubic-bezier(0.45, 0, 0.55, 1)";
 
-/** Window bands of facade-clean, as fractions of the building photo. The last band includes the plinth. */
+/** Four storeys of facade-clean. Each stop covers two neighbouring bays, six stops across. The last row includes the plinth. */
 const BANDS = [
-  { y0: 0.02, y1: 0.17, fly: 0.095 },
+  { y0: 0, y1: 0.17, fly: 0.09 },
   { y0: 0.17, y1: 0.32, fly: 0.245 },
-  { y0: 0.32, y1: 0.47, fly: 0.395 },
+  { y0: 0.32, y1: 0.47, fly: 0.39 },
   { y0: 0.47, y1: 1, fly: 0.62 },
 ];
 
@@ -123,51 +125,62 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const beats: Beat[] = [];
   const dw = g.drone.w;
   const dh = g.drone.h;
-  const xLeft = g.building.x + g.building.w * 0.06;
-  const xRight = g.building.x + g.building.w * 0.94 - dw;
-  const laneY = (i: number) => g.building.y + g.building.h * BANDS[i].fly - dh / 2;
+  const order: { row: number; col: number }[] = [];
+  for (let row = 0; row < BANDS.length; row++) {
+    const cols = row % 2 === 0 ? [...Array(COLS).keys()] : [...Array(COLS).keys()].reverse();
+    for (const col of cols) order.push({ row, col });
+  }
+  const droneAt = (row: number, col: number) => ({
+    x: g.building.x + g.building.w * ((col + 0.5) / COLS) - dw / 2,
+    y: g.building.y + g.building.h * BANDS[row].fly - dh / 2,
+  });
 
-  let cursor = RISE_END;
   const push = (t: number, x: number, y: number, rot: number, ease: string) => {
     beats.push({ t, x, y, rot: clamp(rot, -10, 10), ease });
   };
 
   push(0, g.start.x, g.start.y, 0, EASE_OUT);
-  push(0.16, g.start.x, g.start.y - 1.4, -8, EASE_OUT);
-  push(RISE_END, xLeft, laneY(0), -4, EASE_OUT);
+  push(0.14, g.start.x, g.start.y - 1.2, -8, EASE_OUT);
+  const firstPane = droneAt(order[0].row, order[0].col);
+  push(RISE_END, firstPane.x, firstPane.y, 8, EASE_OUT);
 
-  for (let i = 0; i < 4; i++) {
-    const dir = i % 2 === 0 ? 1 : -1;
-    const fromX = dir > 0 ? xLeft : xRight;
-    const toX = dir > 0 ? xRight : xLeft;
-    const y = laneY(i);
-    const start = cursor;
-    const end = cursor + LANE_DUR;
-    push(start, fromX, y, dir > 0 ? 8 : -8, EASE_LANE);
-    push(end, toX, y, dir > 0 ? 6 : -6, i < 3 ? EASE_DROP : EASE_OUT);
-    const band = BANDS[i];
+  for (let i = 0; i < order.length; i++) {
+    const { row, col } = order[i];
+    const at = RISE_END + i * STEP;
+    const here = droneAt(row, col);
+    const tilt = row % 2 === 0 ? 8 : -8;
+    const band = BANDS[row];
+    push(at, here.x, here.y, tilt * 0.4, "linear");
+    if (i < order.length - 1) {
+      push(at + HOVER * 0.4, here.x, here.y, tilt, EASE_LANE);
+      push(at + HOVER, here.x, here.y, tilt, EASE_LANE);
+      const next = droneAt(order[i + 1].row, order[i + 1].col);
+      push(at + STEP, next.x, next.y, tilt * 0.45, EASE_DROP);
+    } else {
+      push(at + FADE * 0.72, here.x, here.y, 0, EASE_OUT);
+    }
     lanes.push({
-      id: `${g.variant}-lane-${i}`,
-      x: g.building.x,
+      id: `${g.variant}-pane-${row}-${col}`,
+      x: g.building.x + g.building.w * (col / COLS),
       y: g.building.y + g.building.h * band.y0,
-      w: g.building.w,
+      w: g.building.w / COLS,
       h: g.building.h * (band.y1 - band.y0),
-      delay: HERO_DELAY_S + start,
-      dur: LANE_DUR,
-      origin: dir > 0 ? "right" : "left",
+      delay: HERO_DELAY_S + at,
+      dur: FADE,
     });
-    cursor = end;
-    if (i < 3) cursor += DROP;
   }
 
-  const cleanEnd = cursor;
-  const returnEnd = cleanEnd + 0.9;
-  const armEnd = returnEnd + 0.38;
-  const arrive = armEnd + 1.28;
-  const hold = arrive + 0.22;
-  const stepIn = hold + 0.42;
-  const shutEnd = stepIn + 0.32;
-  const driveStart = shutEnd + 0.26;
+  const lastArrive = RISE_END + (order.length - 1) * STEP;
+  const cleanEnd = lastArrive + FADE;
+  const droneLeave = lastArrive + FADE * 0.72;
+  const returnEnd = droneLeave + 0.5;
+  const turnStart = cleanEnd;
+  const fadeEnd = turnStart + 0.32;
+  const arrive = fadeEnd + 2.3;
+  const hold = arrive + 0.1;
+  const stepIn = hold + 0.36;
+  const shutEnd = stepIn + 0.28;
+  const driveStart = shutEnd + 0.2;
   const roof = {
     x: g.van.x + g.van.w * 0.48 - dw / 2,
     y: g.van.y - dh * 0.62,
@@ -182,7 +195,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     push(driveStart + (STORY_S - driveStart) * mark, roof.x + g.travel * driveEase(mark), roof.y, 0, "linear");
   }
 
-  const hover = { x: g.building.x + g.building.w * 0.42 - dw / 2, y: laneY(1) };
+  const hover = droneAt(1, 2);
   const door: Box = {
     x: g.van.x + g.van.w * g.door.ox,
     y: g.van.y + g.van.h * g.door.oy,
@@ -217,17 +230,22 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const standCenter = door.x + door.w + personW * 0.65;
   const standX = standCenter - g.operator.w / 2;
   const lerp = (a: number, b: number, u: number) => a + (b - a) * u;
+  const easeOut = (t: number) => 1 - Math.pow(1 - t, 2.4);
   const walk: { t: number; x: number; y: number; s: number }[] = [
     { t: 0, x: g.operator.x, y: g.operator.y, s: 1 },
-    { t: armEnd, x: g.operator.x, y: g.operator.y, s: 1 },
+    { t: fadeEnd, x: g.operator.x, y: g.operator.y, s: 1 },
   ];
-  for (const u of [0.16, 0.34, 0.52, 0.7, 0.86, 1]) {
-    const e = Math.pow(u, 0.92);
+  const walkSamples = 16;
+  for (let i = 1; i <= walkSamples; i++) {
+    const t = i / walkSamples;
+    const u = easeOut(t);
+    const s = lerp(1, standScale, u);
+    const bulge = Math.sin(Math.PI * u) * 5.5 * s;
     walk.push({
-      t: armEnd + (arrive - armEnd) * u,
-      x: lerp(g.operator.x, standX, e),
-      y: lerp(g.operator.y, standY, e),
-      s: lerp(1, standScale, e),
+      t: fadeEnd + (arrive - fadeEnd) * t,
+      x: lerp(g.operator.x, standX, u) + bulge,
+      y: lerp(g.operator.y, standY, u),
+      s,
     });
   }
   walk.push(
@@ -269,8 +287,8 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     .join("");
   const lookKf = droneBeats
     .map((b, i) => {
-      const deg = b.t >= arrive - 0.12 ? 0 : b.t >= armEnd ? 3 : lookAt(b.x, b.y);
-      const ease = b.t >= armEnd ? EASE_OUT : droneBeats[i + 1]?.ease ?? EASE_OUT;
+      const deg = b.t >= arrive - 0.12 ? 0 : b.t >= turnStart ? 3 : lookAt(b.x, b.y);
+      const ease = b.t >= turnStart ? EASE_OUT : droneBeats[i + 1]?.ease ?? EASE_OUT;
       return `${pOf(b.t)}%{transform:rotate(${num(deg)}deg);animation-timing-function:${ease}}`;
     })
     .join("");
@@ -309,8 +327,8 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     }),
   ].join("");
 
-  const doorOpen = arrive - 0.36;
-  const doorWide = arrive - 0.08;
+  const doorOpen = arrive - 0.34;
+  const doorWide = arrive - 0.06;
   const doorKf = [
     `0%,${pOf(doorOpen)}%{transform:scaleX(1);animation-timing-function:cubic-bezier(0.22, 0.8, 0.2, 1)}`,
     `${pOf(doorWide)}%{transform:scaleX(0.16);animation-timing-function:linear}`,
@@ -319,25 +337,25 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     `100%{transform:scaleX(1)}`,
   ].join("");
   const hideKf = [
-    `0%,${pOf(shutEnd + 0.08)}%{opacity:1;animation-timing-function:linear}`,
-    `${pOf(shutEnd + 0.24)}%,100%{opacity:0}`,
+    `0%,${pOf(shutEnd + 0.22)}%{opacity:1;animation-timing-function:linear}`,
+    `${pOf(shutEnd + 0.42)}%,100%{opacity:0}`,
   ].join("");
   const armKf = [
-    `0%,${pOf(returnEnd)}%{transform:rotate(-8deg);animation-timing-function:${EASE_OUT}}`,
-    `${pOf(armEnd)}%{transform:rotate(-3deg);animation-timing-function:${EASE_OUT}}`,
-    `${pOf(arrive - 0.16)}%,100%{transform:rotate(0deg)}`,
+    `0%,${pOf(turnStart)}%{transform:rotate(-8deg);animation-timing-function:${EASE_OUT}}`,
+    `${pOf(fadeEnd)}%,100%{transform:rotate(0deg)}`,
   ].join("");
   const turnKf = [
-    `0%,${pOf(armEnd)}%{transform:rotate(0deg);animation-timing-function:${EASE_OUT}}`,
-    `${pOf(armEnd + 0.4)}%{transform:rotate(-6deg);animation-timing-function:${EASE_OUT}}`,
-    `${pOf(arrive - 0.16)}%,100%{transform:rotate(0deg)}`,
+    `0%,${pOf(turnStart)}%{transform:rotate(0deg);animation-timing-function:${EASE_OUT}}`,
+    `${pOf(turnStart + 0.16)}%{transform:rotate(-7deg);animation-timing-function:${EASE_OUT}}`,
+    `${pOf(fadeEnd)}%,100%{transform:rotate(0deg)}`,
   ].join("");
-  const fadeEnd = armEnd + 0.34;
-  const bobAt = [0.15, 0.32, 0.5, 0.68, 0.84].map((u) => fadeEnd + (arrive - fadeEnd) * u);
-  const stepAt = [0.18, 0.38, 0.58, 0.78].map((u) => armEnd + 0.16 + (arrive - armEnd - 0.28) * u);
+  const bobAt: number[] = [];
+  for (let t = fadeEnd + 0.25; t < arrive - 0.06; t += 0.25) bobAt.push(t);
+  const stepAt: number[] = [];
+  for (let t = fadeEnd + 0.2; t < arrive - 0.08; t += 0.25) stepAt.push(t);
   const legKf = (sign: number) =>
     [
-      `0%,${pOf(armEnd)}%{transform:rotate(0deg);animation-timing-function:ease-in-out}`,
+      `0%,${pOf(fadeEnd)}%{transform:rotate(0deg);animation-timing-function:ease-in-out}`,
       ...stepAt.map((t, i) => `${pOf(t)}%{transform:rotate(${num(sign * (i % 2 === 0 ? 24 : -22))}deg);animation-timing-function:ease-in-out}`),
       `${pOf(arrive)}%,100%{transform:rotate(0deg)}`,
     ].join("");
@@ -347,15 +365,16 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const mistFull = pOf(RISE_END);
   const mistOut = pOf(cleanEnd);
   const mistGone = pOf(Math.min(STORY_S, cleanEnd + 0.45));
-  const upperKf = `0%,${pOf(armEnd)}%{opacity:1;animation-timing-function:${EASE_OUT}}${pOf(fadeEnd)}%,100%{opacity:0}`;
-  const walkInKf = `0%,${pOf(armEnd)}%{opacity:0;animation-timing-function:${EASE_OUT}}${pOf(fadeEnd)}%,100%{opacity:1}`;
+  const upperKf = `0%,${pOf(turnStart)}%{opacity:1;animation-timing-function:${EASE_OUT}}${pOf(fadeEnd)}%,100%{opacity:0}`;
+  const walkInKf = `0%,${pOf(turnStart)}%{opacity:0;animation-timing-function:${EASE_OUT}}${pOf(fadeEnd)}%,100%{opacity:1}`;
   const bobKf = [
-    `0%,${pOf(fadeEnd)}%{transform:translateY(0%) rotate(0deg);animation-timing-function:ease-in-out}`,
+    `0%,${pOf(fadeEnd)}%{transform:translate(0%,0%) rotate(0deg);animation-timing-function:ease-in-out}`,
     ...bobAt.map((t, i) => {
       const up = i % 2 === 0;
-      return `${pOf(t)}%{transform:translateY(${up ? "-2.6%" : "0%"}) rotate(${up ? "1.6deg" : "-1.6deg"});animation-timing-function:ease-in-out}`;
+      const sway = up ? 1 : -1;
+      return `${pOf(t)}%{transform:translate(${num(sway * 0.9)}%,${up ? "-2.8%" : "0%"}) rotate(${num(sway * 1.8)}deg);animation-timing-function:ease-in-out}`;
     }),
-    `${pOf(arrive)}%,100%{transform:translateY(0%) rotate(0deg)}`,
+    `${pOf(arrive)}%,100%{transform:translate(0%,0%) rotate(0deg)}`,
   ].join("");
 
   const css = `
@@ -428,10 +447,15 @@ const mobileBuilt = buildSpec(mobileGeom);
 export const desktopSpec = desktopBuilt.spec;
 export const mobileSpec = mobileBuilt.spec;
 
-const bobCount = Math.max(4, Math.round((HERO_DELAY_S + 7) / 1.05));
-const spinCount = Math.max(8, Math.ceil((HERO_DELAY_S + 7) / 0.2));
+const bobCount = Math.max(4, Math.round((HERO_DELAY_S + STORY_S) / 1.05));
+const spinCount = Math.max(8, Math.ceil((HERO_DELAY_S + STORY_S) / 0.2));
 
 export const heroMotionCss = `
+@property --pane-hole {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
 .jdc-hero{position:relative}
 .jdc-hero-figure{margin:0}
 .jdc-hero-stage{position:relative;width:100%;overflow:hidden;background:#d5e4ee}
@@ -446,15 +470,10 @@ export const heroMotionCss = `
 .sky{position:absolute;inset:0;background:
   radial-gradient(46% 42% at 8% 0%, rgba(255,236,206,0.9), transparent 58%),
   linear-gradient(180deg, #6d94b0 0%, #9ec0d4 26%, #d7e7f0 58%, #e8eef2 100%)}
-.far-track,.cloud-track{position:absolute;left:0;display:flex;width:200%;animation:jdc-drift 34s linear infinite}
-.far-track{top:72%;height:16%}
-.cloud-track{top:6%;height:26%;animation-duration:${CLOUD_S}s;animation-name:jdc-clouds}
-.far-set,.cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%}
-@keyframes jdc-drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.cloud-track{position:absolute;left:0;top:3%;display:flex;width:200%;height:32%;animation:jdc-clouds ${CLOUD_S}s linear infinite}
+.cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%;overflow:hidden}
 @keyframes jdc-clouds{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.jdc-h-block{position:absolute;bottom:0;background:#1a4068;opacity:0.2;border-radius:40% 40% 0 0;filter:blur(2px)}
-.cloud{position:absolute;background:#f7fbfd;border-radius:999px;opacity:0.92}
-.cloud i{position:absolute;background:inherit;border-radius:inherit}
+.jdc-cloud-img{position:absolute;left:0;top:6%;width:100%;height:88%;object-fit:cover;object-position:center;opacity:0.78;display:block;pointer-events:none}
 .ground{position:absolute;left:0;right:0;bottom:0;background:
   linear-gradient(180deg, #d5dde3 0 2px, #c3ccd4 2px, #b7c1ca 18%, #aeb8c2 100%)}
 .curb{position:absolute;left:0;right:0;height:2px;background:#8b99a4}
@@ -465,13 +484,11 @@ export const heroMotionCss = `
 .jdc-contact{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(180deg, rgba(7,21,37,0.42), rgba(7,21,37,0.08) 55%, transparent)}
 .jdc-cast{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(90deg, rgba(7,21,37,0.16), rgba(7,21,37,0.02) 75%, transparent)}
 .lane{position:absolute;z-index:3;overflow:hidden}
-.dirt{position:absolute;inset:0;transform:scaleX(1);transform-origin:var(--wipe-origin) center;animation-name:jdc-wipe;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
-.jdc-grime{position:absolute;left:0;width:100%;display:block;object-fit:fill;pointer-events:none}
-.dirt-edge{position:absolute;top:-6%;bottom:-6%;width:14%;opacity:0;pointer-events:none;background:linear-gradient(90deg, rgba(255,255,255,0), rgba(244,248,246,0.2) 35%, rgba(232,240,236,0.78) 58%, rgba(210,220,214,0.18) 80%, transparent);animation:jdc-edge var(--wipe-dur) linear var(--wipe-delay) both}
-@keyframes jdc-edge{0%{opacity:0}10%{opacity:1}86%{opacity:0.8}100%{opacity:0}}
-.dirt[data-origin="right"] .dirt-edge{left:0}
-.dirt[data-origin="left"] .dirt-edge{right:0;transform:scaleX(-1)}
-@keyframes jdc-wipe{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.dirt{position:absolute;inset:0;opacity:1;--pane-hole:0%;-webkit-mask-image:radial-gradient(circle at 50% 22%, transparent var(--pane-hole), #000 calc(var(--pane-hole) + 18%));mask-image:radial-gradient(circle at 50% 22%, transparent var(--pane-hole), #000 calc(var(--pane-hole) + 18%));-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;animation-name:jdc-pane;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
+.jdc-grime{position:absolute;display:block;max-width:none;object-fit:fill;pointer-events:none}
+.dirt-edge{position:absolute;inset:0;opacity:0;pointer-events:none;background:radial-gradient(circle at 50% 22%, rgba(255,255,255,0.72), rgba(214,232,228,0.26) 34%, transparent 64%);animation:jdc-edge var(--wipe-dur) ease-out var(--wipe-delay) both}
+@keyframes jdc-edge{0%{opacity:0}24%{opacity:0.9}100%{opacity:0}}
+@keyframes jdc-pane{0%{opacity:1;--pane-hole:0%}100%{opacity:0;--pane-hole:130%}}
 .glint-clip{position:absolute;z-index:4;overflow:hidden;pointer-events:none}
 .glint-bar{position:absolute;top:-20%;bottom:-20%;width:18%;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.72) 50%, rgba(255,255,255,0.08) 80%, transparent);transform:translateX(-140%) skewX(-16deg);opacity:0;animation:jdc-glint 8.5s ease-in-out infinite;animation-delay:${HERO_DELAY_S + STORY_S}s}
 @keyframes jdc-glint{0%{transform:translateX(-140%) skewX(-16deg);opacity:0}14%{opacity:0.8}48%{opacity:0.45}72%,100%{transform:translateX(520%) skewX(-16deg);opacity:0}}
@@ -482,7 +499,7 @@ export const heroMotionCss = `
 .door-move{z-index:7}
 .drone-tilt,.drone-bob,.drone-art{position:absolute;left:0;top:0;width:100%;height:100%}
 .jdc-drone-img,.jdc-drone-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
-.jdc-drone-img img{filter:drop-shadow(0 0 0.8px #071525) drop-shadow(0 0 1.6px rgba(7,21,37,0.95)) drop-shadow(0 0 3px rgba(255,255,255,0.85))}
+.jdc-drone-img img{filter:drop-shadow(0 0 0.7px #071525) drop-shadow(0 0 1.4px rgba(7,21,37,0.88))}
 .drone-tilt{transform-origin:50% 45%}
 .drone-bob{animation:jdc-bob 1.05s ease-in-out ${bobCount} both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%)}}
@@ -541,8 +558,10 @@ ${mobileBuilt.css}
     animation-fill-mode:both !important;
     animation-iteration-count:1 !important;
     transform:none !important;
+    -webkit-mask-image:none !important;
+    mask-image:none !important;
   }
-  .jdc-dirt .dirt-edge{opacity:0;animation:none !important}
+  .dirt-edge{opacity:0;animation:none !important}
 }
 @keyframes jdc-soft-clean{from{opacity:1}to{opacity:0}}
 `;

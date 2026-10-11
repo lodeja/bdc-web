@@ -11,7 +11,7 @@ import {
 } from "./hero-story";
 
 const LABEL =
-  "Illustratie. Een operator, van achteren gezien, met witte helm en fluovest, stuurt vanaf de voorgrond een drone. De drone maakt de vuile gevel baan per baan schoon. Daarna stapt de operator via het bestuurdersportier in de zwarte bestelwagen en rijdt die weg.";
+  "Illustratie. Een operator, van achteren gezien, met witte helm en fluovest, stuurt vanaf de voorgrond een drone. De drone maakt de vuile gevel ruit per ruit schoon. Daarna draait de operator zich om, loopt naar de zwarte bestelwagen, stapt via het bestuurdersportier in en rijdt weg.";
 
 const FACADE_AVIF = "/hero/facade.avif";
 
@@ -82,13 +82,9 @@ function Scene({ spec, loading = "lazy" }: { spec: HeroSpec; loading?: "eager" |
     <div className={`stage stage-${spec.variant}`} data-variant={spec.variant}>
       <div className="sky" />
       <div className="layer">
-        <div className="far-track jdc-idle jdc-anim" data-hero="far">
-          <Skyline />
-          <Skyline />
-        </div>
         <div className="cloud-track jdc-idle jdc-anim" data-hero="clouds">
-          <CloudSet />
-          <CloudSet />
+          <CloudSet loading={loading} />
+          <CloudSet loading={loading} />
         </div>
       </div>
       <div className="ground" style={{ top: `${spec.ground}%` }} data-hero="ground" />
@@ -155,53 +151,40 @@ function LanePane({
 }) {
   const height = (building.h / lane.h) * 100;
   const top = -((lane.y - building.y) / lane.h) * 100;
+  const width = (building.w / lane.w) * 100;
+  const left = -((lane.x - building.x) / lane.w) * 100;
   return (
-    <div className="lane" style={{ left: `${lane.x}%`, top: `${lane.y}%`, width: `${lane.w}%`, height: `${lane.h}%` }}>
-      <div
-        className="dirt jdc-anim jdc-story jdc-dirt"
-        data-hero="dirt"
-        data-origin={lane.origin}
-        style={{
-          ["--wipe-origin" as string]: lane.origin,
-          ["--wipe-delay" as string]: `${lane.delay}s`,
-          ["--wipe-dur" as string]: `${lane.dur}s`,
-        }}
-      >
-        <img className="jdc-grime" src={grime} alt="" draggable={false} loading={loading} style={{ height: `${height}%`, top: `${top}%` }} />
-        <span className="dirt-edge jdc-anim" />
+    <div
+      className="lane"
+      style={{
+        left: `${lane.x}%`,
+        top: `${lane.y}%`,
+        width: `${lane.w}%`,
+        height: `${lane.h}%`,
+        ["--wipe-delay" as string]: `${lane.delay}s`,
+        ["--wipe-dur" as string]: `${lane.dur}s`,
+      }}
+    >
+      <div className="dirt jdc-anim jdc-story jdc-dirt" data-hero="dirt">
+        <img
+          className="jdc-grime"
+          src={grime}
+          alt=""
+          draggable={false}
+          loading={loading}
+          style={{ height: `${height}%`, width: `${width}%`, top: `${top}%`, left: `${left}%` }}
+        />
       </div>
+      <span className="dirt-edge jdc-anim" />
     </div>
   );
 }
 
-function Skyline() {
-  return (
-    <div className="far-set" aria-hidden="true">
-      <i className="jdc-h-block" style={{ left: "6%", width: "14%", height: "46%" }} />
-      <i className="jdc-h-block" style={{ left: "22%", width: "9%", height: "70%" }} />
-      <i className="jdc-h-block" style={{ left: "34%", width: "18%", height: "38%" }} />
-      <i className="jdc-h-block" style={{ left: "58%", width: "11%", height: "62%" }} />
-      <i className="jdc-h-block" style={{ left: "72%", width: "16%", height: "44%" }} />
-    </div>
-  );
-}
-
-function CloudSet() {
+function CloudSet({ loading }: { loading: "eager" | "lazy" }) {
   return (
     <div className="cloud-set" aria-hidden="true">
-      <Puff left="8%" top="22%" width="18%" height="46%" />
-      <Puff left="40%" top="12%" width="22%" height="52%" />
-      <Puff left="70%" top="28%" width="16%" height="40%" />
+      <img className="jdc-cloud-img" src={withBasePath("/hero/clouds.webp")} alt="" draggable={false} loading={loading} />
     </div>
-  );
-}
-
-function Puff({ left, top, width, height }: { left: string; top: string; width: string; height: string }) {
-  return (
-    <span className="cloud" style={{ left, top, width, height }}>
-      <i style={{ left: "8%", top: "18%", width: "48%", height: "72%" }} />
-      <i style={{ left: "36%", top: "2%", width: "42%", height: "64%" }} />
-    </span>
   );
 }
 

@@ -52,7 +52,7 @@ test("reduced motion fades the dirt and keeps the crew still", async ({ page }) 
     return { at0: read(0), at2000: read(2000), at5000: read(5000) };
   });
   expect(sample).not.toBeNull();
-  expect(sample?.at0.dirt).toHaveLength(4);
+  expect(sample?.at0.dirt).toHaveLength(24);
   expect(sample?.at0.dirt.every((opacity) => opacity > 0.9)).toBe(true);
   expect(sample?.at2000.dirt.every((opacity) => opacity < 0.85 && opacity > 0.2)).toBe(true);
   expect(sample?.at5000.dirt.every((opacity) => opacity < 0.05)).toBe(true);
@@ -130,10 +130,9 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     };
     seek(200);
     const lookStart = angle('[data-hero="look"]');
-    const dirtStart = [...stage.querySelectorAll('[data-hero="dirt"]')].map((node) => {
-      const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
-      return match ? Number(match[1].split(",")[0]) : 1;
-    });
+    const dirtOpacity = () =>
+      [...stage.querySelectorAll('[data-hero="dirt"]')].map((node) => Number(getComputedStyle(node).opacity));
+    const dirtStart = dirtOpacity();
     let maxTilt = 0;
     let lookHigh = lookStart;
     seek(2200);
@@ -142,19 +141,16 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       seek(ms);
       maxTilt = Math.max(maxTilt, Math.abs(angle('[data-hero="tilt"]')));
     }
-    seek(8000);
-    const dirtClean = [...stage.querySelectorAll('[data-hero="dirt"]')].map((node) => {
-      const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
-      return match ? Number(match[1].split(",")[0]) : 1;
-    });
+    seek(9600);
+    const dirtClean = dirtOpacity();
     let legSpread = 0;
-    for (let ms = 8200; ms <= 9500; ms += 60) {
+    for (let ms = 9400; ms <= 11400; ms += 60) {
       seek(ms);
       legSpread = Math.max(legSpread, Math.abs(angle('[data-hero="leg"]')));
     }
     let coveredWhileVisible = 0;
     let stuckOut = 0;
-    for (let ms = 9900; ms <= 10700; ms += 40) {
+    for (let ms = 12360; ms <= 12520; ms += 40) {
       seek(ms);
       const door = rect('[data-hero="door"]');
       const op = rect('[data-hero="operator"]');
@@ -172,7 +168,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     const valves: number[] = [];
     const ride: { dx: number; dy: number }[] = [];
     let parked: number | null = null;
-    for (let ms = 10200; ms <= 12800; ms += 80) {
+    for (let ms = 12800; ms <= 14500; ms += 80) {
       seek(ms);
       const wheel = rect('[data-hero="wheel"]');
       const valve = rect('[data-hero="valve"]');
@@ -192,11 +188,11 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     const vanParked = rect('[data-hero="van"]');
     const doorParked = rect('[data-hero="door"]');
     const stageStart = stage.getBoundingClientRect();
-    seek(9460);
+    seek(11580);
     const operatorBeside = rect('[data-hero="operator"]');
     const vanBeside = rect('[data-hero="van"]');
     const groundBeside = rect('[data-hero="ground"]');
-    seek(12800);
+    seek(14600);
     const stageBox = stage.getBoundingClientRect();
     const vanEnd = rect('[data-hero="van"]');
     const droneEnd = rect('[data-hero="drone"]');
@@ -241,7 +237,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
   });
 
   expect(story).not.toBeNull();
-  expect(story?.panes).toBe(4);
+  expect(story?.panes).toBe(24);
   expect(story?.dirtStart.every((value) => value > 0.9)).toBe(true);
   expect(story?.dirtClean.every((value) => value < 0.08)).toBe(true);
   expect(story?.maxTilt ?? 0).toBeGreaterThan(6);
@@ -306,9 +302,9 @@ test("clouds loop without a seam and the glint returns to clear", async ({ page 
     return {
       moved: Math.abs(atMid.x - atStart.x),
       seam: Math.abs(atLoop.x - atStart.x) + Math.abs(atLoop.y - atStart.y),
-      glintStart: glintOpacity(12_600),
-      glintMid: glintOpacity(12_600 + 4_200),
-      glintEnd: glintOpacity(12_600 + 8_500),
+      glintStart: glintOpacity(14_200),
+      glintMid: glintOpacity(14_200 + 4_200),
+      glintEnd: glintOpacity(14_200 + 8_500),
       unused: place(cloudAnim, 0, first).width,
     };
   });
