@@ -61,7 +61,7 @@ test("reduced motion fades the dirt and keeps the crew still", async ({ page }) 
     const before = sample!.at0[name]!;
     const after = sample!.at5000[name]!;
     expect(before.w).toBeGreaterThan(18);
-    expect(before.h).toBeGreaterThan(14);
+    expect(before.h).toBeGreaterThan(name === "drone" ? 6 : 14);
     expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeLessThan(2);
   }
 });
@@ -189,6 +189,8 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
     const ground = rect('[data-hero="ground"]');
     const operatorStart = rect('[data-hero="operator"]');
     const logo = rect('[data-hero="logo"]');
+    const vanParked = rect('[data-hero="van"]');
+    const doorParked = rect('[data-hero="door"]');
     const stageStart = stage.getBoundingClientRect();
     seek(9460);
     const operatorBeside = rect('[data-hero="operator"]');
@@ -231,7 +233,8 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
       baseGap: Math.abs(tower.b - ground.y),
       towerTaller: tower.h > vanBeside.h * 4,
       cropped: operatorStart.b > stageStart.height + stageStart.height * 0.2 && operatorStart.y < stageStart.height * 0.5,
-      logoWide: logo.w >= (stageStart.width > 700 ? 88 : 64),
+      logoWide: logo.w >= (stageStart.width > 700 ? 40 : 22),
+      logoOnPanel: logo.x >= doorParked.r - 2 && logo.r <= vanParked.r + 1,
       besideRatio: operatorBeside.h / vanBeside.h,
       feetGap: Math.abs(operatorBeside.b - groundBeside.y),
     };
@@ -262,6 +265,7 @@ test("the drone cleans every lane, boards the operator, and the van leaves", asy
   expect(story?.towerTaller).toBe(true);
   expect(story?.cropped).toBe(true);
   expect(story?.logoWide).toBe(true);
+  expect(story?.logoOnPanel).toBe(true);
   expect(story?.besideRatio ?? 0).toBeGreaterThan(0.55);
   expect(story?.besideRatio ?? 9).toBeLessThan(0.8);
   expect(story?.feetGap ?? 99).toBeLessThan(6);

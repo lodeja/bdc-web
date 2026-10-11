@@ -25,6 +25,8 @@ export type HeroSpec = {
   aspectW: number;
   aspectH: number;
   building: Box;
+  /** Glass only, for the glint. The last dirt lane continues over the plinth. */
+  glass: Box;
   lanes: Lane[];
   van: Box;
   door: Box;
@@ -42,6 +44,7 @@ type Geom = {
   aspectH: number;
   building: Box;
   van: Box;
+  /** Cab door, as fractions of the van box. */
   door: { ox: number; oy: number; w: number; h: number };
   operator: Box;
   drone: { w: number; h: number };
@@ -52,38 +55,37 @@ type Geom = {
 };
 
 /**
- * Meter model, then stage percent.
- * Desktop band 12:5. A 14 m facade at 86% of the height is the scale:
- * Sprinter 7.0 × 2.8 m, drone span 1.45 m, person 1.8 m.
+ * The facade photo is the scale. One window band is a 3.2 m storey.
+ * Sprinter height 2.8 m, drone span 1.3 m, person 1.8 m.
  * Building bottom is the ground line. Van travel clears the rear bumper.
- * The operator box is a full body; at rest the waist sits on the frame edge.
+ * The operator box is the full walking figure; at rest the waist sits on the frame.
  */
 const desktopGeom: Geom = {
   variant: "desktop",
   aspectW: 12,
   aspectH: 5,
-  building: { x: 16, y: 6, w: 50, h: 86 },
-  van: { x: 1.6, y: 74.8, w: 17.9, h: 17.2 },
-  door: { ox: 0.226, oy: 0.129, w: 2.56, h: 10.81 },
-  operator: { x: 76, y: 23, w: 21, h: 154 },
-  drone: { w: 3.72, h: 4.9 },
-  start: { x: 36, y: 64 },
+  building: { x: 17.41, y: 6, w: 65.19, h: 86 },
+  van: { x: 1.2, y: 80.7, w: 11.19, h: 11.3 },
+  door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
+  operator: { x: 70.5, y: 11, w: 23.8, h: 150 },
+  drone: { w: 2.19, h: 1.82 },
+  start: { x: 26, y: 76 },
   ground: 92,
-  travel: -30,
+  travel: -18,
 };
 
 const mobileGeom: Geom = {
   variant: "mobile",
   aspectW: 8,
   aspectH: 9,
-  building: { x: 8, y: 6, w: 84, h: 82 },
-  van: { x: 0.4, y: 71.6, w: 46.1, h: 16.4 },
-  door: { ox: 0.226, oy: 0.129, w: 6.59, h: 10.31 },
-  operator: { x: 52, y: 33, w: 42, h: 134 },
-  drone: { w: 9.55, h: 4.67 },
-  start: { x: 28, y: 60 },
+  building: { x: -35.96, y: 4, w: 171.92, h: 84 },
+  van: { x: 0.6, y: 76.97, w: 29.5, h: 11.03 },
+  door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
+  operator: { x: 34, y: 36, w: 56.6, h: 132 },
+  drone: { w: 5.77, h: 1.78 },
+  start: { x: 18, y: 72 },
   ground: 88,
-  travel: -58,
+  travel: -36,
 };
 
 const LANE_DUR = 1.12;
@@ -108,27 +110,22 @@ const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
 const EASE_LANE = "cubic-bezier(0.33, 0, 0.2, 1)";
 const EASE_DROP = "cubic-bezier(0.45, 0, 0.55, 1)";
 
-const LANE_GAP = 1.05;
-
-function glassOf(building: Box) {
-  return {
-    x: building.x + building.w * 0.05,
-    y: building.y + building.h * 0.04,
-    w: building.w * 0.9,
-    h: building.h * 0.84,
-  };
-}
+/** Window bands of facade-clean, as fractions of the building photo. The last band includes the plinth. */
+const BANDS = [
+  { y0: 0.02, y1: 0.17, fly: 0.095 },
+  { y0: 0.17, y1: 0.32, fly: 0.245 },
+  { y0: 0.32, y1: 0.47, fly: 0.395 },
+  { y0: 0.47, y1: 1, fly: 0.62 },
+];
 
 function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
-  const glass = glassOf(g.building);
-  const laneH = (glass.h - 3 * LANE_GAP) / 4;
   const lanes: Lane[] = [];
   const beats: Beat[] = [];
   const dw = g.drone.w;
   const dh = g.drone.h;
-  const xLeft = glass.x + glass.w * 0.02;
-  const xRight = glass.x + glass.w - dw - glass.w * 0.02;
-  const laneY = (i: number) => glass.y + i * (laneH + LANE_GAP) + laneH / 2 - dh / 2;
+  const xLeft = g.building.x + g.building.w * 0.06;
+  const xRight = g.building.x + g.building.w * 0.94 - dw;
+  const laneY = (i: number) => g.building.y + g.building.h * BANDS[i].fly - dh / 2;
 
   let cursor = RISE_END;
   const push = (t: number, x: number, y: number, rot: number, ease: string) => {
@@ -148,12 +145,13 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     const end = cursor + LANE_DUR;
     push(start, fromX, y, dir > 0 ? 8 : -8, EASE_LANE);
     push(end, toX, y, dir > 0 ? 6 : -6, i < 3 ? EASE_DROP : EASE_OUT);
+    const band = BANDS[i];
     lanes.push({
       id: `${g.variant}-lane-${i}`,
-      x: glass.x,
-      y: glass.y + i * (laneH + LANE_GAP),
-      w: glass.w,
-      h: laneH,
+      x: g.building.x,
+      y: g.building.y + g.building.h * band.y0,
+      w: g.building.w,
+      h: g.building.h * (band.y1 - band.y0),
       delay: HERO_DELAY_S + start,
       dur: LANE_DUR,
       origin: dir > 0 ? "right" : "left",
@@ -184,12 +182,18 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     push(driveStart + (STORY_S - driveStart) * mark, roof.x + g.travel * driveEase(mark), roof.y, 0, "linear");
   }
 
-  const hover = { x: glass.x + glass.w / 2 - dw / 2, y: laneY(1) };
+  const hover = { x: g.building.x + g.building.w * 0.42 - dw / 2, y: laneY(1) };
   const door: Box = {
     x: g.van.x + g.van.w * g.door.ox,
     y: g.van.y + g.van.h * g.door.oy,
-    w: g.door.w,
-    h: g.door.h,
+    w: g.van.w * g.door.w,
+    h: g.van.h * g.door.h,
+  };
+  const glass: Box = {
+    x: g.building.x,
+    y: g.building.y + g.building.h * 0.02,
+    w: g.building.w,
+    h: g.building.h * 0.75,
   };
   const hole: Box = {
     x: ((door.x - g.van.x) / g.van.w) * 100,
@@ -201,12 +205,13 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   // Scale origin is the feet. He walks back into the scene, shrinking onto
   // the ground beside the van, then ducks into the open door. The last pose
   // sits inside the door before opacity hits 0, otherwise he pops.
-  const tuck = 0.55;
   const personH = g.van.h * (1.8 / 2.8);
   const standScale = personH / g.operator.h;
-  const endScale = Math.min((door.h - tuck * 2) / g.operator.h, (door.w - tuck * 2) / g.operator.w);
+  // The cab door is a thin slice of the van. He ducks until the scaled
+  // figure sits inside that slice, then the opacity drops.
+  const endScale = Math.min((door.h * 0.84) / g.operator.h, (door.w * 0.78) / g.operator.w);
   const endX = door.x + door.w / 2 - g.operator.w / 2;
-  const endY = door.y + door.h - tuck - g.operator.h;
+  const endY = door.y + door.h * 0.96 - g.operator.h;
   const standY = g.ground - g.operator.h;
   const personW = g.operator.w * standScale;
   const standCenter = door.x + door.w + personW * 0.65;
@@ -235,7 +240,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const headY = g.operator.y + g.operator.h * 0.1;
   const lookAt = (x: number, y: number) => {
     const rise = headY - (y + dh * 0.3);
-    return clamp(-rise * 0.35, -22, 14);
+    return clamp(-rise * 0.35, -8, 8);
   };
   const pOf = (t: number) => num((t / STORY_S) * 100);
   const dedupe = <T extends { t: number }>(list: T[]) => {
@@ -293,7 +298,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     ...vanSamples.slice(1).map((s) => `${pOf(s.t)}%{transform:translate(${pct(s.x - g.van.x)},0%);animation-timing-function:linear}`),
   ].join("");
 
-  const wheelR = g.van.w * 0.08;
+  const wheelR = g.van.w * (72 / 1160);
   const wheelDeg = (Math.abs(g.travel) / (2 * Math.PI * wheelR)) * 360;
   const wheelSign = g.travel < 0 ? -1 : 1;
   const wheelKf = [
@@ -308,8 +313,8 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const doorWide = arrive - 0.08;
   const doorKf = [
     `0%,${pOf(doorOpen)}%{transform:scaleX(1);animation-timing-function:cubic-bezier(0.22, 0.8, 0.2, 1)}`,
-    `${pOf(doorWide)}%{transform:scaleX(0.08);animation-timing-function:linear}`,
-    `${pOf(stepIn)}%{transform:scaleX(0.08);animation-timing-function:cubic-bezier(0.4, 0, 0.2, 1)}`,
+    `${pOf(doorWide)}%{transform:scaleX(0.16);animation-timing-function:linear}`,
+    `${pOf(stepIn)}%{transform:scaleX(0.16);animation-timing-function:cubic-bezier(0.4, 0, 0.2, 1)}`,
     `${pOf(shutEnd)}%{transform:scaleX(1);animation-timing-function:linear}`,
     `100%{transform:scaleX(1)}`,
   ].join("");
@@ -324,9 +329,11 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   ].join("");
   const turnKf = [
     `0%,${pOf(armEnd)}%{transform:rotate(0deg);animation-timing-function:${EASE_OUT}}`,
-    `${pOf(armEnd + 0.4)}%{transform:rotate(-14deg);animation-timing-function:${EASE_OUT}}`,
+    `${pOf(armEnd + 0.4)}%{transform:rotate(-6deg);animation-timing-function:${EASE_OUT}}`,
     `${pOf(arrive - 0.16)}%,100%{transform:rotate(0deg)}`,
   ].join("");
+  const fadeEnd = armEnd + 0.34;
+  const bobAt = [0.15, 0.32, 0.5, 0.68, 0.84].map((u) => fadeEnd + (arrive - fadeEnd) * u);
   const stepAt = [0.18, 0.38, 0.58, 0.78].map((u) => armEnd + 0.16 + (arrive - armEnd - 0.28) * u);
   const legKf = (sign: number) =>
     [
@@ -340,6 +347,16 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const mistFull = pOf(RISE_END);
   const mistOut = pOf(cleanEnd);
   const mistGone = pOf(Math.min(STORY_S, cleanEnd + 0.45));
+  const upperKf = `0%,${pOf(armEnd)}%{opacity:1;animation-timing-function:${EASE_OUT}}${pOf(fadeEnd)}%,100%{opacity:0}`;
+  const walkInKf = `0%,${pOf(armEnd)}%{opacity:0;animation-timing-function:${EASE_OUT}}${pOf(fadeEnd)}%,100%{opacity:1}`;
+  const bobKf = [
+    `0%,${pOf(fadeEnd)}%{transform:translateY(0%) rotate(0deg);animation-timing-function:ease-in-out}`,
+    ...bobAt.map((t, i) => {
+      const up = i % 2 === 0;
+      return `${pOf(t)}%{transform:translateY(${up ? "-2.6%" : "0%"}) rotate(${up ? "1.6deg" : "-1.6deg"});animation-timing-function:ease-in-out}`;
+    }),
+    `${pOf(arrive)}%,100%{transform:translateY(0%) rotate(0deg)}`,
+  ].join("");
 
   const css = `
 .stage-${v} .drone-move{transform:translate(${pct(g.start.x)},${pct(g.start.y)});animation:jdc-drone-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
@@ -374,6 +391,12 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
 @keyframes jdc-door-${v}{${doorKf}}
 .stage-${v} .mist{opacity:0;animation:jdc-mist-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-mist-${v}{0%,${mistIn}%{opacity:0}${mistFull}%{opacity:1}${mistOut}%{opacity:1}${mistGone}%,100%{opacity:0}}
+.stage-${v} .jdc-op-photo{animation:jdc-upper-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-upper-${v}{${upperKf}}
+.stage-${v} .jdc-op-walk{opacity:0;animation:jdc-walkin-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-walkin-${v}{${walkInKf}}
+.stage-${v} .jdc-op-bob{animation:jdc-bobwalk-${v} ${STORY_S}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-bobwalk-${v}{${bobKf}}
 @media (prefers-reduced-motion: reduce){
   .stage-${v} .drone-move{transform:translate(${pct(hover.x)},${pct(hover.y)}) !important}
 }
@@ -385,6 +408,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
       aspectW: g.aspectW,
       aspectH: g.aspectH,
       building: g.building,
+      glass,
       lanes,
       van: g.van,
       door,
@@ -434,41 +458,18 @@ export const heroMotionCss = `
   linear-gradient(180deg, #d5dde3 0 2px, #c3ccd4 2px, #b7c1ca 18%, #aeb8c2 100%)}
 .curb{position:absolute;left:0;right:0;height:2px;background:#8b99a4}
 .bldg{position:absolute;z-index:2}
-.bldg-face{position:absolute;inset:0;background:linear-gradient(102deg, #f7fafb 0%, #e4eaee 38%, #c5cfd6 72%, #aeb8c2 100%);box-shadow:inset -28px 0 32px rgba(16,32,48,0.16)}
-.jdc-shade{position:absolute;top:0;right:0;width:14%;height:100%;background:linear-gradient(90deg, transparent, rgba(28,44,58,0.2))}
-.cornice{position:absolute;left:0;right:0;top:0;height:3.4%;background:linear-gradient(#fbfcfd, #c9d2d9)}
-.plinth{position:absolute;left:0;right:0;bottom:0;height:12%;background:linear-gradient(180deg, #c5ced6, #8e9ba6 70%, #7f8d99)}
-.jdc-entrance{position:absolute;z-index:4;background:linear-gradient(180deg, #24323c, #12181e);box-shadow:inset 0 0 0 2px #d5dde3}
-.jdc-entrance i{position:absolute;left:18%;right:18%;top:8%;bottom:0;background:linear-gradient(180deg, #8fb4c6, #35586c 55%, #1c303c)}
-.jdc-step{position:absolute;left:-6%;right:-6%;bottom:0;height:8%;background:#9aa7b1}
+.jdc-facade,.jdc-facade img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.jdc-sheen{position:absolute;inset:0;background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.22) 46%, transparent 58%);transform:translateX(-30%);animation:jdc-sheen 28s linear infinite;pointer-events:none}
+@keyframes jdc-sheen{from{transform:translateX(-40%)}to{transform:translateX(40%)}}
 .jdc-contact{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(180deg, rgba(7,21,37,0.42), rgba(7,21,37,0.08) 55%, transparent)}
-.jdc-cast{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(90deg, rgba(7,21,37,0.2), rgba(7,21,37,0.02) 75%, transparent)}
-.lane{position:absolute;z-index:3;overflow:hidden;box-shadow:inset 0 0 0 2px #1a242e}
-.glass{position:absolute;inset:0;background:
-  linear-gradient(180deg, rgba(255,255,255,0.62), transparent 26%),
-  linear-gradient(165deg, #e7f6fb 0%, #6eb6d2 42%, #1d5674 100%)}
-.jdc-reflect{position:absolute;inset:0;background:
-  radial-gradient(ellipse 42% 30% at 18% 28%, rgba(255,255,255,0.72), transparent 70%),
-  radial-gradient(ellipse 28% 22% at 62% 18%, rgba(255,255,255,0.5), transparent 72%),
-  radial-gradient(ellipse 34% 16% at 74% 58%, rgba(255,255,255,0.28), transparent 70%)}
-.glass-sheen{position:absolute;inset:-10% -20%;background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.55) 47%, transparent 58%);opacity:0.85}
-.dirt{position:absolute;inset:0;transform:scaleX(1);transform-origin:var(--wipe-origin) center;background:
-  repeating-linear-gradient(96deg, rgba(92,70,36,0.45) 0 2px, transparent 2px 6px),
-  repeating-linear-gradient(180deg, rgba(110,84,46,0.28) 0 7px, transparent 7px 16px),
-  linear-gradient(180deg, rgba(196,168,112,0.2), transparent 30%),
-  linear-gradient(180deg, #cbb892 0%, #9a7d52 46%, #5e4c32 100%);
-  animation-name:jdc-wipe;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
-.jdc-moss{position:absolute;left:0;right:0;bottom:0;height:24%;background:
-  radial-gradient(ellipse 18% 80% at 12% 100%, rgba(62,84,34,0.95), transparent 70%),
-  radial-gradient(ellipse 22% 90% at 38% 100%, rgba(48,70,28,0.9), transparent 72%),
-  radial-gradient(ellipse 16% 70% at 63% 100%, rgba(70,90,36,0.85), transparent 70%),
-  radial-gradient(ellipse 20% 85% at 86% 100%, rgba(42,62,24,0.92), transparent 72%),
-  linear-gradient(180deg, transparent, rgba(58,74,32,0.72) 70%)}
-.dirt-edge{position:absolute;top:0;bottom:0;width:4px;background:#00c2e8;box-shadow:0 0 10px rgba(0,194,232,0.85)}
+.jdc-cast{position:absolute;z-index:1;pointer-events:none;background:linear-gradient(90deg, rgba(7,21,37,0.16), rgba(7,21,37,0.02) 75%, transparent)}
+.lane{position:absolute;z-index:3;overflow:hidden}
+.dirt{position:absolute;inset:0;transform:scaleX(1);transform-origin:var(--wipe-origin) center;animation-name:jdc-wipe;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
+.jdc-grime{position:absolute;left:0;width:100%;display:block;object-fit:fill;pointer-events:none}
+.dirt-edge{position:absolute;top:-4%;bottom:-4%;width:18%;background:linear-gradient(90deg, rgba(255,255,255,0.05), rgba(232,248,252,0.72) 42%, rgba(0,194,232,0.35) 70%, transparent);pointer-events:none}
 .dirt[data-origin="right"] .dirt-edge{left:0}
-.dirt[data-origin="left"] .dirt-edge{right:0}
+.dirt[data-origin="left"] .dirt-edge{right:0;transform:scaleX(-1)}
 @keyframes jdc-wipe{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-.mullion{position:absolute;z-index:4;background:#1a242e;opacity:0.85}
 .glint-clip{position:absolute;z-index:4;overflow:hidden;pointer-events:none}
 .glint-bar{position:absolute;top:-20%;bottom:-20%;width:18%;background:linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 20%, rgba(255,255,255,0.72) 50%, rgba(255,255,255,0.08) 80%, transparent);transform:translateX(-140%) skewX(-16deg);opacity:0;animation:jdc-glint 8.5s ease-in-out infinite;animation-delay:${HERO_DELAY_S + STORY_S}s}
 @keyframes jdc-glint{0%{transform:translateX(-140%) skewX(-16deg);opacity:0}14%{opacity:0.8}48%{opacity:0.45}72%,100%{transform:translateX(520%) skewX(-16deg);opacity:0}}
@@ -478,45 +479,41 @@ export const heroMotionCss = `
 .op-move{z-index:6}
 .door-move{z-index:7}
 .drone-tilt,.drone-bob,.drone-art{position:absolute;left:0;top:0;width:100%;height:100%}
-.drone-art svg,.van-body svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-.drone-tilt{transform-origin:50% 50%}
+.jdc-drone-img,.jdc-drone-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.drone-tilt{transform-origin:50% 45%}
 .drone-bob{animation:jdc-bob 1.05s ease-in-out ${bobCount} both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7%)}}
-.rotor{position:absolute;z-index:2;width:48%;height:30%;top:6%}
-.rotor-a{left:-2%}
-.rotor-b{right:-2%}
-.disc{position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse at center, rgba(255,255,255,0.18), rgba(244,251,255,0.55) 62%, rgba(0,194,232,0.28) 100%)}
-.blade{position:absolute;left:8%;top:45%;width:84%;height:10%;border-radius:999px;background:rgba(255,255,255,0.92);transform-origin:center;animation:jdc-spin 0.2s linear ${spinCount} both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%)}}
+.rotor{position:absolute;z-index:2;width:30%;height:42%;top:22%;border-radius:50%;background:radial-gradient(ellipse at center, rgba(255,255,255,0.08), rgba(244,251,255,0.45) 55%, rgba(255,255,255,0) 72%);filter:blur(0.4px)}
+.rotor-a{left:2%}
+.rotor-b{right:2%}
+.blade{position:absolute;left:6%;top:46%;width:88%;height:8%;border-radius:999px;background:rgba(255,255,255,0.8);transform-origin:center;animation:jdc-spin 0.18s linear ${spinCount} both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-spin{to{transform:rotate(360deg)}}
-.mist{position:absolute;left:8%;right:8%;top:58%;height:130%}
-.jdc-spray{position:absolute;left:28%;width:44%;top:0;height:78%;background:linear-gradient(180deg, rgba(232,252,255,0.95), rgba(0,194,232,0.55) 28%, rgba(210,244,255,0) 100%);clip-path:polygon(42% 0, 58% 0, 100% 100%, 0 100%)}
-.puff{position:absolute;border-radius:50%;background:radial-gradient(circle, rgba(214,246,255,0.95), rgba(214,246,255,0) 70%)}
+.mist{position:absolute;left:18%;width:64%;top:68%;height:640%}
+.jdc-spray{position:absolute;left:18%;width:64%;top:0;height:70%;background:linear-gradient(180deg, rgba(232,252,255,0.95), rgba(0,194,232,0.5) 30%, rgba(210,244,255,0) 100%);clip-path:polygon(38% 0, 62% 0, 100% 100%, 0 100%)}
+.puff{position:absolute;border-radius:50%;background:radial-gradient(circle, rgba(214,246,255,0.9), rgba(214,246,255,0) 70%)}
 .van-art{position:absolute;left:0;top:0}
-.van-shadow{position:absolute;left:6%;right:4%;bottom:-1.5%;height:9%;border-radius:50%;background:rgba(7,21,37,0.28)}
+.van-shadow{position:absolute;left:4%;right:6%;bottom:-3%;height:12%;border-radius:50%;background:rgba(7,21,37,0.34)}
 .van-body{position:absolute;inset:0}
-.van-logo{position:absolute;left:37%;top:7%;width:40%;height:62%;object-fit:contain;object-position:center;pointer-events:none;z-index:2}
-.van-hole{position:absolute;background:#07090c;border-radius:1px;z-index:1}
-.wheel{position:absolute;bottom:0;aspect-ratio:1;width:11.2%;z-index:3}
-.wheel-front{left:10.6%}
-.wheel-rear{left:69.6%}
-.wheel-spin{position:absolute;inset:0;border-radius:50%;background:
-  radial-gradient(circle at 50% 50%, #f4f7fb 0 18%, #14181e 19% 58%, #f4f7fb 59% 68%, #14181e 69% 100%)}
-.wheel-spin > i:not(.valve){position:absolute;left:44%;top:6%;width:12%;height:88%;border-radius:2px;background:#f4f7fb}
-.valve{position:absolute;left:42%;top:14%;width:16%;height:16%;border-radius:50%;background:#00c2e8;z-index:1}
-.door-panel{position:absolute;background:#16191e;box-shadow:inset 0 0 0 2px #2c323a;border-radius:2px}
-.door-window{position:absolute;left:12%;top:10%;width:70%;height:38%;background:linear-gradient(180deg, #9ec5d4, #5d8ea3);opacity:0.85}
-.door-handle{position:absolute;right:10%;top:58%;width:8%;height:16%;border-radius:2px;background:#d5dde4}
+.jdc-van-body,.jdc-van-body img,.jdc-door-img,.jdc-door-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.van-logo{position:absolute;left:66.5%;top:30%;width:28%;height:34%;object-fit:contain;object-position:center;opacity:0.92;pointer-events:none;z-index:2;filter:saturate(0.82) contrast(0.96)}
+.wheel{position:absolute;z-index:3}
+.wheel-front{left:10.17%;top:69.67%;width:12.41%;height:29.51%}
+.wheel-rear{left:73.1%;top:69.67%;width:12.41%;height:29.51%}
+.wheel-spin{position:absolute;inset:0}
+.wheel-spin img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.valve{position:absolute;left:44%;top:6%;width:12%;height:12%;border-radius:50%;background:#d7dde2}
+.door-panel{position:absolute}
 .op-scale{position:absolute;left:0;top:0;transform-origin:50% 100%}
-.op-fade,.op-turn,.op-figure{position:absolute;inset:0}
-.leg{position:absolute;top:49%;height:51%;width:16%;transform-origin:50% 0%}
-.leg-a{left:36%}
-.leg-b{left:52%}
-.leg svg,.torso svg,.arms svg,.head svg{display:block;width:100%;height:100%;overflow:visible}
-.torso{position:absolute;left:24%;top:16%;width:52%;height:36%}
-.op-arms{position:absolute;left:0;top:15%;width:100%;height:36%;transform-origin:58% 18%}
-.head{position:absolute;left:28%;top:0;width:44%;height:18%}
-.op-look{position:absolute;inset:0;transform-origin:50% 100%}
-.op-shadow{position:absolute;left:22%;right:22%;bottom:0;height:2.2%;border-radius:50%;background:rgba(7,21,37,0.2)}
+.op-fade,.op-turn{position:absolute;inset:0}
+.jdc-op-walk{position:absolute;inset:0;opacity:0}
+.jdc-op-bob{position:absolute;inset:0}
+.jdc-op-bob picture,.jdc-op-bob img{width:100%;height:100%;object-fit:fill;display:block}
+.jdc-op-upper{position:absolute;left:50%;top:0;height:72%;transform:translateX(-50%)}
+.stage-mobile .jdc-op-upper{height:65%}
+.jdc-op-upper picture,.jdc-op-upper img{height:100%;width:auto;max-width:none;aspect-ratio:682 / 900;display:block}
+.op-look{height:100%;transform-origin:50% 100%}
+.leg{position:absolute;left:46%;top:72%;width:8%;height:22%;transform-origin:50% 0%;opacity:0}
+.op-shadow{position:absolute;left:18%;right:18%;bottom:-1%;height:3.2%;border-radius:50%;background:rgba(7,21,37,0.28)}
 .jdc-hero-pause{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .jdc-hero-toggle{position:absolute;z-index:8;top:calc(var(--header-height) + 0.6rem);left:0.6rem;display:inline-flex;align-items:center;min-height:44px;padding:0.35rem 0.8rem;border:1px solid rgba(11,31,58,0.28);background:rgba(244,247,251,0.94);color:#0b1f3a;font-size:0.8rem;font-weight:600;line-height:1.2;cursor:pointer}
 .jdc-hero-pause:focus-visible ~ .jdc-hero-toggle{outline:2px solid #0b1f3a;outline-offset:3px}
