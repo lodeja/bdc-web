@@ -304,14 +304,14 @@ export function QuoteForm() {
             }`}
           >
             <span
-              className={`jdc-mono block text-[10px] tracking-[0.12em] ${
+              className={`jdc-mono block text-xs tracking-[0.12em] sm:text-[10px] ${
                 index === step ? "text-jdc-cyan-ink" : "text-jdc-slate"
               }`}
             >
               {String(index + 1).padStart(2, "0")}
             </span>
             <span
-              className={`mt-0.5 block text-[0.65rem] leading-tight sm:text-xs ${
+              className={`sr-only text-xs leading-tight sm:not-sr-only sm:mt-0.5 sm:block ${
                 index === step ? "font-semibold text-jdc-navy" : "text-jdc-slate"
               }`}
             >
@@ -320,10 +320,11 @@ export function QuoteForm() {
           </li>
         ))}
       </ol>
-      <p className="mt-2 text-xs text-jdc-slate" aria-live="polite">
-        {step < STEPS.length - 1
-          ? `Nu: ${STEPS[step].label}. Daarna: ${upcoming?.label ?? ""}.`
-          : "Nu: Contact."}
+      <p className="mt-2 text-sm text-jdc-slate sm:text-xs" aria-live="polite">
+        <span className="font-semibold text-jdc-navy sm:font-normal sm:text-jdc-slate">
+          {`Stap ${step + 1} van ${STEPS.length}: ${STEPS[step].label}.`}
+        </span>
+        {step < STEPS.length - 1 ? ` Daarna: ${upcoming?.label ?? ""}.` : null}
       </p>
 
       <div className="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
