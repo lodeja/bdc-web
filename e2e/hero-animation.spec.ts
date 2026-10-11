@@ -91,6 +91,35 @@ test("reduced motion shows drone, operator and van", async ({ page }) => {
   const operatorBox = await (await crew(page, "operator")).boundingBox();
   expect(droneBox?.height ?? 999).toBeLessThan((operatorBox?.height ?? 0) * 0.5);
   expect(droneBox?.width ?? 999).toBeLessThan((operatorBox?.height ?? 0) * 0.55);
+
+  const fit = await page.evaluate(() => {
+    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    if (!frame) return null;
+    const box = frame.getBoundingClientRect();
+    const svg = frame.querySelector("svg")?.getBoundingClientRect();
+    const inside = ["drone", "operator", "van", "tower"].map((name) => {
+      const node = frame.querySelector(`[data-hero="${name}"]`)?.getBoundingClientRect();
+      if (!node) return { name, ok: false };
+      return {
+        name,
+        ok:
+          node.left >= box.left - 1 &&
+          node.top >= box.top - 1 &&
+          node.right <= box.right + 1 &&
+          node.bottom <= box.bottom - 4,
+      };
+    });
+    return {
+      width: svg ? svg.width / box.width : 0,
+      height: svg ? svg.height / box.height : 0,
+      inside,
+    };
+  });
+  expect(fit?.width ?? 0).toBeGreaterThan(0.9);
+  expect(fit?.height ?? 0).toBeGreaterThan(0.9);
+  expect(fit?.inside.every((item) => item.ok)).toBe(true);
   for (const transform of wiped) {
     expect(transform.startsWith("matrix(0,")).toBe(true);
   }

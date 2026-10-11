@@ -97,33 +97,33 @@ const EASE_VAN = "cubic-bezier(0.55, 0.04, 0.82, 0.22)";
 
 const desktopGeom: Geom = {
   variant: "desktop",
-  viewW: 1440,
-  viewH: 900,
+  viewW: 680,
+  viewH: 640,
   cols: 3,
   rows: 3,
   tower: {
-    x: 1024,
-    y: 108,
-    w: 376,
-    h: 756,
-    padX: 16,
-    padY: 20,
-    padBottom: 188,
-    gapX: 12,
-    gapY: 12,
+    x: 300,
+    y: 24,
+    w: 340,
+    h: 490,
+    padX: 14,
+    padY: 14,
+    padBottom: 56,
+    gapX: 10,
+    gapY: 8,
   },
-  droneLand: { x: 960, y: 688 },
-  operator: { x: 1008, y: 872 },
-  figure: 1,
+  droneLand: { x: 250, y: 478 },
+  operator: { x: 308, y: 628 },
+  figure: 0.82,
   van: {
-    x: 576,
-    y: 762,
-    travel: -1040,
-    length: 392,
-    rearAxle: 309.4,
-    frontAxle: 92.2,
-    axleY: 96.1,
-    wheelR: 20.2,
+    x: 36,
+    y: 542,
+    travel: -420,
+    length: 300,
+    rearAxle: 236.8,
+    frontAxle: 70.6,
+    axleY: 73.5,
+    wheelR: 15.4,
   },
   approach: 0.85,
   lane: 1.22,
@@ -137,33 +137,33 @@ const desktopGeom: Geom = {
 
 const mobileGeom: Geom = {
   variant: "mobile",
-  viewW: 390,
-  viewH: 844,
+  viewW: 360,
+  viewH: 580,
   cols: 3,
   rows: 3,
   tower: {
-    x: 30,
-    y: 524,
-    w: 330,
-    h: 180,
+    x: 24,
+    y: 18,
+    w: 312,
+    h: 400,
     padX: 10,
-    padY: 8,
-    padBottom: 18,
+    padY: 10,
+    padBottom: 22,
     gapX: 8,
     gapY: 6,
   },
-  droneLand: { x: 228, y: 692 },
-  operator: { x: 268, y: 824 },
-  figure: 0.78,
+  droneLand: { x: 168, y: 430 },
+  operator: { x: 198, y: 562 },
+  figure: 0.72,
   van: {
-    x: 22,
-    y: 734,
-    travel: -370,
-    length: 308,
-    rearAxle: 243.1,
-    frontAxle: 72.5,
-    axleY: 75.5,
-    wheelR: 15.9,
+    x: 14,
+    y: 456,
+    travel: -310,
+    length: 248,
+    rearAxle: 195.7,
+    frontAxle: 58.4,
+    axleY: 60.8,
+    wheelR: 12.8,
   },
   approach: 0.7,
   lane: 1.02,
@@ -461,20 +461,20 @@ function buildStory(g: Geom): HeroStory {
 export const desktopStory = buildStory(desktopGeom);
 export const mobileStory = buildStory(mobileGeom);
 
-function frameRule(story: HeroStory, anchor: "right" | "center") {
+function frameRule(story: HeroStory) {
   const { variant, viewW, viewH } = story;
-  const fit = `scale(min(100cqw / ${viewW}px, 100cqh / ${viewH}px))`;
-  if (anchor === "right") {
-    return `.jdc-ha-frame[data-variant="${variant}"] svg{right:0;width:${viewW}px;height:${viewH}px;transform-origin:100% 100%;transform:${fit}}`;
-  }
-  return `.jdc-ha-frame[data-variant="${variant}"] svg{left:50%;width:${viewW}px;height:${viewH}px;transform-origin:center bottom;transform:translateX(-50%) ${fit}}`;
+  // Size the SVG with lengths. Firefox drops a transform when scale() divides
+  // container-query units, which left Fig. 01 at its raw viewBox size.
+  const width = `min(100cqw,calc(100cqh * ${viewW} / ${viewH}))`;
+  const height = `min(100cqh,calc(100cqw * ${viewH} / ${viewW}))`;
+  return `.jdc-ha-frame[data-variant="${variant}"] svg{left:50%;top:50%;bottom:auto;width:${width};height:${height};transform:translate(-50%,-50%)}`;
 }
 
 export const heroMotionCss = `
 .jdc-ha-frame{container-type:size;position:relative;width:100%;height:100%;overflow:hidden}
-.jdc-ha-frame svg{position:absolute;bottom:0;max-width:none;display:block}
-${frameRule(desktopStory, "right")}
-${frameRule(mobileStory, "center")}
+.jdc-ha-frame svg{position:absolute;max-width:none;display:block}
+${frameRule(desktopStory)}
+${frameRule(mobileStory)}
 @keyframes jdc-ha-wipe{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @keyframes jdc-ha-glint{0%{opacity:0}38%{opacity:.95}100%{opacity:.48}}
 @keyframes jdc-ha-spin{to{transform:rotate(398deg)}}

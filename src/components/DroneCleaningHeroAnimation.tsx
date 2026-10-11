@@ -17,7 +17,7 @@ const LABEL =
  */
 export function DroneCleaningHeroAnimation() {
   return (
-    <div className="absolute inset-0">
+    <div className="relative h-full w-full">
       <style dangerouslySetInnerHTML={{ __html: heroMotionCss }} />
       <script
         dangerouslySetInnerHTML={{
