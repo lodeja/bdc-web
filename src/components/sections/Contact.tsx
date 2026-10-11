@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { business, filled, formatAddress } from "@/config/business";
 import { QuoteForm } from "../QuoteForm";
@@ -45,21 +46,18 @@ export function Contact() {
   const workArea = filled(business.workArea);
   const vat = filled(business.vat);
   const kbo = filled(business.enterpriseNumber);
-  const canReach = Boolean(business.formEndpoint || email || phone);
+  const hasReach = Boolean(email || phone || address || workArea || vat || kbo);
 
   return (
     <SectionShell
       id="contact"
       title="Vrijblijvende offerte"
-      lead={
-        canReach
-          ? "Vertel ons wat proper moet. We antwoorden met een vrijblijvende offerte. Stuur gerust een paar foto's mee."
-          : "Het formulier controleert uw invoer, maar verstuurt nog niets. Beschrijf het gebouw, en vermeld waar we foto's kunnen zien."
-      }
+      lead="Beschrijf het gebouw. Daarna plannen we een plaatsbezoek en sturen we een vrijblijvende offerte."
       tone="white"
     >
-      <div className="grid gap-10 lg:grid-cols-5 lg:gap-12">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+        <div>
+          <div className={hasReach ? "mb-8 space-y-4" : ""}>
           {email ? (
             <ContactLine
               icon={Mail}
@@ -80,11 +78,49 @@ export function Contact() {
           {workArea ? <ContactLine icon={MapPin} label="Werkgebied" value={workArea} /> : null}
           {vat ? <p className="text-sm font-medium text-jdc-navy">BTW {vat}</p> : null}
           {kbo ? <p className="text-sm font-medium text-jdc-navy">KBO {kbo}</p> : null}
+          </div>
+
+          <ol className="border-t border-jdc-navy/15">
+            <li className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-3 border-b border-jdc-navy/15 py-4">
+              <span className="jdc-mono pt-1 text-xs tracking-[0.14em] text-jdc-cyan-ink" aria-hidden>
+                01
+              </span>
+              <div>
+                <h3 className="font-semibold text-jdc-navy">Plaatsbezoek</h3>
+                <p className="mt-1 text-sm leading-relaxed text-jdc-slate">
+                  We komen langs, bekijken het vlak en nemen foto&apos;s.
+                </p>
+              </div>
+            </li>
+            <li className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-3 border-b border-jdc-navy/15 py-4">
+              <span className="jdc-mono pt-1 text-xs tracking-[0.14em] text-jdc-cyan-ink" aria-hidden>
+                02
+              </span>
+              <div>
+                <h3 className="font-semibold text-jdc-navy">Offerte</h3>
+                <p className="mt-1 text-sm leading-relaxed text-jdc-slate">
+                  U krijgt een vrijblijvende offerte.
+                </p>
+              </div>
+            </li>
+          </ol>
+
+          <h3 className="mt-8 font-semibold text-jdc-navy">Foto&apos;s die helpen</h3>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-jdc-slate">
+            Een foto van het dak, de gevel, de ramen of de panelen, en van hoe we het gebouw
+            bereiken, helpt het plaatsbezoek te plannen.
+          </p>
+          <p className="mt-5">
+            <Link
+              href="/veiligheid-en-regelgeving/"
+              className="text-sm font-semibold text-jdc-navy underline decoration-jdc-cyan underline-offset-4 hover:text-jdc-cyan-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+            >
+              Veiligheid en regelgeving
+            </Link>
+          </p>
         </div>
 
-        <div className="lg:col-span-3">
-          <QuoteForm />
-        </div>
+        <QuoteForm />
       </div>
     </SectionShell>
   );

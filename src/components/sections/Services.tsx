@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { services } from "@/config/services";
-import { ServiceFigure } from "../ServiceFigure";
+import { ServiceSketch } from "../ServiceSketch";
 import { SectionShell } from "../SectionShell";
 
 export function Services() {
@@ -11,56 +11,43 @@ export function Services() {
       lead="Eerst kijken, dan vliegen. Per dienst leest u hoe we werken en wanneer we liever geen drone inzetten."
       tone="fog"
     >
-      <div className="relative">
-        <div
-          className="absolute top-3 bottom-3 left-[7px] w-px bg-jdc-navy/55"
-          aria-hidden="true"
-        />
-        <ol>
+      <ul className="grid gap-px border border-jdc-navy/15 bg-jdc-navy/15 sm:grid-cols-2">
         {services.map((service, index) => {
-          const flip = index % 2 === 1;
+          const wide = service.id === "industrie";
           return (
-            <li
-              key={service.id}
-              className="relative grid gap-6 border-b border-jdc-navy/10 py-10 pl-10 last:border-b-0 lg:grid-cols-12 lg:items-center lg:gap-10 lg:py-14"
-            >
-              <span
-                className="absolute top-12 left-0 h-[15px] w-[15px] rounded-full border-2 border-jdc-navy-deep bg-jdc-cyan"
-                aria-hidden="true"
-              />
-              <div className={flip ? "lg:col-span-6 lg:col-start-7" : "lg:col-span-6"}>
-                <p className="font-mono text-xs tracking-[0.18em] text-jdc-cyan-ink">
-                  0{index + 1}
-                </p>
-                <h3 className="mt-2 text-2xl font-semibold tracking-tight text-jdc-navy sm:text-3xl">
-                  <Link
-                    href={service.href}
-                    className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-jdc-cyan"
-                  >
-                    {service.title}
-                  </Link>
-                </h3>
-                <p className="mt-3 max-w-xl text-base leading-relaxed text-jdc-slate">
-                  {service.description}
-                </p>
-              </div>
-              <div
-                className={
-                  flip
-                    ? "max-w-sm lg:col-span-5 lg:col-start-1 lg:row-start-1"
-                    : "max-w-sm lg:col-span-5 lg:col-start-8"
-                }
-              >
-                <ServiceFigure id={service.id} />
+            <li key={service.id} className={`bg-white ${wide ? "sm:col-span-2" : ""}`}>
+              <div className={wide ? "sm:grid sm:grid-cols-2 sm:items-center" : ""}>
+                <figure className={`m-0 border-b border-jdc-navy/10 ${wide ? "sm:border-r sm:border-b-0" : ""}`}>
+                  <div className="flex items-baseline justify-between px-4 pt-3">
+                    <span className="jdc-mono text-[11px] tracking-[0.16em] text-jdc-cyan-ink">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <figcaption className="text-[11px] tracking-[0.14em] text-jdc-slate uppercase">
+                      Illustratie
+                    </figcaption>
+                  </div>
+                  <div className="px-3 pb-2">
+                    <ServiceSketch id={service.id} />
+                  </div>
+                </figure>
+                <div className={`px-4 py-4 sm:px-5 sm:py-5 ${wide ? "sm:pr-8" : ""}`}>
+                  <h3 className="jdc-display text-[1.85rem] text-jdc-navy">
+                    <Link
+                      href={service.href}
+                      className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-jdc-cyan"
+                    >
+                      {service.title}
+                    </Link>
+                  </h3>
+                  <p className="mt-2 max-w-md text-sm leading-relaxed text-jdc-slate">
+                    {service.description}
+                  </p>
+                </div>
               </div>
             </li>
           );
         })}
-        </ol>
-      </div>
-      <p className="mt-4 max-w-2xl text-sm leading-relaxed text-jdc-slate">
-        Illustratie. Geen foto van een uitgevoerd werk.
-      </p>
+      </ul>
     </SectionShell>
   );
 }

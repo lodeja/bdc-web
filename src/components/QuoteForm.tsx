@@ -285,23 +285,42 @@ export function QuoteForm() {
         aanvraag te beantwoorden.
       </p>
       {notice ? (
-        <p id={`${formId}-notice`} className="mt-3 text-sm text-jdc-navy">
+        <p id={`${formId}-notice`} className="mt-3 text-xs leading-relaxed text-jdc-slate">
           {notice}
         </p>
       ) : null}
 
-      <ol className="mt-4 flex flex-wrap gap-x-3 gap-y-1" aria-label="Stappen">
+      <ol className="mt-5 grid grid-cols-5 border-y border-jdc-navy/15" aria-label="Stappen">
         {STEPS.map((item, index) => (
           <li
             key={item.id}
             aria-current={index === step ? "step" : undefined}
-            className={index === step ? "text-sm font-semibold text-jdc-navy" : "text-sm text-jdc-slate"}
+            className={`min-w-0 border-t-2 px-1 py-2 sm:px-2 ${
+              index === step
+                ? "border-jdc-cyan bg-jdc-fog"
+                : index < step
+                  ? "border-jdc-navy/40"
+                  : "border-transparent"
+            }`}
           >
-            {item.label}
+            <span
+              className={`jdc-mono block text-[10px] tracking-[0.12em] ${
+                index === step ? "text-jdc-cyan-ink" : "text-jdc-slate"
+              }`}
+            >
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <span
+              className={`mt-0.5 block text-[0.65rem] leading-tight sm:text-xs ${
+                index === step ? "font-semibold text-jdc-navy" : "text-jdc-slate"
+              }`}
+            >
+              {item.label}
+            </span>
           </li>
         ))}
       </ol>
-      <p className="mt-2 text-sm text-jdc-slate" aria-live="polite">
+      <p className="mt-2 text-xs text-jdc-slate" aria-live="polite">
         {step < STEPS.length - 1
           ? `Nu: ${STEPS[step].label}. Daarna: ${upcoming?.label ?? ""}.`
           : "Nu: Contact."}

@@ -14,11 +14,11 @@ export function BeforeAfterSlider() {
   const before = pair && photoReady(pair.before) ? pair.before : null;
   const after = pair && photoReady(pair.after) ? pair.after : null;
   const usePhotos = Boolean(before && after);
-  const caption = pair?.caption ?? "Illustratie. Geen foto van een uitgevoerd werk.";
+  const caption = pair?.caption ?? "Illustratie";
 
   return (
     <div className="overflow-hidden rounded-sm border border-jdc-navy/10 bg-jdc-navy-deep">
-      <div className="relative aspect-[16/10] w-full select-none">
+      <div className="relative aspect-[4/3] w-full select-none sm:aspect-[3/2]">
         {usePhotos && after ? (
           // eslint-disable-next-line @next/next/no-img-element -- static export, path via withBasePath
           <img

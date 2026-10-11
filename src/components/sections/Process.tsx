@@ -58,24 +58,25 @@ export function Process() {
     >
       <div className="relative mx-auto max-w-3xl">
         <div
-          className="pointer-events-none absolute top-8 bottom-8 left-[1.15rem] w-px bg-jdc-cyan"
+          className="pointer-events-none absolute top-3 bottom-3 left-0 w-px bg-jdc-cyan"
           aria-hidden
         />
-        <ol className="space-y-4">
-        {STEPS.map((step) => (
-          <li key={step.n} className="relative pl-14">
-            <span
-              className="absolute top-6 left-0 flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-jdc-navy-deep text-xs font-semibold tracking-wider text-jdc-cyan"
-              aria-hidden
+        <ol>
+          {STEPS.map((step) => (
+            <li
+              key={step.n}
+              className="relative grid grid-cols-[3.25rem_minmax(0,1fr)] gap-4 border-b border-white/15 py-5 last:border-b-0"
             >
-              {step.n}
-            </span>
-            <div className="rounded-sm border border-jdc-navy/10 bg-white p-6">
-              <h3 className="text-lg font-semibold text-jdc-navy">{step.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-jdc-slate">{step.text}</p>
-            </div>
-          </li>
-        ))}
+              <span className="jdc-mono relative text-sm text-jdc-cyan" aria-hidden>
+                <span className="absolute top-1.5 -left-[3px] h-1.5 w-1.5 rounded-full bg-jdc-cyan" />
+                <span className="pl-4">{step.n}</span>
+              </span>
+              <div>
+                <h3 className="text-lg font-semibold text-white">{step.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-[#d5e2ee]">{step.text}</p>
+              </div>
+            </li>
+          ))}
         </ol>
       </div>
       <p className="mx-auto mt-8 max-w-3xl">

@@ -49,7 +49,7 @@ export const services: readonly Service[] = [
     slug: "zonnepanelen-reinigen",
     title: "Zonnepanelen reinigen",
     description:
-      "Stof, stuifmeel en groene aanslag van uw panelen, zonder erover te lopen. Een cijfer over meeropbrengst verzinnen we niet.",
+      "Stof, stuifmeel en groene aanslag van uw panelen, zonder erover te lopen.",
     href: "/zonnepanelen-reinigen/",
   },
   {
