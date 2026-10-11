@@ -5,7 +5,7 @@ export function Hero() {
   return (
     <section
       id="jdc-hero"
-      className="relative isolate overflow-hidden bg-[linear-gradient(180deg,#7ea4bf_0%,#a9c6d6_28%,#d5e6ef_62%,#e7eef2_100%)] h-[calc(100svh-var(--header-height))] min-h-[560px] max-lg:flex max-lg:h-[calc(100svh-var(--header-height)-3.25rem)] max-lg:min-h-0 max-lg:flex-col"
+      className="relative isolate overflow-hidden bg-[linear-gradient(180deg,#7ea4bf_0%,#8aafc6_16%,#9bbdd0_34%,#b3d0dc_52%,#c9e0e8_70%,#dceaf0_86%,#e7eef2_100%)] h-[calc(100svh-var(--header-height))] min-h-[560px] max-lg:flex max-lg:h-[calc(100svh-var(--header-height)-3.25rem)] max-lg:min-h-0 max-lg:flex-col"
       aria-labelledby="hero-heading"
     >
       <div className="jdc-hero-copy pointer-events-none absolute top-0 left-0 z-[7] w-[min(32%,28rem)] bg-[linear-gradient(100deg,rgba(244,247,251,0.96)_0%,rgba(244,247,251,0.9)_68%,rgba(244,247,251,0)_100%)] px-4 pt-5 pb-8 sm:px-6 sm:pt-7 max-lg:contents">

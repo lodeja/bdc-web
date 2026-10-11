@@ -28,6 +28,14 @@ export function DroneCleaningHeroAnimation() {
           {LABEL}
         </figcaption>
         <div className="jdc-hero-stage" data-hero="band" aria-hidden="true">
+          <div className="cloud-track jdc-idle jdc-anim" data-hero="clouds">
+            <CloudSet />
+            <CloudSet />
+          </div>
+          <div
+            className="jdc-sky-noise"
+            style={{ backgroundImage: `url(${withBasePath("/hero/sky-noise.webp")})` }}
+          />
           <Scene spec={mobileSpec} />
           <Scene spec={desktopSpec} />
         </div>
@@ -74,12 +82,6 @@ function Scene({ spec, loading = "lazy" }: { spec: HeroSpec; loading?: "eager" |
   return (
     <div className={`stage stage-${spec.variant}`} data-variant={spec.variant}>
       <div className="sky" />
-      <div className="layer">
-        <div className="cloud-track jdc-idle jdc-anim" data-hero="clouds">
-          <CloudSet loading={loading} />
-          <CloudSet loading={loading} />
-        </div>
-      </div>
       <div className="ground" style={{ top: `${spec.ground}%` }} data-hero="ground" />
       <div className="curb" style={{ top: `${spec.ground}%` }} />
       <div
@@ -168,10 +170,20 @@ function LanePane({
   );
 }
 
-function CloudSet({ loading }: { loading: "eager" | "lazy" }) {
+function CloudSet() {
   return (
     <div className="cloud-set" aria-hidden="true">
-      <img className="jdc-cloud-img" src={withBasePath("/hero/clouds.webp")} alt="" draggable={false} loading={loading} />
+      {["cloud-1", "cloud-2", "cloud-3", "cloud-4", "cloud-5"].map((name, index) => (
+        <img
+          key={name}
+          className={`cumulus c${index + 1}`}
+          src={withBasePath(`/hero/${name}.webp`)}
+          alt=""
+          draggable={false}
+          loading="eager"
+          fetchPriority="low"
+        />
+      ))}
     </div>
   );
 }

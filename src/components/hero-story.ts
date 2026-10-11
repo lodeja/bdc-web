@@ -9,7 +9,7 @@
 export const HERO_DELAY_S = 1;
 export const STORY_S = 13.2;
 export const SOFT_S = 3.4;
-export const CLOUD_S = 20;
+export const CLOUD_S = 36;
 
 export type Box = { x: number; y: number; w: number; h: number };
 
@@ -57,7 +57,8 @@ type Geom = {
  * The facade photo is the scale. One window band is a 3.2 m storey.
  * Sprinter height 2.8 m, drone span 1.3 m, person 1.8 m.
  * Building bottom is the ground line. Van travel clears the rear bumper.
- * The operator box is the full walking figure; at rest the waist sits on the frame.
+ * The operator box is the full walking figure. On both layouts the waist
+ * of the foreground crop sits below the stage edge.
  */
 const desktopGeom: Geom = {
   variant: "desktop",
@@ -80,7 +81,8 @@ const mobileGeom: Geom = {
   building: { x: -17.5, y: 22, w: 135, h: 66 },
   van: { x: 1.2, y: 79.33, w: 23.21, h: 8.67 },
   door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
-  operator: { x: 58, y: 46, w: 17.95, h: 42 },
+  // Foreground crop, anchored on the bottom edge of the stage (waist sits below the fold).
+  operator: { x: 67.6, y: 64, w: 24.8, h: 58 },
   drone: { w: 6.81, h: 2.1 },
   start: { x: 12, y: 60 },
   ground: 88,
@@ -265,7 +267,10 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const headY = g.operator.y + g.operator.h * 0.1;
   const lookAt = (x: number, y: number) => {
     const rise = headY - (y + dh * 0.3);
-    return clamp(-rise * 0.35, -8, 8);
+    // On the phone the head sits lower, so the same gain barely moves.
+    const gain = g.variant === "mobile" ? 0.7 : 0.35;
+    const limit = g.variant === "mobile" ? 16 : 8;
+    return clamp(-rise * gain, -limit, limit);
   };
   const pOf = (t: number) => num((t / STORY_S) * 100);
   const dedupe = <T extends { t: number }>(list: T[]) => {
@@ -379,7 +384,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const walkShoulder = 0.238;
   const alignH = (walkShoulder - walkHelmet) / (upperShoulder - upperHelmet);
   const alignTop = walkHelmet - upperHelmet * alignH;
-  const restH = v === "mobile" ? 0.53 : 0.72;
+  const restH = 0.72;
   const alignScale = alignH / restH;
   const boxAspect = (g.operator.w * (g.aspectW / g.aspectH)) / g.operator.h;
   const restW = (restH * (687 / 900)) / boxAspect;
@@ -484,11 +489,11 @@ export const heroMotionCss = `
 @media (max-width: 1023px) and (max-height: 760px){
   .jdc-hero-lead p{display:none}
 }
-.jdc-hero-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:linear-gradient(180deg,#7ea4bf 0%,#a9c6d6 28%,#d5e6ef 62%,#e7eef2 100%)}
+.jdc-hero-stage{position:absolute;inset:0;z-index:1;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent}
 @media (max-width: 1023px){
   .jdc-hero-stage{align-items:flex-end}
 }
-.stage{position:relative;overflow:hidden;flex:none}
+.stage{position:relative;z-index:2;overflow:hidden;flex:none}
 .stage-mobile{width:min(100cqw, calc(100cqh * 8 / 9));height:min(100cqh, calc(100cqw * 9 / 8))}
 .stage-desktop{display:none;width:min(100cqw, calc(100cqh * 12 / 5));height:min(100cqh, calc(100cqw * 5 / 12))}
 @media (min-width: 1024px){
@@ -496,11 +501,20 @@ export const heroMotionCss = `
   .stage-desktop{display:block}
 }
 .layer{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none}
-.sky{position:absolute;inset:0;background:linear-gradient(180deg,#7ea4bf 0%,#a9c6d6 28%,#d5e6ef 62%,#e7eef2 100%)}
-.cloud-track{position:absolute;left:0;top:2%;display:flex;width:200%;height:42%;overflow:visible;animation:jdc-clouds ${CLOUD_S}s linear infinite}
+.sky{position:absolute;inset:0;background:transparent}
+.cloud-track{position:absolute;left:0;top:0;z-index:1;display:flex;width:200%;height:calc(100cqh - min(100cqh, 100cqw * 9 / 8) * 0.8);overflow:visible;pointer-events:none;animation:jdc-clouds ${CLOUD_S}s linear infinite}
+@media (min-width: 1024px){
+  .cloud-track{height:calc(100cqh - min(100cqh, 100cqw * 5 / 12) * 0.86)}
+}
 .cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%;overflow:visible}
 @keyframes jdc-clouds{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.jdc-cloud-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0.92;display:block;pointer-events:none}
+.cumulus{position:absolute;width:auto;height:auto;display:block;pointer-events:none}
+.c1{left:2%;top:4%;height:38%}
+.c2{left:27%;top:36%;height:50%}
+.c3{left:50%;top:0%;height:28%}
+.c4{left:66%;top:16%;height:42%}
+.c5{left:82%;top:44%;height:34%}
+.jdc-sky-noise{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0.05;background-size:160px 160px;mix-blend-mode:soft-light}
 .ground{position:absolute;left:0;right:0;bottom:0;background:
   linear-gradient(180deg, #d5dde3 0 2px, #c3ccd4 2px, #b7c1ca 18%, #aeb8c2 100%)}
 .curb{position:absolute;left:0;right:0;height:2px;background:#8b99a4}
@@ -556,7 +570,7 @@ export const heroMotionCss = `
 .jdc-op-bob{position:absolute;inset:0}
 .jdc-op-bob picture,.jdc-op-bob img{width:100%;height:100%;object-fit:fill;display:block}
 .jdc-op-upper{position:absolute;left:50%;top:0;height:72%;transform:translateX(-50%);transform-origin:50% 0}
-.stage-mobile .jdc-op-upper{height:53%}
+.stage-mobile .jdc-op-upper{height:72%}
 .jdc-op-upper picture,.jdc-op-upper img{height:100%;width:auto;max-width:none;aspect-ratio:687 / 900;display:block}
 .op-look{height:100%;transform-origin:50% 100%}
 .leg{position:absolute;left:46%;top:72%;width:8%;height:22%;transform-origin:50% 0%;opacity:0}
