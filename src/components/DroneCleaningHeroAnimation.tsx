@@ -50,19 +50,21 @@ function Scene({ story, className }: { story: HeroStory; className: string }) {
       >
         <Sky id={v} w={story.viewW} h={story.viewH} />
         <Tower story={story} />
-        <g
-          data-hero="van"
-          className={`jdc-ha-play jdc-ha-van-${v}`}
-        >
+        <g data-hero="van" className={`jdc-ha-play jdc-ha-van-${v}`}>
           <WorkVan variant={v} />
         </g>
         <Operator story={story} />
         <g data-hero="drone" className={`jdc-ha-play jdc-ha-drone-${v}`}>
-          <g className={`jdc-ha-play jdc-ha-tilt-${v}`}>
+          <g data-hero="tilt" className={`jdc-ha-play jdc-ha-tilt-${v}`}>
             <g className={`jdc-ha-play jdc-ha-bob-${v}`}>
-              <CleaningDrone variant={v} />
+              <g transform="scale(0.36)">
+                <CleaningDrone variant={v} />
+              </g>
             </g>
           </g>
+        </g>
+        <g className={`jdc-ha-play jdc-ha-van-${v}`}>
+          <VanDoor story={story} />
         </g>
       </svg>
     </div>
@@ -112,7 +114,7 @@ function Tower({ story }: { story: HeroStory }) {
   const t = story.tower;
   return (
     <g>
-      <rect x={t.x} y={t.y} width={t.w} height={t.h} fill="#D5DBE2" />
+      <rect data-hero="tower" x={t.x} y={t.y} width={t.w} height={t.h} fill="#D5DBE2" />
       <rect x={t.x + t.w - 8} y={t.y} width="8" height={t.h} fill="#B7BEC8" />
       <rect x={t.x - 6} y={t.y} width={t.w + 12} height="10" fill="#C5CCD4" />
       <rect x={t.x} y={t.y} width={t.w} height="10" fill="#EEF1F4" />
@@ -184,31 +186,63 @@ function Operator({ story }: { story: HeroStory }) {
   const { x, y } = story.operator;
   const v = story.variant;
   const s = story.figure;
+  const hipY = y - 36 * s;
   return (
-    <g data-hero="operator" className={`jdc-ha-play jdc-ha-board-${v}`}>
+    <g data-hero="operator" className={`jdc-ha-play jdc-ha-walk-${v}`}>
       <ellipse cx={x} cy={y - 1} rx={22 * s} ry={4.5} fill="#071525" opacity="0.16" />
-      <g transform={`translate(${x} ${y}) scale(${s})`}>
-        <path d="M-7 0 L-9 -34 L-2 -36 L-1 -6 Z" fill="#1A2230" />
-        <path d="M1 -2 L3 -38 L11 -36 L8 -2 Z" fill="#243044" />
-        <path d="M-8 -34 L-4 -74 L10 -76 L12 -36 Z" fill="#E4F018" />
-        <path d="M-4 -74 L8 -76 L6 -58 L-2 -56 Z" fill="#C5D20F" />
-        <rect x="-5" y="-66" width="14" height="3.2" fill="#ffffff" />
-        <rect x="-6" y="-50" width="16" height="3" fill="#ffffff" />
-        <path d="M8 -62 L22 -50 L20 -45 L8 -54 Z" fill="#D6E210" />
-        <rect x="18" y="-52" width="13" height="7" rx="1.4" fill="#14181E" />
-        <rect x="20" y="-49.6" width="8" height="2.2" rx="0.4" fill="#00C2E8" />
-        <path d="M-2 -70 L-8 -58 L-4 -56 L1 -68 Z" fill="#C5D20F" />
-      </g>
-      <g transform={`translate(${story.neck.x} ${story.neck.y})`}>
-        <g className={`jdc-ha-play jdc-ha-look-${v}`}>
-          <g transform={`scale(${s})`}>
-            <rect x="-14" y="-30" width="28" height="30" fill="none" />
-            <path d="M-1 0 C-2 -6 -1 -16 4 -22 C12 -28 18 -20 16 -8 C14 -2 8 1 2 0 Z" fill="#C9845A" />
-            <path d="M-2 2 C-6 -8 -2 -22 6 -28 C16 -32 22 -18 18 -4 C20 2 10 6 2 3 Z" fill="#F4F7FB" />
-            <path d="M4 -6 L20 -12 L18 -7 L6 -3 Z" fill="#E6EAEF" />
-            <path d="M8 -16 L16 -18" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" />
+      <g className={`jdc-ha-play jdc-ha-stride-${v}`}>
+        <Leg variant={v} which="a" hipX={x - 4 * s} hipY={hipY} s={s} fill="#1A2230" />
+        <Leg variant={v} which="b" hipX={x + 5 * s} hipY={hipY} s={s} fill="#243044" />
+        <g transform={`translate(${x} ${y}) scale(${s})`}>
+          <path d="M-8 -34 L-4 -74 L10 -76 L12 -36 Z" fill="#E4F018" />
+          <path d="M-4 -74 L8 -76 L6 -58 L-2 -56 Z" fill="#C5D20F" />
+          <rect x="-5" y="-66" width="14" height="3.2" fill="#ffffff" />
+          <rect x="-6" y="-50" width="16" height="3" fill="#ffffff" />
+          <path d="M8 -62 L22 -50 L20 -45 L8 -54 Z" fill="#D6E210" />
+          <rect x="18" y="-52" width="13" height="7" rx="1.4" fill="#14181E" />
+          <rect x="20" y="-49.6" width="8" height="2.2" rx="0.4" fill="#00C2E8" />
+          <path d="M-2 -70 L-8 -58 L-4 -56 L1 -68 Z" fill="#C5D20F" />
+        </g>
+        <g transform={`translate(${story.neck.x} ${story.neck.y})`}>
+          <g data-hero="look" className={`jdc-ha-play jdc-ha-look-${v}`}>
+            <g transform={`scale(${s})`}>
+              <rect x="-18" y="-34" width="36" height="34" fill="transparent" />
+              <path d="M-4 -1 C-6 -14 0 -30 10 -32 C18 -30 18 -16 14 -4 C10 0 2 1 0 0 Z" fill="#F7F8FA" />
+              <path d="M-1 0 C0 -8 4 -16 10 -18 C14 -12 13 -4 8 -1 Z" fill="#C9845A" />
+              <path d="M1 -7 L16 -4 L15 0 L2 -2 Z" fill="#D5DCE3" />
+              <path d="M3 -13 L14 -16" stroke="#071525" strokeWidth="2.4" strokeLinecap="round" />
+              <path d="M6 -20 L13 -22" stroke="#00C2E8" strokeWidth="1.8" strokeLinecap="round" />
+            </g>
           </g>
         </g>
+      </g>
+    </g>
+  );
+}
+
+function Leg({
+  variant,
+  which,
+  hipX,
+  hipY,
+  s,
+  fill,
+}: {
+  variant: string;
+  which: "a" | "b";
+  hipX: number;
+  hipY: number;
+  s: number;
+  fill: string;
+}) {
+  return (
+    <g transform={`translate(${hipX} ${hipY}) scale(${s})`}>
+      <g
+        data-hero={which === "a" ? "leg" : undefined}
+        className={`jdc-ha-play jdc-ha-leg-${which}-${variant}`}
+      >
+        <rect x="-12" y="-36" width="24" height="72" fill="transparent" />
+        <path d="M-1 2 L-5 18 L-2 34 L6 33 L4 16 L3 2 Z" fill={fill} />
       </g>
     </g>
   );
@@ -324,19 +358,41 @@ function Wheel({
   cy: number;
   r: number;
 }) {
+  const spoke = (rot: number) => (
+    <rect
+      x={-r * 0.1}
+      y={-r * 0.56}
+      width={r * 0.2}
+      height={r * 1.12}
+      rx={r * 0.05}
+      fill="#F4F7FB"
+      transform={`rotate(${rot})`}
+    />
+  );
   return (
     <g transform={`translate(${cx} ${cy})`}>
-      <g className={`jdc-ha-wheel jdc-ha-play jdc-ha-wheel-${variant}`}>
-        <circle r={r} fill="#16181C" />
-        <circle r={r * 0.62} fill="#2A2E34" />
-        <circle r={r * 0.28} fill="#D5D8DC" />
-        <path
-          d={`M0 ${-r * 0.55} V${r * 0.55} M${-r * 0.48} ${-r * 0.28} L${r * 0.48} ${r * 0.28} M${-r * 0.48} ${r * 0.28} L${r * 0.48} ${-r * 0.28}`}
-          stroke="#A7ADB4"
-          strokeWidth={Math.max(1.2, r * 0.08)}
-          strokeLinecap="round"
-        />
+      <g data-hero="wheel" className={`jdc-ha-wheel jdc-ha-play jdc-ha-wheel-${variant}`}>
+        <circle r={r} fill="#14171C" />
+        <circle r={r * 0.8} fill="none" stroke="#C5CCD4" strokeWidth={Math.max(2, r * 0.12)} />
+        <circle r={r * 0.58} fill="#1A1E24" />
+        {spoke(0)}
+        {spoke(60)}
+        {spoke(120)}
+        <circle r={r * 0.2} fill="#E6EAEF" />
+        <circle r={r * 0.08} fill="#2C3138" />
+        <circle cx="0" cy={-r * 0.4} r={r * 0.12} fill="#00C2E8" />
       </g>
+    </g>
+  );
+}
+
+function VanDoor({ story }: { story: HeroStory }) {
+  const { x, y, w, h } = story.door;
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h} fill="#121418" />
+      <rect x={x} y={y} width={Math.max(1.5, w * 0.06)} height={h} fill="#3A414A" />
+      <rect x={x + w * 0.72} y={y + h * 0.18} width={Math.max(2, w * 0.08)} height={h * 0.28} rx="1" fill="#6A8FA6" />
     </g>
   );
 }

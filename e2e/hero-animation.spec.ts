@@ -42,14 +42,13 @@ test("hero animation starts within about two seconds", async ({ page }) => {
 
 test("cleaning pass changes the facade", async ({ page }) => {
   await page.goto("/");
-  const width = page.viewportSize()?.width ?? 1440;
   const panes = await page.evaluate(() => {
     const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
       (node) => node.getBoundingClientRect().width > 0,
     );
     return frame?.querySelectorAll('[data-hero="dirt"]').length ?? 0;
   });
-  expect(panes).toBe(width < 800 ? 6 : 9);
+  expect(panes).toBe(9);
   const dirt = await crew(page, "dirt");
   await expect(dirt).toBeVisible();
   const before = await dirt.evaluate((el) => getComputedStyle(el).transform);
@@ -78,7 +77,6 @@ test("reduced motion shows drone, operator and van", async ({ page }) => {
   const end = await drone.boundingBox();
   expect(Math.hypot((end?.x ?? 0) - (start?.x ?? 0), (end?.y ?? 0) - (start?.y ?? 0))).toBeLessThan(2);
 
-  const width = page.viewportSize()?.width ?? 1440;
   const wiped = await page.evaluate(() => {
     const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
       (node) => node.getBoundingClientRect().width > 0,
@@ -88,10 +86,110 @@ test("reduced motion shows drone, operator and van", async ({ page }) => {
       (node) => getComputedStyle(node).transform,
     );
   });
-  expect(wiped).toHaveLength(width < 800 ? 6 : 9);
+  expect(wiped).toHaveLength(9);
+  const droneBox = await drone.boundingBox();
+  const operatorBox = await (await crew(page, "operator")).boundingBox();
+  expect(droneBox?.height ?? 999).toBeLessThan((operatorBox?.height ?? 0) * 0.5);
+  expect(droneBox?.width ?? 999).toBeLessThan((operatorBox?.height ?? 0) * 0.55);
   for (const transform of wiped) {
     expect(transform.startsWith("matrix(0,")).toBe(true);
   }
+});
+
+async function sampleMotion(page: Page, ms: number) {
+  const frames: { tilt: number; look: number; wheel: number; leg: number; x: number; opacity: number }[] = [];
+  const started = Date.now();
+  while (Date.now() - started < ms) {
+    frames.push(
+      await page.evaluate(() => {
+        const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+          (node) => node.getBoundingClientRect().width > 0,
+        );
+        const partsOf = (transform: string) => {
+          const m3 = transform.match(/matrix3d\(([^)]+)\)/);
+          if (m3) {
+            const p = m3[1].split(",").map((part) => Number(part.trim()));
+            return { a: p[0] ?? 1, b: p[1] ?? 0, x: p[12] ?? 0 };
+          }
+          const match = transform.match(/matrix\(([^)]+)\)/);
+          if (!match) return { a: 1, b: 0, x: 0 };
+          const p = match[1].split(",").map((part) => Number(part.trim()));
+          return { a: p[0] ?? 1, b: p[1] ?? 0, x: p[4] ?? 0 };
+        };
+        const read = (sel: string) => {
+          const node = frame?.querySelector(sel);
+          if (!node) return { transform: "none", opacity: "1" };
+          const style = getComputedStyle(node);
+          return { transform: style.transform, opacity: style.opacity };
+        };
+        const tilt = read('[data-hero="tilt"]');
+        const look = read('[data-hero="look"]');
+        const wheel = read('[data-hero="wheel"]');
+        const leg = read('[data-hero="leg"]');
+        const operator = read('[data-hero="operator"]');
+        const angle = (transform: string) => {
+          const parts = partsOf(transform);
+          return (Math.atan2(parts.b, parts.a) * 180) / Math.PI;
+        };
+        return {
+          tilt: angle(tilt.transform),
+          look: angle(look.transform),
+          wheel: angle(wheel.transform),
+          leg: angle(leg.transform),
+          x: partsOf(operator.transform).x,
+          opacity: Number(operator.opacity),
+        };
+      }),
+    );
+    await page.waitForTimeout(120);
+  }
+  return frames;
+}
+
+function spread(values: number[]) {
+  return Math.max(...values) - Math.min(...values);
+}
+
+test("pitch, head, wheels and the walk change without hiding the operator", async ({ page }) => {
+  await page.goto("/");
+  const frames = await sampleMotion(page, 12_000);
+  expect(spread(frames.map((frame) => frame.tilt))).toBeGreaterThan(10);
+  expect(spread(frames.map((frame) => frame.look))).toBeGreaterThan(10);
+  expect(spread(frames.map((frame) => frame.wheel))).toBeGreaterThan(20);
+  expect(spread(frames.map((frame) => frame.leg))).toBeGreaterThan(12);
+  expect(spread(frames.map((frame) => frame.x))).toBeGreaterThan(24);
+
+  for (const frame of frames) {
+    expect(frame.opacity).toBeGreaterThan(0.92);
+  }
+  for (let i = 1; i < frames.length; i++) {
+    expect(Math.abs(frames[i].opacity - frames[i - 1].opacity)).toBeLessThan(0.08);
+  }
+});
+
+test("mobile keeps the drone clear of the buttons and shows three columns", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "hero-mobile", "Composition check is for the phone viewport.");
+  await page.goto("/");
+  const cta = page.getByRole("link", { name: "Ontdek onze diensten" });
+  const ctaBox = await cta.boundingBox();
+  expect(ctaBox?.height ?? 0).toBeGreaterThan(20);
+  const started = Date.now();
+  while (Date.now() - started < 4500) {
+    const drone = await crew(page, "drone");
+    const box = await drone.boundingBox();
+    expect(box?.y ?? 0).toBeGreaterThan((ctaBox?.y ?? 0) + (ctaBox?.height ?? 0) + 8);
+    await page.waitForTimeout(150);
+  }
+  const gap = await page.evaluate(() => {
+    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    const tower = frame?.querySelector('[data-hero="tower"]')?.getBoundingClientRect();
+    const van = frame?.querySelector('[data-hero="van"]')?.getBoundingClientRect();
+    if (!tower || !van) return 0;
+    return van.top - tower.bottom;
+  });
+  expect(gap).toBeGreaterThan(16);
 });
 
 test("the van drives off after the facade is cleaned", async ({ page }) => {

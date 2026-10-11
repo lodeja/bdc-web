@@ -74,6 +74,12 @@ export type HeroStory = {
   neck: Point;
   figure: number;
   van: Geom["van"];
+  /** Door panel in van-local pixels. The operator walks into it and stays opaque. */
+  door: { x: number; y: number; w: number; h: number };
+  /** Where the drone tucks into the cargo, in viewBox pixels. */
+  cargo: Point;
+  /** How far the operator steps up into the van, in viewBox pixels. */
+  sink: number;
   droneLand: Point;
   duration: number;
   wipeDur: number;
@@ -123,50 +129,50 @@ const desktopGeom: Geom = {
   lane: 1.22,
   drop: 0.36,
   settle: 0.3,
-  land: 0.9,
-  board: 0.72,
-  drive: 1.9,
+  land: 0.75,
+  board: 1.45,
+  drive: 1.85,
   bob: 5,
 };
 
 const mobileGeom: Geom = {
   variant: "mobile",
-  viewW: 430,
-  viewH: 780,
-  cols: 2,
+  viewW: 390,
+  viewH: 844,
+  cols: 3,
   rows: 3,
   tower: {
-    x: 64,
-    y: 348,
-    w: 340,
-    h: 400,
-    padX: 12,
-    padY: 12,
-    padBottom: 120,
-    gapX: 10,
-    gapY: 10,
+    x: 30,
+    y: 524,
+    w: 330,
+    h: 180,
+    padX: 10,
+    padY: 8,
+    padBottom: 18,
+    gapX: 8,
+    gapY: 6,
   },
-  droneLand: { x: 168, y: 586 },
-  operator: { x: 172, y: 766 },
-  figure: 0.9,
+  droneLand: { x: 228, y: 692 },
+  operator: { x: 268, y: 824 },
+  figure: 0.78,
   van: {
-    x: 18,
-    y: 660,
-    travel: -430,
-    length: 360,
-    rearAxle: 284.1,
-    frontAxle: 84.7,
-    axleY: 88.2,
-    wheelR: 18.5,
+    x: 22,
+    y: 734,
+    travel: -370,
+    length: 308,
+    rearAxle: 243.1,
+    frontAxle: 72.5,
+    axleY: 75.5,
+    wheelR: 15.9,
   },
-  approach: 0.75,
-  lane: 1.05,
-  drop: 0.32,
-  settle: 0.26,
-  land: 0.8,
-  board: 0.62,
-  drive: 1.7,
-  bob: 3.5,
+  approach: 0.7,
+  lane: 1.02,
+  drop: 0.28,
+  settle: 0.2,
+  land: 0.65,
+  board: 1.2,
+  drive: 1.6,
+  bob: 3.2,
 };
 
 function buildWindows(g: Geom): Win[] {
@@ -205,19 +211,26 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
-/** Small pitch into the direction of travel. The craft points right, so a full atan2 would flip it. */
+/**
+ * Pitch into the travel direction. The craft points right, so this stays in
+ * ±16° instead of a full atan2 (that would flip it). Positive is nose-down.
+ * Straight legs hold about 13°. A mostly vertical leg banks to about 14°.
+ */
 function tilt(a: Point, b: Point) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
-  if (Math.hypot(dx, dy) < 6) return 0;
-  return clamp(dx * 0.035 + dy * 0.07, -14, 16);
+  if (Math.hypot(dx, dy) < 8) return 0;
+  if (Math.abs(dx) >= Math.abs(dy) * 0.65) {
+    return clamp(Math.sign(dx) * 13 + Math.sign(dy || 1) * 2, -16, 16);
+  }
+  return clamp(Math.sign(dy) * 14, -16, 16);
 }
 
 function lookDeg(neck: Point, drone: Point) {
   const rise = neck.y - drone.y;
   const side = drone.x - neck.x;
-  const deg = -8 - rise * 0.055 + side * 0.012;
-  return clamp(deg, -36, 8);
+  const deg = -6 - rise * 0.09 + side * 0.008;
+  return clamp(deg, -50, 10);
 }
 
 function num(n: number) {
@@ -274,23 +287,37 @@ function buildStory(g: Geom): HeroStory {
     keys.push({ t, x, y, rot: 0, ease });
   };
 
+  const door = {
+    x: g.van.length * 0.32,
+    y: 2,
+    w: Math.max(72, g.van.length * 0.2),
+    h: g.van.axleY + g.van.wheelR - 2,
+  };
+  const cargo = {
+    x: g.van.x + door.x + door.w * 0.5,
+    y: g.van.y + g.van.axleY * 0.42,
+  };
+  // Steps down into the cargo so the helmet clears the roof. The door covers him.
+  const sink = 14;
+
   push(0, g.droneLand.x, g.droneLand.y, EASE_OUT);
   for (const visit of visits) push(visit.t, visit.at.x, visit.at.y, EASE_LANE);
   push(settleEnd, last.at.x, last.at.y, EASE_OUT);
   push(landEnd, g.droneLand.x, g.droneLand.y, EASE_OUT);
-  push(duration, g.droneLand.x, g.droneLand.y, EASE_OUT);
+  push(boardEnd, cargo.x, cargo.y, EASE_VAN);
+  push(duration, cargo.x + g.van.travel, cargo.y, EASE_VAN);
 
+  keys[0].rot = 0;
   for (let i = 0; i < keys.length - 1; i++) {
-    const segment = tilt(keys[i], keys[i + 1]);
-    keys[i].rot = i === 0 ? segment * 0.35 : segment;
-    if (keys[i + 1].t > cleanEnd) keys[i].ease = EASE_OUT;
+    keys[i + 1].rot = tilt(keys[i], keys[i + 1]);
+    if (keys[i + 1].t > cleanEnd && keys[i + 1].t <= landEnd + 0.02) keys[i].ease = EASE_OUT;
     else if (Math.abs(keys[i + 1].y - keys[i].y) > 18 && Math.abs(keys[i + 1].x - keys[i].x) < 80) {
       keys[i].ease = EASE_DROP;
     }
   }
-  keys[keys.length - 1].rot = 0;
-  const landing = keys.findIndex((k) => k.t >= landEnd - 0.01);
-  if (landing > 0) keys[landing].rot = -4;
+  for (const key of keys) {
+    if (key.t >= landEnd - 0.01) key.rot = 0;
+  }
 
   const pct = (t: number) => `${((t / duration) * 100).toFixed(3)}%`;
   const posKf = keys
@@ -326,13 +353,33 @@ function buildStory(g: Geom): HeroStory {
   const wheelDeg = (Math.abs(g.van.travel) / (2 * Math.PI * g.van.wheelR)) * 360;
   const wheelSign = g.van.travel < 0 ? -1 : 1;
   const endX = g.van.x + g.van.travel;
-  const doorX = g.van.x + g.van.length * 0.62;
-  const walk = Math.min(-28, doorX - g.operator.x + 18);
+  const walk = g.van.x + door.x + door.w * 0.5 - g.operator.x;
+  const ride = walk + g.van.travel;
   const landLook = lookDeg(neck, g.droneLand);
   const bobCycles = Math.max(4, Math.round((landEnd / 1.15) * 2) / 2);
+  const stepAt = (p: number) => landEnd + g.board * p;
+  const steps = [0.18, 0.36, 0.54, 0.72, 0.88];
+  const legA = [32, -34, 30, -28, 18];
+  const legKf = (angles: number[]) =>
+    [
+      `0%,${landPct}{transform:rotate(0deg);animation-timing-function:ease-in-out}`,
+      ...steps.map(
+        (p, i) =>
+          `${pct(stepAt(p))}{transform:rotate(${angles[i]}deg);animation-timing-function:ease-in-out}`,
+      ),
+      `${boardPct},100%{transform:rotate(0deg)}`,
+    ].join("");
+  const strideKf = [
+    `0%,${landPct}{transform:translate(0px,0px);animation-timing-function:ease-in-out}`,
+    ...steps.map(
+      (p, i) =>
+        `${pct(stepAt(p))}{transform:translate(0px,${i % 2 === 0 ? -3.5 : 0}px);animation-timing-function:ease-in-out}`,
+    ),
+    `${boardPct},100%{transform:translate(0px,0px)}`,
+  ].join("");
 
   const css = `
-.jdc-ha-drone-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(${num(g.droneLand.x)}px,${num(g.droneLand.y)}px);opacity:1;animation:jdc-ha-drone-${v} ${duration}s linear both,jdc-ha-exit-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+.jdc-ha-drone-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(${num(g.droneLand.x)}px,${num(g.droneLand.y)}px);opacity:1;animation:jdc-ha-drone-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-drone-${v}{${posKf}}
 .jdc-ha-tilt-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-tilt-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-tilt-${v}{${tiltKf}}
@@ -340,15 +387,20 @@ function buildStory(g: Geom): HeroStory {
 @keyframes jdc-ha-bob-${v}{0%,100%{transform:translateY(0px)}50%{transform:translateY(${num(-g.bob)}px)}}
 .jdc-ha-look-${v}{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(${num(landLook)}deg);animation:jdc-ha-look-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-look-${v}{${lookKf}}
-.jdc-ha-board-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);opacity:1;animation:jdc-ha-board-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-ha-board-${v}{
-  0%,${landPct}{transform:translate(0px,0px);opacity:1;animation-timing-function:${EASE_OUT}}
-  ${boardPct},100%{transform:translate(${num(walk)}px,1px);opacity:0}
+.jdc-ha-walk-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);opacity:1;animation:jdc-ha-walk-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-ha-walk-${v}{
+  0%,${landPct}{transform:translate(0px,0px);animation-timing-function:${EASE_OUT}}
+  ${pct(stepAt(0.55))}{transform:translate(${num(walk * 0.55)}px,0px);animation-timing-function:${EASE_OUT}}
+  ${boardPct}{transform:translate(${num(walk)}px,${num(sink)}px);animation-timing-function:${EASE_VAN}}
+  100%{transform:translate(${num(ride)}px,${num(sink)}px)}
 }
-@keyframes jdc-ha-exit-${v}{
-  0%,${landPct}{opacity:1}
-  ${boardPct},100%{opacity:0}
-}
+.jdc-ha-stride-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(0px,0px);animation:jdc-ha-stride-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-ha-stride-${v}{${strideKf}}
+.jdc-ha-leg-a-${v},.jdc-ha-leg-b-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation-duration:${duration}s;animation-timing-function:linear;animation-fill-mode:both;animation-delay:${HERO_DELAY_S}s}
+.jdc-ha-leg-a-${v}{animation-name:jdc-ha-leg-a-${v}}
+.jdc-ha-leg-b-${v}{animation-name:jdc-ha-leg-b-${v}}
+@keyframes jdc-ha-leg-a-${v}{${legKf(legA)}}
+@keyframes jdc-ha-leg-b-${v}{${legKf(legA.map((deg) => -deg))}}
 .jdc-ha-van-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation:jdc-ha-van-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-van-${v}{
   0%,${drivePct}{transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation-timing-function:${EASE_VAN}}
@@ -357,8 +409,8 @@ function buildStory(g: Geom): HeroStory {
 .jdc-ha-pitch-${v}{transform-box:fill-box;transform-origin:${num(g.van.rearAxle)}px ${num(g.van.axleY)}px;transform:rotate(0deg);animation:jdc-ha-pitch-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-pitch-${v}{
   0%,${drivePct}{transform:rotate(0deg)}
-  ${pitchPct}{transform:rotate(-1.5deg);animation-timing-function:cubic-bezier(0.22,1,0.36,1)}
-  100%{transform:rotate(-0.2deg)}
+  ${pitchPct}{transform:rotate(-2.6deg);animation-timing-function:cubic-bezier(0.22,1,0.36,1)}
+  100%{transform:rotate(-0.35deg)}
 }
 .jdc-ha-wheel-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-wheel-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-wheel-${v}{
@@ -392,6 +444,9 @@ function buildStory(g: Geom): HeroStory {
     neck,
     figure: g.figure,
     van: g.van,
+    door,
+    cargo,
+    sink,
     droneLand: g.droneLand,
     duration,
     wipeDur,
