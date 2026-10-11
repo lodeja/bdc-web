@@ -25,10 +25,37 @@ export default defineConfig({
   projects: [
     {
       name: "desktop",
+      testIgnore: /hero-animation/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
     },
     {
       name: "mobile",
+      testIgnore: /hero-animation/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+      },
+    },
+    {
+      name: "hero-chromium",
+      testMatch: /hero-animation/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "hero-firefox",
+      testMatch: /hero-animation/,
+      use: { ...devices["Desktop Firefox"], viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "hero-webkit",
+      testMatch: /hero-animation/,
+      use: { ...devices["Desktop Safari"], viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "hero-mobile",
+      testMatch: /hero-animation/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 390, height: 844 },

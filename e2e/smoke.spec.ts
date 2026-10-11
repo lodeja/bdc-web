@@ -57,17 +57,21 @@ test("honeypot submission is not treated as sent", async ({ page }) => {
   await expect(page.getByText("Bedankt")).toHaveCount(0);
 });
 
-test("reduced motion does not move the hero clouds", async ({ page }) => {
+test("reduced motion keeps the hero crew still and visible", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  const cloud = page.locator('[id^="cloud-far-"]');
+  const cloud = page.locator('[data-hero="cloud"]:visible');
   await expect(cloud).toBeVisible();
   const before = await cloud.boundingBox();
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(700);
   const after = await cloud.boundingBox();
   expect(after?.x).toBe(before?.x);
   expect(after?.y).toBe(before?.y);
-  await expect(page.locator('[id^="drone-"]').first()).toHaveCSS("opacity", "0");
+  for (const name of ["drone", "operator", "van"]) {
+    const crew = page.locator(`[data-hero="${name}"]:visible`);
+    await expect(crew).toBeVisible();
+    await expect(crew).toHaveCSS("opacity", "1");
+  }
 });
 
 test("mobile menu moves focus and escape returns it", async ({ page }, testInfo) => {
