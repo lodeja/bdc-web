@@ -4,22 +4,22 @@ const STEPS = [
   {
     n: "01",
     title: "Aanvraag",
-    text: "U beschrijft het object, de locatie en wat u wilt bereiken. Foto’s helpen om de haalbaarheid in te schatten.",
+    text: "Vertel ons wat er gereinigd moet worden en waar. Stuur gerust een paar foto's mee, dan zien we meteen wat mogelijk is.",
   },
   {
     n: "02",
-    title: "Beoordeling",
-    text: "We bekijken bereikbaarheid, ondergrond, omgeving en weersrisico’s. Zo bepalen we of drone-reiniging zinvol is.",
+    title: "Uw foto's",
+    text: "We kijken naar bereikbaarheid, materiaal en het weer. Past een drone niet, dan zeggen we dat.",
   },
   {
     n: "03",
-    title: "Voorstel",
-    text: "U ontvangt een duidelijke offerte met scope, voorwaarden en wat wél of niet inbegrepen is.",
+    title: "Offerte",
+    text: "U krijgt een vrijblijvende offerte. Daarin staat wat we doen en wat erbuiten valt.",
   },
   {
     n: "04",
     title: "Uitvoering",
-    text: "Op de afgesproken dag voeren we de reiniging uit en documenteren we het resultaat waar relevant.",
+    text: "Op de afgesproken dag voeren we de werken uit.",
   },
 ] as const;
 
@@ -27,8 +27,8 @@ export function Process() {
   return (
     <SectionShell
       id="werkwijze"
-      title="Werkwijze in vier stappen"
-      lead="Van eerste contact tot uitvoering — transparant en zonder verrassingen over wat haalbaar is."
+      title="Zo werken we"
+      lead="Vier stappen, van uw foto's tot de reinigingsbeurt."
       tone="fog"
     >
       <ol className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

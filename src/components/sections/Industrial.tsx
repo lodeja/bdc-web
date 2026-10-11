@@ -6,17 +6,17 @@ import { IndustrialScene } from "../IndustrialScene";
 const POINTS = [
   {
     title: "Moeilijk bereikbare zones",
-    text: "Hoge wanden, silo’s en installaties waar steigers of hoogwerkers zwaar ingrijpen.",
+    text: "Hoge wanden, silo's en installaties waar een stelling of hoogtewerker veel plaats vraagt.",
     icon: Factory,
   },
   {
-    title: "Gerichte behandeling",
-    text: "Reiniging waar het oppervlak en de omgeving dat toelaten — na beoordeling van risico’s en toegankelijkheid.",
+    title: "Gericht wassen",
+    text: "We wassen het vlak dat vuil is, als het materiaal en de omgeving dat toelaten.",
     icon: Waves,
   },
   {
     title: "Veiligheid eerst",
-    text: "Geen belofte van ‘altijd veiligere’ uitvoering: we werken met procedures die passen bij de site en de opdracht.",
+    text: "We volgen de veiligheidsregels van uw site en stemmen de werkwijze af op elke opdracht.",
     icon: ShieldAlert,
   },
 ] as const;
@@ -26,7 +26,7 @@ export function Industrial() {
     <SectionShell
       id="industriele-reiniging"
       title="Industriële reiniging"
-      lead="Voor sites waar hoogte, bereikbaarheid of stilstand zwaar wegen, biedt JDC drone-ondersteunde reiniging als aanvulling op klassieke methodes — niet als wondermiddel."
+      lead="Hoge wanden, tanks en loodsen, waar een stelling zwaar ingrijpt."
       tone="navy"
     >
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">

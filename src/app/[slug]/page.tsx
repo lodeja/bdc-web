@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ServiceFigure } from "@/components/ServiceFigure";
 import { SiteFrame } from "@/components/SiteFrame";
-import { getServicePage } from "@/config/service-pages";
+import { getServicePage, methodNotes } from "@/config/service-pages";
 import { quoteHref, services } from "@/config/services";
 import { absoluteUrl } from "@/lib/site";
 
@@ -25,11 +25,11 @@ export async function generateMetadata({
   if (!page) return {};
   const url = absoluteUrl(page.href);
   return {
-    title: page.title,
+    title: page.metaTitle,
     description: page.metaDescription,
     alternates: { canonical: url },
     openGraph: {
-      title: page.title,
+      title: page.metaTitle,
       description: page.metaDescription,
       url,
     },
@@ -44,6 +44,9 @@ export default async function ServicePage({
   const { slug } = await params;
   const page = getServicePage(slug);
   if (!page) notFound();
+  const notes = Object.values(methodNotes).filter(
+    (note): note is string => typeof note === "string" && note.length > 0,
+  );
 
   return (
     <SiteFrame>
@@ -61,31 +64,34 @@ export default async function ServicePage({
             Dienst
           </p>
           <h1 className="mt-3 text-balance text-4xl font-semibold tracking-tight text-jdc-navy sm:text-5xl">
-            {page.title}
+            {page.headline}
           </h1>
           <div className="jdc-flight-rule mt-6 max-w-xs" aria-hidden="true" />
           <p className="mt-6 text-pretty text-lg leading-relaxed text-jdc-slate">
-            {page.description}
+            {page.definition}
           </p>
         </header>
 
         <div className="mt-12 grid items-start gap-10 border-t border-jdc-navy/10 pt-12 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-16">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-jdc-navy">
-              Hoe de reiniging werkt
+              {page.howTitle}
             </h2>
             <div className="mt-5 space-y-4 text-base leading-relaxed text-jdc-ink">
               {page.how.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
+              {notes.map((note) => (
+                <p key={note}>{note}</p>
+              ))}
             </div>
           </div>
-          <ServiceFigure id={page.id} caption="Tekening, geen foto van een uitgevoerd werk." />
+          <ServiceFigure id={page.id} caption="Illustratie" />
         </div>
 
         <section className="mt-16 border-t border-jdc-navy/10 pt-12" aria-labelledby="grenzen-heading">
           <h2 id="grenzen-heading" className="text-2xl font-semibold tracking-tight text-jdc-navy">
-            Wanneer dit niet past
+            Wanneer we geen drone inzetten
           </h2>
           <ul className="mt-6 max-w-3xl divide-y divide-jdc-navy/10 border-y border-jdc-navy/10">
             {page.limits.map((limit) => (
@@ -101,11 +107,7 @@ export default async function ServicePage({
             Werkwijze
           </h2>
           <div className="max-w-2xl">
-            <p className="text-base leading-relaxed text-jdc-ink">
-              Dezelfde vier stappen als de andere diensten: aanvraag, beoordeling,
-              voorstel en uitvoering. De beoordeling zegt of deze dienst bij het
-              oppervlak past.
-            </p>
+            <p className="text-base leading-relaxed text-jdc-ink">{page.approach}</p>
             <p className="mt-4">
               <Link
                 href="/#werkwijze"
@@ -151,18 +153,17 @@ export default async function ServicePage({
         <section className="mt-16 border border-jdc-navy/15 bg-jdc-navy-deep px-6 py-8 text-white sm:px-8" aria-labelledby="offerte-heading">
           <div className="jdc-flight-rule jdc-flight-rule-on-dark max-w-[8rem]" aria-hidden="true" />
           <h2 id="offerte-heading" className="mt-5 text-2xl font-semibold tracking-tight">
-            Offerte voor {page.title.toLowerCase()}
+            Vraag een vrijblijvende offerte aan
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
-            Het formulier op de startpagina zet deze dienst al klaar. U beschrijft
-            het oppervlak; wij beoordelen of een vlucht past.
+            Stuur gerust een paar foto&apos;s mee. Het formulier zet {page.title.toLowerCase()} al klaar.
           </p>
           <p className="mt-6">
             <Link
               href={quoteHref(page.id)}
               className="inline-flex items-center gap-2 bg-jdc-cyan px-5 py-3 text-sm font-semibold text-jdc-navy-deep hover:bg-jdc-cyan-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
             >
-              Vraag een offerte aan
+              Vraag een vrijblijvende offerte aan
               <span aria-hidden="true">→</span>
             </Link>
           </p>

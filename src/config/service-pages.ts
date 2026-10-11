@@ -1,14 +1,35 @@
 import { services, type Service, type ServiceId } from "@/config/services";
 
 /**
- * Page copy for the five confirmed services.
+ * Page copy for the five confirmed services. Belgian Dutch (nl-BE), u + we.
  *
- * OWNER: confirm the on-site method (water, brush, pressure, product) before
- * this copy names a tool. It stays method-agnostic on purpose.
- * OWNER: confirm any surface we must always refuse. Do not add that refusal
- * here until it is confirmed. Do not add prices, yields, client names, or
- * certificates.
+ * Owner to confirm before any of these appear in visible copy.
+ * `methodNotes` stays null until then, and the page hides a null note.
+ * - osmosewater
+ * - gedemineraliseerd water
+ * - biologisch afbreekbaar middel
+ * - hydrofuge
+ * - impregneren
+ * - softwash
+ * - testzone
+ * - plaatsbezoek
+ * - opleverrapport
+ * - voor- en nabeelden
+ *
+ * Do not add prices, yields, client names, or certificates.
  */
+
+export const methodNotes: Record<string, string | null> = {
+  purifiedWater: null,
+  biodegradableAgent: null,
+  hydrofuge: null,
+  impregnate: null,
+  softwash: null,
+  testPatch: null,
+  siteVisit: null,
+  handoverReport: null,
+  beforeAfterPhotos: null,
+};
 
 export type ServiceFaq = {
   q: string;
@@ -16,9 +37,14 @@ export type ServiceFaq = {
 };
 
 export type ServicePageCopy = {
+  metaTitle: string;
   metaDescription: string;
+  headline: string;
+  definition: string;
+  howTitle: string;
   how: readonly string[];
   limits: readonly string[];
+  approach: string;
   faqs: readonly ServiceFaq[];
   /** Extra link already on the site, when this service also has a home section. */
   related?: { href: string; label: string };
@@ -26,56 +52,70 @@ export type ServicePageCopy = {
 
 export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
   dak: {
+    metaTitle: "Dak ontmossen met een drone",
     metaDescription:
-      "Dakreiniging met een drone op geschikte dakvlakken, met minder betreden van het dak. Alleen na beoordeling van bekleding, bereikbaarheid en weer.",
+      "Mos, algen en groene aanslag van uw dak, met zo weinig mogelijk dakbetreding. Janssens Drone Cleaning wast pannen en leien vanop afstand.",
+    headline: "Uw dak weer proper, zonder iemand op de pannen",
+    definition:
+      "Dakreiniging met een drone betekent: we ontmossen het dak vanop afstand, met zo weinig mogelijk dakbetreding.",
+    howTitle: "Zo pakken we uw dak aan",
     how: [
-      "Een drone brengt de reiniging tot bij het dakvlak. Het dak zelf hoeft daardoor minder belopen te worden dan bij een klassieke betreding. Of er nog een korte toegang op het dak nodig is om op te stellen, hangt af van het gebouw.",
-      "Aanslag, mos en fijnstof kunnen verminderen wanneer de dakbekleding een behandeling verdraagt. Welke techniek past, leggen we vast na beoordeling van het materiaal. Die keuze verschilt per dak.",
-      "Dit is een reiniging, geen herstelling. Losse pannen, een versleten laag of een lek vallen buiten deze dienst.",
+      "De drone vliegt boven uw dak en wast van daaruit. Zo hoeft er bijna niemand over uw pannen of leien te lopen.",
+      "Soms moet iemand even op het dak om iets klaar te zetten. Dat bekijken we per woning.",
+      "We halen mos, algen en groene aanslag weg waar de dakbedekking dat verdraagt. Dit is een wasbeurt, geen herstelling.",
     ],
     limits: [
-      "Niet elke bekleding verdraagt water of een mechanische behandeling. Bij twijfel over het materiaal reinigen we niet.",
-      "Sterke wind, neerslag of te weinig zicht: geen vlucht. We plannen dan opnieuw.",
-      "Een drone vervangt geen controle van de waterdichtheid en geen dakherstelling.",
-      "Obstakels, een te smalle koer of geen bruikbare opstelplaats kunnen de vlucht onmogelijk maken.",
+      "Is de dakbedekking te kwetsbaar voor water, dan wassen we niet.",
+      "Bij sterke wind, regen of weinig zicht plannen we een andere dag.",
+      "Losse pannen, een lek of een versleten laag horen bij een dakdekker.",
+      "Een te smalle binnenplaats of obstakels rond het huis kunnen een vlucht in de weg zitten.",
     ],
+    approach:
+      "U stuurt foto's van het dak en de omgeving. We zeggen of een drone past, en u krijgt een vrijblijvende offerte. Daarna plannen we de reinigingsbeurt.",
     faqs: [
       {
-        q: "Verwijdert dit alle mos voorgoed?",
-        a: "Nee. Mos en aanslag kunnen minder worden als de bekleding dat toelaat. Nieuwe aangroei hangt af van schaduw, vocht en het materiaal. We garanderen geen blijvend mosvrij dak.",
+        q: "Blijft mijn dak daarna mosvrij?",
+        a: "Mos komt na een tijd terug, vooral op de schaduwkant en onder bomen. Hoe snel dat gebeurt, verschilt per dak.",
       },
       {
-        q: "Betreedt iemand het dak?",
-        a: "Minder dan bij een gewone dakbetreding, en niet altijd nul. Soms is een korte toegang nodig om op te stellen of om een zone te controleren.",
+        q: "Komt er iemand op mijn dak?",
+        a: "Zo weinig mogelijk. Soms is een korte toegang nodig om iets klaar te zetten of een zone te controleren.",
       },
       {
-        q: "Werkt dit op elk daktype?",
-        a: "Nee. We starten pas als de bekleding, de helling, de bereikbaarheid en het weer een reiniging toelaten.",
+        q: "Werkt dit op elk dak?",
+        a: "Nee. We starten als de dakbedekking, de helling, de bereikbaarheid en het weer een wasbeurt toelaten.",
       },
     ],
   },
   gevel: {
+    metaTitle: "Gevel wassen met een drone",
     metaDescription:
-      "Gevelreiniging met een drone waar een stelling omslachtig is. Alleen na beoordeling van het gevelmateriaal, de omgeving en het weer.",
+      "Groene aanslag en grijze sluier van uw gevel, ook waar een stelling veel plaats vraagt. Voor woningen, kantoren en appartementsgebouwen.",
+    headline: "Een grauwe gevel weer fris, zonder stelling voor de deur",
+    definition:
+      "Gevelreiniging met een drone betekent: we wassen groene aanslag en atmosferische vervuiling van de gevel, vanop de grond.",
+    howTitle: "Zo pakken we uw gevel aan",
     how: [
-      "De drone behandelt het gevelvlak vanop afstand, op hoogtes waar een stelling veel plaats of tijd vraagt. Dat is een manier om bij het oppervlak te komen, geen reden om elke gevel te reinigen.",
-      "Vuil, aanslag en fijnstof kunnen verminderen als de afwerking dat verdraagt. Pleister, verse verf, open natuursteen of een onbekende coating vragen eerst een beoordeling.",
-      "We spreken geen resultaat af dat het materiaal niet aankan. Kleurverschil, voegen of onderliggende schade blijven zichtbaar wanneer ze niet in de reiniging zitten.",
+      "De drone wast uw gevel vanop afstand. Ook op hoogtes waar een stelling veel plaats en opbouwtijd vraagt.",
+      "Groene aanslag, atmosferische vervuiling en een grijze sluier kunnen wijken als de afwerking dat verdraagt.",
+      "Een VME of syndicus kan de gevel van het appartementsgebouw laten wassen. Kleurverschil of oude schade blijft staan wanneer die niet in de wasbeurt zit.",
     ],
     limits: [
-      "Een beschermde gevel of een delicate afwerking: geen start zonder aparte beoordeling.",
-      "Graffiti, loszittende verf en kapotte voegen zijn geen standaard reiniging.",
-      "Wind en neerslag bepalen of een vlucht langs de gevel verantwoord is.",
-      "Niet elke binnenplaats of smalle straat heeft een bruikbare opstelplaats.",
+      "Een beschermde gevel of een delicate afwerking wassen we pas als het materiaal duidelijk is.",
+      "Graffiti, loszittende verf en kapotte voegen vragen een andere aanpak.",
+      "Bij wind of regen langs de gevel plannen we een andere dag.",
+      "Een smalle straat of een kleine binnenplaats kan de vlucht in de weg zitten.",
     ],
+    approach:
+      "Foto's van de gevel en de straat volstaan om te starten. In de vrijblijvende offerte staat wat we wassen en wat we laten staan.",
     faqs: [
       {
-        q: "Vervangt dit altijd een stelling?",
-        a: "Nee. Soms blijft een stelling of hoogwerker geschikter, bijvoorbeeld bij herstelling of wanneer de drone de gevel niet goed kan naderen.",
+        q: "Heb ik dan geen stelling meer nodig?",
+        a: "Soms wel. Bij een herstelling, of wanneer de drone de gevel niet goed kan naderen, is een stelling of hoogtewerker beter.",
       },
       {
         q: "Raakt de gevel beschadigd?",
-        a: "Dat risico hangt af van het materiaal en de techniek. Daarom beoordelen we de afwerking vooraf. Past de behandeling niet, dan reinigen we niet.",
+        a: "Dat risico zit in het materiaal. Past een wasbeurt niet bij de afwerking, dan starten we niet.",
       },
       {
         q: "Kan elke vlek weg?",
@@ -84,89 +124,110 @@ export const servicePageCopy: Record<ServiceId, ServicePageCopy> = {
     ],
   },
   ramen: {
+    metaTitle: "Ramen wassen met een drone",
     metaDescription:
-      "Ramen- en glasreiniging met een drone, alleen waar het glas, de bereikbaarheid en de omgeving dat toelaten. Geen streeploze garantie.",
+      "Buitenglas, omlijstingen en dorpels op hoogte, zonder hoogtewerker voor de deur. Streeploos is het doel. Zon en wind spelen mee bij het drogen.",
+    headline: "Ramen en glaspartijen weer helder, ook op hoogte",
+    definition:
+      "Ramen wassen met een drone betekent: we reinigen het buitenglas, de omlijstingen en de dorpels die we van buitenaf bereiken.",
+    howTitle: "Zo wassen we uw ramen",
     how: [
-      "Een drone kan ramen en glasvlakken bereiken die anders een hoogwerker of stelling vragen. Of dat voor uw glas past, hangt af van het glastype, de indeling, obstakels en de wind.",
-      "De reiniging gaat over het buitenoppervlak. Binnenglas, kaders die hersteld moeten worden en kapotte dichtingen vallen erbuiten.",
-      "Water, zon en het glas zelf bepalen hoe het droogt. Een streeploos resultaat is geen belofte.",
+      "De drone bereikt ramen en glaspartijen die anders een hoogtewerker of stelling vragen.",
+      "We wassen het buitenoppervlak, de omlijstingen en de dorpels. Binnenglas en kapotte dichtingen vallen erbuiten.",
+      "Streeploos is het doel. Zon, wind en het glas zelf bepalen mee hoe het opdroogt.",
     ],
     limits: [
-      "Beschadigd, gebarsten of onbekend gecoat glas: geen reiniging tot dat duidelijk is.",
-      "Te veel wind maakt een gecontroleerde passage langs het glas ongeschikt.",
-      "Diepe dagkanten, luifels of begroeiing kunnen zones onbereikbaar maken.",
-      "Interieurglas reinigen we niet met de drone.",
+      "Beschadigd, gebarsten of onbekend gecoat glas wassen we pas als dat duidelijk is.",
+      "Bij te veel wind plannen we de passage langs het glas op een andere dag.",
+      "Diepe dagkanten, luifels of begroeiing kunnen een zone onbereikbaar maken.",
+      "Interieurglas wassen we niet met de drone.",
     ],
+    approach:
+      "Stuur foto's van de glaspartijen en de gevel. We zeggen welke ramen we bereiken, en u krijgt een vrijblijvende offerte.",
     faqs: [
       {
-        q: "Is het resultaat altijd streeploos?",
-        a: "Nee. Glas, zon, wind en de droogsnelheid spelen mee. We beloven geen streeploos resultaat.",
+        q: "Worden de ramen streeploos?",
+        a: "Dat is het doel. Zon, wind en het glas bepalen mee hoe het droogt. Een streep kan dus blijven.",
       },
       {
-        q: "Reinigen jullie ook de binnenkant?",
-        a: "Nee. Deze dienst gaat over glas dat de drone aan de buitenzijde kan bereiken.",
+        q: "Wassen jullie ook de binnenkant?",
+        a: "Nee. Deze dienst gaat over glas dat de drone aan de buitenzijde bereikt.",
       },
       {
         q: "Elk soort glas?",
-        a: "Nee. Geschiktheid hangt af van het glas, de bereikbaarheid en de omgeving. Bij twijfel starten we niet.",
+        a: "Nee. We kijken naar het glas, de bereikbaarheid en de wind. Bij twijfel starten we niet.",
       },
     ],
   },
   zonnepanelen: {
+    metaTitle: "Zonnepanelen wassen met een drone",
     metaDescription:
-      "Zonnepanelen reinigen met een drone: een zachte reiniging om lichtinval te herstellen, zonder rendementscijfer of opbrengstgarantie.",
+      "Stof, stuifmeel en groene aanslag van uw zonnepanelen, zonder over de panelen te lopen. Geen verzonnen cijfer over meeropbrengst.",
+    headline: "Zonnepanelen weer vrij van stof en groene aanslag",
+    definition:
+      "Zonnepanelen reinigen met een drone betekent: we wassen stof, stuifmeel en groene aanslag van de panelen, zonder erover te lopen.",
+    howTitle: "Zo wassen we uw panelen",
     how: [
-      "Stof, stuifmeel en aanslag kunnen het licht op het paneel verminderen. Een zachte reiniging is bedoeld om dat oppervlakkige vuil te verminderen, niet om het paneel te herstellen.",
-      "We noemen geen meeropbrengst. Hoeveel lichtinval terugkomt, hangt af van de vuilgraad, de helling, het weer en de staat van de panelen.",
-      "De fabrikant van de panelen kan een methode uitsluiten. Geeft u die voorschriften door, dan houden we daar rekening mee. We kennen ze niet op voorhand.",
+      "Stof, stuifmeel en groene aanslag leggen een sluier op het paneel. Een wasbeurt haalt dat oppervlakkige vuil weg.",
+      "Hoeveel meer uw panelen daarna opbrengen, kunnen we niet op voorhand zeggen. Dat verschilt per vuilgraad, helling en weer. Een cijfer verzinnen we niet.",
+      "De fabrikant kan een methode uitsluiten. Geeft u die voorschriften door, dan volgen we die. We kennen ze niet op voorhand.",
     ],
     limits: [
-      "Beschadigde, losse of duidelijk defecte panelen reinigen we niet wanneer een behandeling het risico vergroot.",
-      "We publiceren geen percentage meeropbrengst en geven geen garantie op de energieopbrengst.",
-      "Een opstelling die de drone niet veilig nadert, kan de opdracht ongeschikt maken.",
-      "Een product gebruiken we alleen wanneer dat voor het paneel toegelaten is en nodig blijkt. Het is geen standaardstap.",
+      "Beschadigde of losse panelen wassen we niet wanneer dat het risico vergroot.",
+      "We publiceren geen cijfer over meeropbrengst en geven geen garantie op de energieopbrengst.",
+      "Een opstelling die de drone niet veilig nadert, laten we liggen.",
+      "Een product gebruiken we alleen wanneer dat voor het paneel toegelaten is en nodig blijkt.",
     ],
+    approach:
+      "Foto's van de panelen en het dak volstaan voor een eerste kijk. U krijgt daarna een vrijblijvende offerte, zonder een verzonnen opbrengstcijfer.",
     faqs: [
       {
-        q: "Hoeveel procent meer opbrengst levert dit op?",
-        a: "Dat cijfer publiceren we niet. Het hangt af van vuil, helling, weer en de staat van de installatie. Een vast percentage zou verzonnen zijn.",
+        q: "Hoeveel meer opbrengst levert een wasbeurt op?",
+        a: "Dat cijfer geven we niet. Het verschilt per vuil, helling, weer en de staat van de installatie. Een vast percentage zou verzonnen zijn.",
       },
       {
-        q: "Betreedt iemand de panelen?",
-        a: "De bedoeling is de panelen niet te belopen. Of een korte toegang op het dak nodig is om op te stellen, beoordelen we per site.",
+        q: "Loopt er iemand over de panelen?",
+        a: "De bedoeling is de panelen niet te belopen. Soms is een korte toegang op het dak nodig om iets klaar te zetten.",
       },
       {
-        q: "Mag elk paneel nat gereinigd worden?",
-        a: "Niet blind. Beschadigde panelen en de voorschriften van de fabrikant kunnen een reiniging uitsluiten.",
+        q: "Mag elk paneel nat gewassen worden?",
+        a: "Niet blind. Beschadigde panelen en de voorschriften van de fabrikant kunnen een wasbeurt uitsluiten.",
       },
     ],
   },
   industrie: {
+    metaTitle: "Industriële reiniging met een drone",
     metaDescription:
-      "Industriële reiniging met een drone als aanvulling op klassieke methodes, na beoordeling van de site. Geen standaardaanpak voor elke installatie.",
+      "Wanden, tanks en loodsen wassen met een drone, waar een stelling veel plaats vraagt. We volgen de regels van uw site.",
+    headline: "Hoge wanden en loodsen wassen, zonder een volledige stelling",
+    definition:
+      "Industriële reiniging met een drone betekent: we wassen wanden, tanks of een loods waar een stelling zwaar ingrijpt, als uw site een vlucht toelaat.",
+    howTitle: "Zo pakken we een bedrijfssite aan",
     how: [
-      "Op industriële sites wegen hoogte, bereikbaarheid en stilstand vaak zwaarder dan bij een woning. Een drone kan sommige wanden, tanks of installaties bereiken zonder een volledige stelling. Dat is een aanvulling, geen vervanging van elke klassieke methode.",
-      "Welk oppervlak in aanmerking komt, beslissen we na een beoordeling van de site: materiaal, temperatuur, omgeving, obstakels en of een vlucht het proces stoort.",
-      "We beloven geen kortere stilstand en geen resultaat op elk industrieel oppervlak. Past de vlucht niet, dan zeggen we dat.",
+      "Op een bedrijfssite wegen hoogte, bereikbaarheid en stilstand vaak zwaarder dan bij een woning.",
+      "Een drone kan sommige wanden, tanks of een loods bereiken zonder een volledige stelling. Dat kan een loods van een KMO zijn, of een grotere site.",
+      "Welk vlak we wassen, spreken we af per site. We kijken naar materiaal, temperatuur, obstakels en of een vlucht het proces stoort.",
     ],
     limits: [
-      "Zones met explosiegevaar, hete oppervlakken of een lopend proces dat geen vlucht toelaat, vallen buiten een standaardopdracht.",
-      "Chemische residu's, een onbekende coating of een installatie onder druk vragen een aparte beoordeling. Zonder die informatie starten we niet.",
-      "Een drone is niet automatisch veiliger dan een stelling of hoogwerker. We kiezen wat bij de site past.",
-      "Site-regels die u moet aanleveren, vragen we op voorhand. We gaan niet uit van een toelating die er niet is.",
+      "Zones met explosiegevaar, hete vlakken of een lopend proces dat geen vlucht toelaat, vallen buiten een gewone opdracht.",
+      "Chemische resten, een onbekende coating of een installatie onder druk vragen eerst meer info. Zonder die info starten we niet.",
+      "Een drone is niet vanzelf veiliger dan een stelling of hoogtewerker. We kiezen wat bij uw site past.",
+      "Bezorg ons vooraf de veiligheidsregels van uw site. We starten pas als de toelatingen rond zijn.",
     ],
+    approach:
+      "U beschrijft de site en stuurt foto's mee. We zeggen of een drone past, en u krijgt een vrijblijvende offerte. Een vaste stilstandduur spreken we niet af.",
     faqs: [
       {
-        q: "Kunnen jullie elke tank of hal reinigen?",
-        a: "Nee. Alleen oppervlakken die na beoordeling bereikbaar en geschikt zijn.",
+        q: "Kunnen jullie elke tank of loods wassen?",
+        a: "Nee. Alleen vlakken die we veilig bereiken en die het materiaal toelaat.",
       },
       {
         q: "Moet de productie stilliggen?",
-        a: "Dat hangt af van de site. We spreken geen vaste stilstandduur af. Soms is een vlucht tijdens productie niet verantwoord.",
+        a: "Dat verschilt per site. Soms is een vlucht tijdens de productie niet verantwoord. Een vaste duur spreken we niet af.",
       },
       {
-        q: "Is dit altijd veiliger dan een hoogwerker?",
-        a: "Nee. Of een vlucht past, hangt af van de site, het weer en de opdracht. We doen geen algemene veiligheidsclaim.",
+        q: "Is een drone veiliger dan een hoogtewerker?",
+        a: "Niet op elke site. We kijken naar de site, het weer en de opdracht, en kiezen dan.",
       },
     ],
     related: {

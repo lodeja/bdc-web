@@ -32,8 +32,8 @@ export function Results() {
   return (
     <SectionShell
       id="resultaten"
-      title="Resultaten"
-      lead="Zo kan een verschil eruitzien op panelen of gevelvlakken."
+      title="Zo kan het eruitzien"
+      lead="Een voorbeeld van panelen of een gevel. Dit is een illustratie, geen foto van ons werk."
       tone="white"
     >
       <div className="grid gap-10 lg:grid-cols-5 lg:items-start">
@@ -45,9 +45,9 @@ export function Results() {
             Zonnepanelen & gevels
           </h3>
           <p className="mt-3 text-sm leading-relaxed text-jdc-slate sm:text-base">
-            Aanslag, pollen en fijnstof verminderen de lichtinval. Een zachte
-            reiniging kan dat verbeteren — het effect verschilt per installatie
-            en seizoen.
+            Stof, pollen en atmosferische vervuiling leggen een sluier op panelen
+            en gevels. Een wasbeurt haalt die laag weg. Hoe groot het verschil
+            is, verschilt per installatie.
           </p>
           {references.length > 0 ? (
             <ul className="mt-6 space-y-3">
@@ -66,7 +66,7 @@ export function Results() {
                     ) : (
                       <span className="font-semibold text-jdc-navy">{item.name}</span>
                     )}
-                    {summary ? <span> — {summary}</span> : null}
+                    {summary ? <span>. {summary}</span> : null}
                   </li>
                 );
               })}
@@ -76,7 +76,7 @@ export function Results() {
             href="#contact"
             className="mt-8 inline-flex items-center justify-center rounded-sm bg-jdc-navy-deep px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-jdc-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
           >
-            Vraag een beoordeling van uw project
+            Vraag een vrijblijvende offerte aan
           </a>
         </div>
       </div>

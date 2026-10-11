@@ -6,24 +6,24 @@ import { SectionShell } from "../SectionShell";
 
 const FAQS = [
   {
-    q: "Voor welke oppervlakken is drone-reiniging geschikt?",
-    a: "Vaak daken, gevels, ramen en glas, zonnepanelen en sommige industriële wanden. Geschiktheid hangt af van materiaal, bereikbaarheid, obstakels en weersomstandigheden.",
+    q: "Welke oppervlakken wassen jullie?",
+    a: "Daken, gevels, ramen en glas, zonnepanelen, en wanden op een loods of bedrijfssite. Per opdracht kijken we of een drone erbij kan.",
   },
   {
-    q: "Vervangt dit altijd steigers of een hoogwerker?",
-    a: "Nee. In sommige situaties blijven klassieke methodes veiliger of efficiënter. We adviseren wat past bij uw site — niet wat het makkelijkst te verkopen is.",
+    q: "Vervangt een drone een stelling of hoogtewerker?",
+    a: "Niet op elke opdracht. Soms is een stelling of hoogtewerker beter, bijvoorbeeld bij een herstelling. Dan zeggen we dat.",
   },
   {
-    q: "Werken jullie bij elk weer?",
-    a: "Nee. Wind, neerslag en zichtbaarheid bepalen of een vlucht verantwoord is. Bij twijfel plannen we opnieuw in.",
+    q: "Werken jullie bij regen?",
+    a: "Nee. Bij wind, regen of te weinig zicht plannen we een andere dag.",
   },
   {
     q: "Hoe snel krijg ik een offerte?",
-    a: "Dat hangt af van de complexiteit en of we extra info of een plaatsbezoek nodig hebben. Duidelijke foto’s en een korte beschrijving versnellen het proces.",
+    a: "Dat verschilt per opdracht. Stuur gerust een paar foto's mee, dan kunnen we gerichter antwoorden.",
   },
   {
-    q: "Gebruiken jullie chemicaliën?",
-    a: "Alleen wanneer nodig en toegelaten voor het oppervlak en de omgeving. We prefereren de mildste effectieve aanpak.",
+    q: "Gebruiken jullie een reinigingsmiddel?",
+    a: "We beginnen zo zacht mogelijk. Een middel gebruiken we alleen als het nodig is en toegelaten is voor uw materiaal en de omgeving.",
   },
 ] as const;
 
@@ -34,8 +34,8 @@ export function FAQ() {
   return (
     <SectionShell
       id="faq"
-      title="Veelgestelde vragen"
-      lead="Korte antwoorden — zonder absolute beloftes over prijs, snelheid of veiligheid in elke context."
+      title="Vragen die we vaak krijgen"
+      lead="Korte antwoorden, in gewone taal."
       tone="fog"
     >
       <div className="mx-auto max-w-3xl divide-y divide-jdc-navy/10 rounded-sm border border-jdc-navy/10 bg-white">
