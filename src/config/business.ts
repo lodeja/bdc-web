@@ -68,6 +68,11 @@ export type BusinessConfig = {
   certifications: Certification[];
   references: ClientReference[];
   /**
+   * Rows for the dossier specification table. Empty hides the whole table.
+   * Only add a row when the value is a real measurement.
+   */
+  dossierSpecs: readonly { label: string; value: string }[];
+  /**
    * Site path of the privacy page.
    * OWNER/LEGAL: review `src/app/privacy/page.tsx` before `formEndpoint` is
    * set. That page is a draft of what the site does, not a signed policy.
@@ -127,6 +132,7 @@ export const business: BusinessConfig = {
   social: [],
   certifications: [],
   references: [],
+  dossierSpecs: [],
   privacyPolicyPath: "/privacy/",
   compliance: {
     uasOperatorNumber: null,

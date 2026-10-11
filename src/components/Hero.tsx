@@ -1,82 +1,54 @@
-import { images, photoReady } from "@/config/images";
-import { withBasePath } from "@/lib/paths";
-import { Logo } from "./Logo";
+import { DossierSpecs } from "./DossierSpecs";
 import { HeroScene } from "./HeroScene";
 
 export function Hero() {
   return (
     <section
-      className="relative -mt-[var(--header-height)] flex min-h-[100dvh] flex-col justify-end overflow-hidden jdc-hero-atmosphere pt-[var(--header-height)]"
+      className="border-b border-jdc-navy/10 bg-jdc-fog"
       aria-labelledby="hero-heading"
     >
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-        <div className="max-w-xl lg:max-w-2xl">
-          <div className="mb-8 text-white sm:mb-10" translate="no">
-            {/* Wordmark already includes “JANSSENS DRONE CLEANING” — no duplicate text */}
-            <Logo
-              className="h-28 w-auto sm:h-32 md:h-36"
-              variant="wordmark"
-              idSuffix="hero"
-            />
-          </div>
-
+      <div className="mx-auto grid w-full max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14 lg:px-8 lg:py-20">
+        <div>
           <h1
             id="hero-heading"
-            className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl"
+            className="jdc-display max-w-xl text-[clamp(3.25rem,6.2vw,6.1rem)] text-jdc-navy"
           >
             Uw dak, gevel en zonnepanelen weer proper. Vanuit de lucht.
           </h1>
 
-          <p className="mt-5 max-w-lg text-pretty text-base leading-relaxed text-white/75 sm:mt-6 sm:text-lg">
+          <p className="mt-6 max-w-lg text-pretty text-base leading-relaxed text-jdc-slate sm:text-lg">
             Janssens Drone Cleaning reinigt daken, gevels, ramen, zonnepanelen
             en industriële gebouwen met een drone. Geen zware stelling, geen
             hoogtewerker voor de deur, en zo weinig mogelijk mensen op hoogte.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <a
               href="#contact"
-              className="group inline-flex items-center justify-center gap-3 rounded-sm bg-jdc-cyan px-6 py-3.5 text-sm font-semibold text-jdc-navy-deep transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-jdc-cyan-bright active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+              className="inline-flex items-center justify-center bg-jdc-cyan px-6 py-3.5 text-sm font-semibold text-jdc-navy-deep transition-colors hover:bg-jdc-cyan-bright focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-navy"
             >
               Vraag een vrijblijvende offerte aan
-              <span
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-jdc-navy-deep/10 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px"
-                aria-hidden="true"
-              >
-                →
-              </span>
             </a>
             <a
               href="#diensten"
-              className="inline-flex items-center justify-center rounded-sm border border-white/25 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition-[border-color,background-color] duration-300 hover:border-white/40 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+              className="inline-flex items-center justify-center px-6 py-3.5 text-sm font-semibold text-jdc-navy shadow-[inset_0_0_0_1px_rgba(7,21,37,0.4)] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-navy"
             >
               Ontdek onze diensten
             </a>
           </div>
         </div>
-      </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[100dvh] max-h-full overflow-hidden">
-        {photoReady(images.hero) ? (
-          // eslint-disable-next-line @next/next/no-img-element -- static export, path via withBasePath
-          <img
-            src={withBasePath(images.hero.src)}
-            alt={images.hero.alt}
-            width={images.hero.width}
-            height={images.hero.height}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <HeroScene />
-        )}
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-jdc-navy-deep/90 via-jdc-navy-deep/35 to-transparent sm:via-jdc-navy-deep/12 sm:to-transparent"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-jdc-navy-deep/30 to-transparent"
-          aria-hidden="true"
-        />
+        <figure className="m-0">
+          <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold tracking-[0.14em] text-jdc-cyan-ink uppercase">
+            <span>Fig. 01</span>
+            <span>Reinigingsbaan</span>
+          </div>
+          <div className="h-[min(68dvh,640px)] min-h-72 overflow-hidden border border-jdc-navy/20 bg-[#A8D4F0]">
+            <HeroScene />
+          </div>
+          <figcaption className="mt-2 text-xs text-jdc-slate">Illustratie</figcaption>
+          <DossierSpecs />
+        </figure>
       </div>
     </section>
   );

@@ -54,18 +54,18 @@ export function Process() {
       id="werkwijze"
       title="Zo werken we"
       lead="Van het plaatsbezoek tot het opleverrapport."
-      tone="fog"
+      tone="navy"
     >
       <div className="relative mx-auto max-w-3xl">
         <div
-          className="pointer-events-none absolute top-8 bottom-8 left-[1.15rem] w-px bg-jdc-navy/55"
+          className="pointer-events-none absolute top-8 bottom-8 left-[1.15rem] w-px bg-jdc-cyan"
           aria-hidden
         />
         <ol className="space-y-4">
         {STEPS.map((step) => (
           <li key={step.n} className="relative pl-14">
             <span
-              className="absolute top-6 left-0 flex h-10 w-10 items-center justify-center rounded-full border border-jdc-navy/15 bg-white font-mono text-xs font-semibold tracking-wider text-jdc-cyan-ink"
+              className="absolute top-6 left-0 flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-jdc-navy-deep text-xs font-semibold tracking-wider text-jdc-cyan"
               aria-hidden
             >
               {step.n}
@@ -81,7 +81,7 @@ export function Process() {
       <p className="mx-auto mt-8 max-w-3xl">
         <Link
           href="/veiligheid-en-regelgeving/"
-          className="font-semibold text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+          className="font-semibold text-white underline decoration-jdc-cyan underline-offset-4 hover:text-jdc-cyan focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
         >
           Veiligheid en regelgeving
         </Link>
