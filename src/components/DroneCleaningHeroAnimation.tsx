@@ -323,7 +323,7 @@ function WorkVan({ variant }: { variant: string }) {
     x: (story.van.frontAxle + story.van.wheelR + 2) / scale,
     y: 72,
     w: (story.van.rearAxle - story.van.frontAxle - story.van.wheelR * 2 - 4) / scale,
-    h: (story.van.wheelR * 2.4) / scale,
+    h: (story.van.wheelR * 1.7) / scale,
   };
   return (
     <g>
@@ -331,7 +331,7 @@ function WorkVan({ variant }: { variant: string }) {
       <g className={`jdc-ha-pitch jdc-ha-play jdc-ha-pitch-${variant}`}>
         <g transform={`scale(${scale})`}>
           <g>
-            <rect width="408" height="160" fill="transparent" />
+            <rect width="408" height="121" fill="transparent" />
             <path
               d="M8 86 L8 58 C8 50 14 42 26 34 L52 16 C64 8 80 4 98 4 L392 4 Q402 4 402 14 L402 86 Z"
               fill="#121418"
