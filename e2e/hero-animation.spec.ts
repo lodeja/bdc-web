@@ -29,6 +29,9 @@ test("hero animation starts within about two seconds", async ({ page }) => {
 
 test("cleaning pass changes the facade", async ({ page }) => {
   await page.goto("/");
+  const width = page.viewportSize()?.width ?? 1440;
+  const lane = page.locator('[data-hero="dirt"]:visible');
+  await expect(lane).toHaveCount(width < 800 ? 2 : 3);
   const dirt = await crew(page, "dirt");
   await expect(dirt).toBeVisible();
   const before = await dirt.evaluate((el) => getComputedStyle(el).transform);
@@ -56,6 +59,18 @@ test("reduced motion shows drone, operator and van", async ({ page }) => {
   await page.waitForTimeout(700);
   const end = await drone.boundingBox();
   expect(Math.hypot((end?.x ?? 0) - (start?.x ?? 0), (end?.y ?? 0) - (start?.y ?? 0))).toBeLessThan(2);
+
+  const width = page.viewportSize()?.width ?? 1440;
+  const wiped = await page.locator('[data-hero="dirt"]').evaluateAll((nodes) =>
+    nodes
+      .filter((node) => node.getBoundingClientRect().height > 8)
+      .map((node) => getComputedStyle(node).transform),
+  );
+  expect(wiped).toHaveLength(width < 800 ? 2 : 3);
+  for (const transform of wiped) {
+    expect(transform.startsWith("matrix(0,")).toBe(true);
+  }
+  await expect(page.locator('[data-hero="context"]:visible').first()).toBeVisible();
 });
 
 test("story replays on reload and keeps playing through history", async ({ page }) => {

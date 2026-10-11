@@ -1,8 +1,12 @@
 /**
  * One-shot hero timeline. CSS drives it so the story starts with first paint,
  * including when hydration is deferred. GSAP stays on the industrial scene.
- * Reduced motion uses the un-animated transforms: clean glass, drone landed,
- * operator and van parked.
+ *
+ * One clean pass: the drone flies a single horizontal lane and only that lane
+ * wipes from dirty to clean. Neighbouring floors stay quietly dusty so the
+ * lane reads before, during, and after the pass.
+ * Reduced motion and no-animation use the un-animated transforms: that lane
+ * already clean, drone landed, operator and van on site.
  */
 
 export const HERO_DELAY_S = 1;
@@ -55,9 +59,11 @@ type Geom = {
     axleY: number;
     wheelR: number;
   };
+  /** Row index of the single cleaning lane. */
+  lane: number;
   approach: number;
-  travel: number;
-  clean: number;
+  /** Time to glide from the first pane of the lane to the last. */
+  pass: number;
   land: number;
   vanDrive: number;
 };
@@ -80,7 +86,6 @@ export type HeroStory = {
 };
 
 const EASE_ARRIVE = "cubic-bezier(0.16, 1, 0.3, 1)";
-const EASE_MOVE = "cubic-bezier(0.45, 0, 0.2, 1)";
 const EASE_VAN = "cubic-bezier(0.5, 0.02, 0.7, 0.25)";
 
 const desktopGeom: Geom = {
@@ -101,66 +106,66 @@ const desktopGeom: Geom = {
     gapX: 16,
     gapY: 16,
   },
-  droneStart: { x: 830, y: 168 },
-  droneLand: { x: 1084, y: 688 },
+  droneStart: { x: 900, y: 0 },
+  droneLand: { x: 868, y: 628 },
   nozzle: 74,
   operator: { x: 1024, y: 888 },
-  neck: { x: 1024, y: 816 },
+  neck: { x: 1024, y: 842 },
   van: {
-    x: 548,
+    x: 430,
     y: 771,
-    travel: -250,
+    travel: -90,
     length: 408,
     rearAxle: 322,
     frontAxle: 96,
     axleY: 100,
     wheelR: 21,
   },
-  approach: 1.35,
-  travel: 0.42,
-  clean: 0.55,
-  land: 1.35,
-  vanDrive: 2.25,
+  lane: 1,
+  approach: 1.15,
+  pass: 3.15,
+  land: 1.25,
+  vanDrive: 2.2,
 };
 
 const mobileGeom: Geom = {
   variant: "mobile",
-  viewW: 840,
-  viewH: 760,
+  viewW: 560,
+  viewH: 900,
   cols: 2,
   rows: 3,
   tower: {
-    x: 390,
-    y: 28,
-    w: 390,
-    h: 732,
-    side: 40,
-    padX: 20,
-    padY: 20,
-    padBottom: 176,
-    gapX: 16,
+    x: 96,
+    y: 400,
+    w: 400,
+    h: 500,
+    side: 26,
+    padX: 16,
+    padY: 16,
+    padBottom: 148,
+    gapX: 14,
     gapY: 14,
   },
-  droneStart: { x: 96, y: 118 },
-  droneLand: { x: 500, y: 548 },
-  nozzle: 70,
-  operator: { x: 412, y: 742 },
-  neck: { x: 412, y: 676 },
+  droneStart: { x: 70, y: 0 },
+  droneLand: { x: 168, y: 640 },
+  nozzle: 74,
+  operator: { x: 458, y: 886 },
+  neck: { x: 458, y: 836 },
   van: {
-    x: 36,
-    y: 644,
-    travel: -130,
-    length: 330,
-    rearAxle: 260.4,
-    frontAxle: 77.6,
-    axleY: 80.9,
-    wheelR: 17,
+    x: 16,
+    y: 806,
+    travel: -64,
+    length: 268,
+    rearAxle: 211.5,
+    frontAxle: 63.1,
+    axleY: 65.7,
+    wheelR: 13.8,
   },
-  approach: 1.15,
-  travel: 0.38,
-  clean: 0.5,
-  land: 1.15,
-  vanDrive: 1.9,
+  lane: 1,
+  approach: 0.95,
+  pass: 2.45,
+  land: 1.05,
+  vanDrive: 1.7,
 };
 
 function buildWindows(g: Geom): Win[] {
@@ -188,21 +193,8 @@ function buildWindows(g: Geom): Win[] {
   return list;
 }
 
-function routeOf(windows: Win[], rows: number): Win[] {
-  const route: Win[] = [];
-  for (let row = 0; row < rows; row++) {
-    const line = windows.filter((w) => w.row === row).sort((a, b) => a.col - b.col);
-    route.push(...(row % 2 === 0 ? line : [...line].reverse()));
-  }
-  return route;
-}
-
-function hover(g: Geom, w: Win): Point {
-  return { x: w.x - g.nozzle + 10, y: w.cy - 2 };
-}
-
-function arrive(g: Geom, index: number) {
-  return g.approach + index * (g.clean + g.travel);
+function hoverX(g: Geom, w: Win) {
+  return w.x - g.nozzle + 10;
 }
 
 /** Cinematic gaze: true atan2 stays pinned at the clamp because the drone is far above. */
@@ -219,13 +211,23 @@ function num(n: number) {
 
 function buildStory(g: Geom): HeroStory {
   const windows = buildWindows(g);
-  const route = routeOf(windows, g.rows);
-  const cleanEnd = arrive(g, route.length - 1) + g.clean;
+  const lane = windows
+    .filter((w) => w.row === g.lane)
+    .sort((a, b) => a.col - b.col);
+  const laneY = lane[0].cy - 2;
+  const firstX = hoverX(g, lane[0]);
+  const lastX = hoverX(g, lane[lane.length - 1]);
+  const span = Math.max(1, lastX - firstX);
+  const wipeDur = 0.72;
+  const glideEnd = g.approach + g.pass;
+  const cleanEnd = glideEnd + wipeDur * 0.85;
   const duration = cleanEnd + Math.max(g.land, g.vanDrive);
   const spins = Math.max(10, Math.round((HERO_DELAY_S + cleanEnd + g.land) / 0.12));
-  const wipeDur = Math.max(0.32, g.clean - 0.1);
   const wipeDelay = new Map(
-    route.map((w, i) => [w.id, HERO_DELAY_S + arrive(g, i) + 0.08]),
+    lane.map((w) => [
+      w.id,
+      HERO_DELAY_S + g.approach + (g.pass * (hoverX(g, w) - firstX)) / span,
+    ]),
   );
 
   const keys: { t: number; x: number; y: number; ease: string }[] = [];
@@ -240,12 +242,11 @@ function buildStory(g: Geom): HeroStory {
     keys.push({ t, x, y, ease });
   };
 
-  push(0, g.droneStart.x, g.droneStart.y, EASE_ARRIVE);
-  route.forEach((w, i) => {
-    const at = hover(g, w);
-    push(arrive(g, i), at.x, at.y, EASE_MOVE);
-    push(arrive(g, i) + g.clean, at.x, at.y, EASE_ARRIVE);
-  });
+  const entryX = Math.max(g.droneStart.x, firstX - (g.variant === "mobile" ? 36 : 28));
+  push(0, entryX, laneY, EASE_ARRIVE);
+  push(g.approach, firstX, laneY, "linear");
+  push(glideEnd, lastX, laneY, EASE_ARRIVE);
+  push(cleanEnd, lastX, laneY, EASE_ARRIVE);
   push(cleanEnd + g.land, g.droneLand.x, g.droneLand.y, EASE_ARRIVE);
   push(duration, g.droneLand.x, g.droneLand.y, EASE_ARRIVE);
 
