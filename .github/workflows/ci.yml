@@ -54,8 +54,8 @@ jobs:
           exit 1
       - name: Copy checks
         run: npm run copy:check
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Playwright and axe
         run: npm run test:e2e
       - name: Chrome path for Lighthouse
