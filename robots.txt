@@ -1,0 +1,5 @@
+User-Agent: *
+Allow: /
+
+Host: lodeja.github.io
+Sitemap: https://lodeja.github.io/jdc-web/sitemap.xml

@@ -1,0 +1,6 @@
+:HL["/jdc-web/_next/static/chunks/1g87pg5i98hxi.css","style"]
+:HL["/jdc-web/_next/static/media/3db671d6070d1069.p.37dk47525g5oa.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/jdc-web/_next/static/media/9e31f8a9aad83172-s.p.0ksktpq58k_4h.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"privacy","h":64,"c":"$Q2"}]]
+0:{"b":"uuofjIey1A12PHeOaQfNi","t":{"t":{"s":"","h":16,"c":"$Q1"}}}
