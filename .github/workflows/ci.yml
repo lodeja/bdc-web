@@ -8,9 +8,19 @@ jobs:
     runs-on: ubuntu-latest
     services:
       languagetool:
-        image: erikvl87/languagetool:6.6
+        # Tag 6.6 runs Java 11. The server jar needs 17, so that container
+        # exits before the job starts. dockerupdate-2 is the same 6.6 build
+        # on Java 17. The image healthcheck gives up before the server has
+        # loaded, so this one waits until /v2/languages answers.
+        image: erikvl87/languagetool:6.6-dockerupdate-2
         ports:
           - 8010:8010
+        options: >-
+          --health-cmd "curl -sf http://127.0.0.1:8010/v2/languages"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 18
+          --health-start-period 40s
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,7 +46,7 @@ jobs:
         run: pip install -r scripts/copy-check/requirements.txt
       - name: Wait for LanguageTool
         run: |
-          for _ in $(seq 1 60); do
+          for _ in $(seq 1 90); do
             curl -sf http://127.0.0.1:8010/v2/languages >/dev/null && exit 0
             sleep 2
           done
@@ -44,8 +54,8 @@ jobs:
           exit 1
       - name: Copy checks
         run: npm run copy:check
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Playwright and axe
         run: npm run test:e2e
       - name: Chrome path for Lighthouse
