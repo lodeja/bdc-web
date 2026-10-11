@@ -1,0 +1,12 @@
+extends: existence
+message: "Mogelijk onbewezen claim: '%s'. Alleen gebruiken met bewijs in business.ts."
+level: error
+ignorecase: true
+tokens:
+  - '\d+\s?%'
+  - gegarandeerd
+  - '100 ?%'
+  - zonder risico
+  - altijd veilig
+  - binnen 24
+  - '\d+x sneller'

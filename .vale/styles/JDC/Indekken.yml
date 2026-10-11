@@ -1,0 +1,15 @@
+extends: existence
+message: "Defensieve of stijve formulering: '%s'. Herschrijf positief en concreet."
+level: warning
+ignorecase: true
+tokens:
+  - geen belofte
+  - we beloven geen
+  - we garanderen geen
+  - geen algemene veiligheidsclaim
+  - complementair
+  - universeel
+  - we prefereren
+  - geavanceerde
+  - wondermiddel
+  - de beoordeling zegt

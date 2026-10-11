@@ -23,6 +23,7 @@ npm run build
 npm run test:e2e          # Playwright + axe against the static export
 npm run preview           # gzip static server on 127.0.0.1:4173
 npm run lhci              # Lighthouse mobile + desktop
+npm run copy:check        # Vale, local LanguageTool nl-BE, Flesch-Douma
 GITHUB_PAGES=true npm run build   # static export; basePath is / plus REPO_SLUG
 ```
 

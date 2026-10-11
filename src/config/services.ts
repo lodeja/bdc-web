@@ -25,7 +25,7 @@ export const services: readonly Service[] = [
     slug: "dakreiniging",
     title: "Dakreiniging",
     description:
-      "Verwijderen van aanslag, mos en fijnstof op geschikte dakvlakken — met minder betreden van het dak zelf.",
+      "Mos, algen en groene aanslag van uw dak, met zo weinig mogelijk dakbetreding.",
     href: "/dakreiniging/",
   },
   {
@@ -33,7 +33,7 @@ export const services: readonly Service[] = [
     slug: "gevelreiniging",
     title: "Gevelreiniging",
     description:
-      "Gecontroleerde gevelbehandeling voor woningen, kantoren en appartementsgebouwen waar steigers omslachtig zijn.",
+      "Een grauwe of groene gevel weer fris, ook op hoogtes waar u anders een stelling of hoogtewerker nodig hebt. Voor woningen, kantoren en appartementsgebouwen.",
     href: "/gevelreiniging/",
   },
   {
@@ -41,7 +41,7 @@ export const services: readonly Service[] = [
     slug: "ramen-en-glasreiniging",
     title: "Ramen- en glasreiniging",
     description:
-      "Reiniging van ramen en glasvlakken waar een drone het oppervlak veilig kan bereiken. Geschiktheid hangt af van het glas, de bereikbaarheid en de omgeving.",
+      "Buitenglas, omlijstingen en dorpels weer helder. Ook op hoogtes waar u anders een hoogtewerker of stelling nodig hebt.",
     href: "/ramen-en-glasreiniging/",
   },
   {
@@ -49,7 +49,7 @@ export const services: readonly Service[] = [
     slug: "zonnepanelen-reinigen",
     title: "Zonnepanelen reinigen",
     description:
-      "Zachte reiniging van panelen om lichtinval te herstellen. Resultaat hangt af van vuilgraad, helling en weersomstandigheden.",
+      "Stof, stuifmeel en groene aanslag van uw panelen, zonder erover te lopen. Een cijfer over meeropbrengst verzinnen we niet.",
     href: "/zonnepanelen-reinigen/",
   },
   {
@@ -57,7 +57,7 @@ export const services: readonly Service[] = [
     slug: "industriele-reiniging",
     title: "Industriële reiniging",
     description:
-      "Voor sites waar hoogte, bereikbaarheid of stilstand zwaar wegen. Een aanvulling op klassieke methodes, na beoordeling van de site.",
+      "Wanden, tanks en loodsen waar een stelling zwaar ingrijpt. We volgen de regels van uw site.",
     href: "/industriele-reiniging/",
   },
 ];

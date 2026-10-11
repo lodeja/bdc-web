@@ -38,8 +38,8 @@ export function Footer() {
             <Logo className="h-11 w-auto" variant="mono" idSuffix="ftr" />
           </Link>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/80">
-            Professionele drone-reiniging voor daken, gevels, ramen en glas,
-            zonnepanelen en geschikte industriële oppervlakken.
+            Janssens Drone Cleaning wast daken, gevels, ramen, zonnepanelen en
+            bedrijfsgebouwen met een drone.
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-white/80 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>
-            © {new Date().getFullYear()} {business.shortName} — {business.brandName}
+            © {new Date().getFullYear()} {business.shortName}, {business.brandName}
           </p>
           {privacy ? (
             <Link

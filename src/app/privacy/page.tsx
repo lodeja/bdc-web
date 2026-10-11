@@ -13,7 +13,7 @@ import { absoluteUrl } from "@/lib/site";
 
 const title = "Privacy";
 const description =
-  "Wat deze site doet met persoonsgegevens: geen analysecookies, en het contactformulier verstuurt pas gegevens wanneer dat is ingericht.";
+  "Wat Janssens Drone Cleaning op deze site doet met uw gegevens. Geen analysecookies. Het formulier verstuurt nog niets.";
 
 export const metadata: Metadata = {
   title,
@@ -50,14 +50,14 @@ export default function PrivacyPage() {
           </h1>
           <div className="jdc-flight-rule mt-6 max-w-xs" aria-hidden="true" />
           <p className="mt-6 text-lg leading-relaxed text-jdc-slate">
-            Deze tekst zegt wat {business.brandName} op deze website doet met
-            persoonsgegevens. Ze volgt wat de site vandaag effectief doet.
+            Hier leest u wat {business.brandName} op deze site doet met uw
+            gegevens. Alleen wat de site vandaag echt doet.
           </p>
         </header>
 
         <section className="mt-12 border-t border-jdc-navy/10 pt-8" aria-labelledby="verantwoordelijke-heading">
           <h2 id="verantwoordelijke-heading" className="text-2xl font-semibold tracking-tight text-jdc-navy">
-            Verwerkingsverantwoordelijke
+            Wie is verantwoordelijk?
           </h2>
           <p className="mt-4 text-base leading-relaxed text-jdc-ink">{business.brandName}</p>
           <ul className="mt-3 space-y-1 text-base leading-relaxed text-jdc-ink">
@@ -93,10 +93,10 @@ export default function PrivacyPage() {
             Geen analyse of advertenties
           </h2>
           <p className="mt-4 text-base leading-relaxed text-jdc-ink">
-            Deze site plaatst geen analysecookies en geen advertentiecookies.
-            Er is geen meetsoftware en geen account. Uw browser kan wel zelf
-            technische gegevens verwerken om de pagina te tonen; die keuze
-            ligt bij de browser, niet bij een extra script van ons.
+            We plaatsen geen analysecookies en geen advertentiecookies.
+            Er is geen meetsoftware en geen account. Uw browser kan zelf
+            technische gegevens verwerken om de pagina te tonen. Dat doet de
+            browser, niet een extra script van ons.
           </p>
         </section>
 
@@ -107,12 +107,12 @@ export default function PrivacyPage() {
           {endpoint ? (
             <>
               <p className="mt-4 text-base leading-relaxed text-jdc-ink">
-                Een verzonden aanvraag bevat de naam, het e-mailadres, het
+                Een verzonden aanvraag bevat uw naam, uw e-mailadres, uw
                 telefoonnummer als u dat invult, de gekozen dienst en het
                 bericht. We gebruiken die gegevens om de aanvraag te beantwoorden.
               </p>
               <p className="mt-4 text-base leading-relaxed text-jdc-ink">
-                Een veld dat bedoeld is om automatische inzendingen te herkennen,
+                Een verborgen veld vangt automatische inzendingen. Dat veld
                 gebruiken we niet als contactgegeven.
               </p>
             </>
@@ -121,7 +121,7 @@ export default function PrivacyPage() {
               Het formulier verstuurt uw invoer niet naar een server van deze
               site. Bij een geldige aanvraag kan uw eigen e-mailprogramma een
               bericht openen naar {email}. U verstuurt dat bericht zelf. Tot u
-              dat doet, ontvangen wij de inhoud niet via deze website.
+              dat doet, ontvangen we de inhoud niet via deze website.
             </p>
           ) : (
             <p className="mt-4 text-base leading-relaxed text-jdc-ink">
@@ -137,8 +137,8 @@ export default function PrivacyPage() {
             Uw rechten
           </h2>
           <p className="mt-4 text-base leading-relaxed text-jdc-ink">
-            Onder de AVG kunt u inzage, verbetering of wissing vragen, en kunt u
-            bezwaar maken of een beperking vragen, voor zover we gegevens van u
+            U kunt inzage, verbetering of wissing vragen. U kunt ook bezwaar
+            maken of een beperking vragen, voor zover we gegevens van u
             verwerken.
             {email ? (
               <>
@@ -167,7 +167,7 @@ export default function PrivacyPage() {
         </section>
 
         <p className="mt-12 border-t border-jdc-navy/10 pt-8 text-sm leading-relaxed text-jdc-slate">
-          Deze pagina wordt aangepast wanneer de site anders met gegevens omgaat.{" "}
+          We passen deze pagina aan wanneer de site anders met gegevens omgaat.{" "}
           <Link
             href="/"
             className="font-medium text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"

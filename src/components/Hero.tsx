@@ -24,13 +24,13 @@ export function Hero() {
             id="hero-heading"
             className="text-balance text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl"
           >
-            Geavanceerde reiniging. Van gebouwen tot industrie.
+            Uw dak, gevel en zonnepanelen weer proper. Vanuit de lucht.
           </h1>
 
           <p className="mt-5 max-w-lg text-pretty text-base leading-relaxed text-white/75 sm:mt-6 sm:text-lg">
-            JDC reinigt daken, gevels, ramen en glas, zonnepanelen en geschikte
-            industriële oppervlakken met professionele drone-technologie —
-            precies, veilig en zonder zware steigers.
+            Janssens Drone Cleaning reinigt daken, gevels, ramen, zonnepanelen
+            en industriële gebouwen met een drone. Geen zware stelling, geen
+            hoogtewerker voor de deur, en zo weinig mogelijk mensen op hoogte.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
@@ -38,7 +38,7 @@ export function Hero() {
               href="#contact"
               className="group inline-flex items-center justify-center gap-3 rounded-sm bg-jdc-cyan px-6 py-3.5 text-sm font-semibold text-jdc-navy-deep transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-jdc-cyan-bright active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
             >
-              Vraag een offerte aan
+              Vraag een vrijblijvende offerte aan
               <span
                 className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-jdc-navy-deep/10 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px"
                 aria-hidden="true"

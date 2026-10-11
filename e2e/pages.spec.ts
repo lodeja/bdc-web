@@ -2,11 +2,36 @@ import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 const SERVICE_PAGES = [
-  { path: "/dakreiniging/", title: "Dakreiniging", id: "dak" },
-  { path: "/gevelreiniging/", title: "Gevelreiniging", id: "gevel" },
-  { path: "/ramen-en-glasreiniging/", title: "Ramen- en glasreiniging", id: "ramen" },
-  { path: "/zonnepanelen-reinigen/", title: "Zonnepanelen reinigen", id: "zonnepanelen" },
-  { path: "/industriele-reiniging/", title: "Industriële reiniging", id: "industrie" },
+  {
+    path: "/dakreiniging/",
+    title: "Dakreiniging",
+    headline: "Uw dak weer proper, zonder iemand op de pannen",
+    id: "dak",
+  },
+  {
+    path: "/gevelreiniging/",
+    title: "Gevelreiniging",
+    headline: "Een grauwe gevel weer fris, zonder stelling voor de deur",
+    id: "gevel",
+  },
+  {
+    path: "/ramen-en-glasreiniging/",
+    title: "Ramen- en glasreiniging",
+    headline: "Ramen en glaspartijen weer helder, ook op hoogte",
+    id: "ramen",
+  },
+  {
+    path: "/zonnepanelen-reinigen/",
+    title: "Zonnepanelen reinigen",
+    headline: "Zonnepanelen weer vrij van stof en groene aanslag",
+    id: "zonnepanelen",
+  },
+  {
+    path: "/industriele-reiniging/",
+    title: "Industriële reiniging",
+    headline: "Hoge wanden en loodsen wassen, zonder een volledige stelling",
+    id: "industrie",
+  },
 ] as const;
 
 async function expectAccessible(page: Page) {
@@ -32,7 +57,7 @@ test("service pages are linked from home and expose one heading", async ({ page 
 
   for (const service of SERVICE_PAGES) {
     await page.goto(service.path);
-    await expect(page.getByRole("heading", { level: 1, name: service.title })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: service.headline })).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     const crumbs = page.getByRole("navigation", { name: "Broodkruimelpad" });
     await expect(crumbs.getByRole("link", { name: "Home" })).toBeVisible();
@@ -41,15 +66,15 @@ test("service pages are linked from home and expose one heading", async ({ page 
       "href",
       "/#werkwijze",
     );
-    await expect(page.getByText("Tekening, geen foto van een uitgevoerd werk.")).toHaveCount(1);
+    await expect(page.getByText("Illustratie", { exact: true })).toHaveCount(1);
   }
 });
 
 test("dakreiniging preselects the quote form and stays accessible", async ({ page }) => {
   await page.goto("/dakreiniging/");
-  await expect(page.getByRole("heading", { name: "Wanneer dit niet past" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Wanneer we geen drone inzetten" })).toBeVisible();
   await expectAccessible(page);
-  await page.getByRole("link", { name: "Vraag een offerte aan" }).click();
+  await page.getByRole("link", { name: "Vraag een vrijblijvende offerte aan" }).click();
   await expect(page).toHaveURL(/dienst=dak/);
   await expect(page.locator('select[name="service"]')).toHaveValue("dak");
 });

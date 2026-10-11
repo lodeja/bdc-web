@@ -188,11 +188,12 @@ export function QuoteForm() {
       aria-labelledby={`${formId}-title`}
     >
       <h3 id={`${formId}-title`} className="text-xl font-semibold text-jdc-navy">
-        Offerte aanvragen
+        Vraag een vrijblijvende offerte aan
       </h3>
       <p className="mt-2 text-sm text-jdc-slate">
-        Velden met * zijn verplicht. We gebruiken uw gegevens enkel om deze
-        aanvraag te beantwoorden.
+        Velden met * zijn verplicht. We gebruiken uw gegevens alleen om deze
+        aanvraag te beantwoorden. Stuur gerust een paar foto&apos;s mee in uw
+        bericht, of vermeld waar we ze kunnen zien.
       </p>
       {notice ? (
         <p id={`${formId}-notice`} className="mt-3 text-sm text-jdc-navy">
@@ -307,7 +308,7 @@ export function QuoteForm() {
             name="message"
             rows={4}
             className={`${fieldClass} resize-y`}
-            placeholder="Locatie, type gebouw/oppervlak, timing…"
+            placeholder="Waar staat het gebouw, wat moet proper, en waar kunnen we foto's zien?"
             aria-invalid={Boolean(errors.message)}
             aria-describedby={errors.message ? `${formId}-message-err` : undefined}
           />

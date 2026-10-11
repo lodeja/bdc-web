@@ -50,11 +50,11 @@ export function Contact() {
   return (
     <SectionShell
       id="contact"
-      title="Contact & offerte"
+      title="Vrijblijvende offerte"
       lead={
         canReach
-          ? "Vertel ons kort wat u nodig heeft. We reageren met een haalbaarheidsinschatting of een gerichte offerte."
-          : "Online contact openen we zodra er een inbox is. Het formulier controleert uw invoer, maar verstuurt nog niets."
+          ? "Vertel ons wat proper moet. We antwoorden met een vrijblijvende offerte. Stuur gerust een paar foto's mee."
+          : "Het formulier controleert uw invoer, maar verstuurt nog niets. Beschrijf het gebouw, en vermeld waar we foto's kunnen zien."
       }
       tone="white"
     >

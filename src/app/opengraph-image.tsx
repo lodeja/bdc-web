@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const dynamic = "force-static";
 
-export const alt = "Janssens Drone Cleaning — professionele drone-reiniging";
+export const alt = "Janssens Drone Cleaning, daken en gevels vanuit de lucht";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -43,7 +43,7 @@ export default function OpenGraphImage() {
               lineHeight: 1.3,
             }}
           >
-            Professionele drone-reiniging
+            Daken, gevels en zonnepanelen, vanuit de lucht
           </div>
         </div>
         <div style={{ display: "flex", color: "#00c2e8", fontSize: 24, letterSpacing: 2 }}>

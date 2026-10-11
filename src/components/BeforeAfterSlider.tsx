@@ -14,7 +14,7 @@ export function BeforeAfterSlider() {
   const before = pair && photoReady(pair.before) ? pair.before : null;
   const after = pair && photoReady(pair.after) ? pair.after : null;
   const usePhotos = Boolean(before && after);
-  const caption = pair?.caption ?? "Illustratie — geen echte projectfoto.";
+  const caption = pair?.caption ?? "Illustratie. Geen foto van een uitgevoerd werk.";
 
   return (
     <div className="overflow-hidden rounded-sm border border-jdc-navy/10 bg-jdc-navy-deep">

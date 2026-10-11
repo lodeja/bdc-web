@@ -1,0 +1,6 @@
+extends: occurrence
+message: "Te veel gedachtestreepjes; gebruik een punt of komma."
+level: warning
+scope: paragraph
+max: 1
+token: —

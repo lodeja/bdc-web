@@ -28,6 +28,7 @@ test-results/
 playwright-report/
 .lighthouseci/
 /tmp/
+.copy-text/
 
 # debug
 npm-debug.log*

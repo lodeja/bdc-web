@@ -1,0 +1,8 @@
+extends: existence
+message: "Spreek de klant aan met 'u', niet met '%s'."
+level: error
+tokens:
+  - '\bje\b'
+  - '\bjij\b'
+  - '\bjouw\b'
+  - '\bjou\b'

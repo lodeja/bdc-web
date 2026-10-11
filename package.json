@@ -11,6 +11,11 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
     "preview": "node scripts/static-server.mjs",
+    "copy:extract": "node scripts/copy-check/extract-text.mjs",
+    "copy:vale": "vale --output=JSON --no-exit .copy-text | node scripts/copy-check/vale-gate.mjs",
+    "copy:lt": "node scripts/copy-check/languagetool.mjs",
+    "copy:readability": "python3 scripts/copy-check/readability.py",
+    "copy:check": "npm run copy:extract && npm run copy:vale && npm run copy:lt && npm run copy:readability",
     "lhci": "lhci autorun --config=lighthouserc.mobile.cjs && lhci autorun --config=lighthouserc.desktop.cjs"
   },
   "dependencies": {

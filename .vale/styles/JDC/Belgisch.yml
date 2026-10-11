@@ -1,0 +1,14 @@
+extends: substitution
+message: "Gebruik Belgisch-Nederlands: '%s' in plaats van '%s'."
+level: error
+ignorecase: true
+swap:
+  hoogwerkers?: hoogtewerker
+  steigers?: stelling
+  proefvlak(ken)?: testzone
+  VvE'?s?: VME
+  kozijnen: ramen
+  glasbewassing: ramenwassen
+  werkzaamheden: werken
+  appartementencomplex(en)?: appartementsgebouw
+  dakbekleding: dakbedekking

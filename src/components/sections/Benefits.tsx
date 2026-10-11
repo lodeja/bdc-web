@@ -10,38 +10,38 @@ import { SectionShell } from "../SectionShell";
 
 const BENEFITS = [
   {
-    title: "Minder betreden oppervlak",
-    text: "Waar mogelijk blijft het dak of de gevel minder belopen dan bij klassieke toegang.",
+    title: "Zo weinig mogelijk dakbetreding",
+    text: "De drone wast vanop afstand. U blijft zelf beneden.",
     icon: Footprints,
     span: "md:col-span-2",
   },
   {
-    title: "Precieze aanpak",
-    text: "Gerichte behandeling per zone, afgestemd op vuilgraad en materiaal.",
+    title: "Zone per zone",
+    text: "We wassen waar de groene aanslag of de grijze sluier zit, afgestemd op het materiaal.",
     icon: Ruler,
     span: "",
   },
   {
-    title: "Flexibele planning",
-    text: "Inzetbaar wanneer weersomstandigheden en site-toegang het toelaten.",
+    title: "We plannen rond het weer",
+    text: "Wind en regen bepalen de dag. Past het niet, dan schuiven we de werken op.",
     icon: Clock3,
     span: "",
   },
   {
-    title: "Visuele controle",
-    text: "Duidelijke voor/na-opnames helpen om het resultaat objectief te bekijken.",
+    title: "U volgt het vanop de grond",
+    text: "U ziet wat we doen, zonder zelf de hoogte in te moeten.",
     icon: Eye,
     span: "",
   },
   {
-    title: "Lager waterverbruik mogelijk",
-    text: "Afhankelijk van methode en oppervlak kan het verbruik lager liggen dan bij sommige conventionele spoelingen — niet in elke situatie.",
+    title: "Gericht spoelen",
+    text: "We richten de straal op het vuile vlak. Hoeveel water dat vraagt, verschilt per opdracht.",
     icon: Leaf,
     span: "md:col-span-2",
   },
   {
-    title: "Complementair, niet universeel",
-    text: "Steigers of hoogwerkers blijven soms de betere keuze. We adviseren eerlijk wanneer drone-reiniging niet past.",
+    title: "Niet altijd de drone",
+    text: "Soms is een stelling of hoogtewerker beter. Dan zeggen we dat gewoon.",
     icon: Gauge,
     span: "md:col-span-3",
   },
@@ -51,8 +51,8 @@ export function Benefits() {
   return (
     <SectionShell
       id="voordelen"
-      title="Voordelen in de praktijk"
-      lead="Wat drone-reiniging kan bieden — zonder beloftes die voor elke gevel of industriehal zouden gelden."
+      title="Waarom een drone"
+      lead="Een drone is vaak handiger dan een stelling. Soms is het omgekeerd."
       tone="white"
     >
       <ul className="grid gap-4 md:grid-cols-3">
