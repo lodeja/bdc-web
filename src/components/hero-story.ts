@@ -313,7 +313,7 @@ function buildStory(g: Geom): HeroStory {
     x: trackEnd - doorW,
     y: 3,
     w: doorW,
-    h: g.van.axleY - 4,
+    h: g.van.axleY + 4,
   };
   const cargo = {
     x: g.van.x + door.x + door.w * 0.5,
