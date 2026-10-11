@@ -11,6 +11,8 @@
   --bdc-cyan: #00c2e8;
   --bdc-cyan-bright: #33d6f0;
   --bdc-cyan-dim: #009bb8;
+  /* Text cyan on white/fog. #009bb8 is 3.29:1; #0e7490 clears 4.5:1. */
+  --bdc-cyan-ink: #0e7490;
   --bdc-white: #ffffff;
   --bdc-fog: #f4f7fb;
   --bdc-mist: #e4ebf4;
@@ -35,6 +37,7 @@
   --color-bdc-cyan: var(--bdc-cyan);
   --color-bdc-cyan-bright: var(--bdc-cyan-bright);
   --color-bdc-cyan-dim: var(--bdc-cyan-dim);
+  --color-bdc-cyan-ink: var(--bdc-cyan-ink);
   --color-bdc-white: var(--bdc-white);
   --color-bdc-fog: var(--bdc-fog);
   --color-bdc-mist: var(--bdc-mist);

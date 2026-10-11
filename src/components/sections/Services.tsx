@@ -50,7 +50,7 @@ export function Services() {
                 </p>
                 <a
                   href="#contact"
-                  className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-bdc-navy transition-colors hover:text-bdc-cyan-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+                  className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-bdc-navy transition-colors hover:text-bdc-cyan-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
                 >
                   Offerte voor {service.title.toLowerCase()}
                   <ArrowRight

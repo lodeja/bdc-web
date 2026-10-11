@@ -1,7 +1,7 @@
 "use client";
 
 import gsap from "gsap";
-import { useEffect, useId, useRef } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 
 /**
  * Industrial façade / tank-bay cleaning scene (SVG + GSAP).
@@ -11,7 +11,7 @@ export function IndustrialDroneCleaningAnimation() {
   const uid = useId().replace(/:/g, "");
   const svgRef = useRef<SVGSVGElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
 
@@ -27,6 +27,7 @@ export function IndustrialDroneCleaningAnimation() {
     if (!drone || !spray || !dirt) return;
 
     if (reduce) {
+      svg.pauseAnimations();
       gsap.set(dirt, { attr: { height: 0, y: 280 } });
       gsap.set(drone, { opacity: 0 });
       gsap.set(spray, { opacity: 0 });

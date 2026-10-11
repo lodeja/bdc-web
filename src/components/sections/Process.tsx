@@ -41,7 +41,7 @@ export function Process() {
               />
             ) : null}
             <div className="relative rounded-sm border border-bdc-navy/10 bg-white p-6">
-              <span className="font-mono text-sm font-semibold tracking-wider text-bdc-cyan-dim">
+              <span className="font-mono text-sm font-semibold tracking-wider text-bdc-cyan-ink">
                 {step.n}
               </span>
               <h3 className="mt-3 text-lg font-semibold text-bdc-navy">

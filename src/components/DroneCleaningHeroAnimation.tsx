@@ -1,7 +1,7 @@
 "use client";
 
 import gsap from "gsap";
-import { useEffect, useId, useMemo, useRef } from "react";
+import { useId, useLayoutEffect, useMemo, useRef } from "react";
 import { withBasePath } from "@/lib/paths";
 
 /**
@@ -150,7 +150,7 @@ export function DroneCleaningHeroAnimation() {
   const windows = useMemo(() => buildWindows(), []);
   const route = useMemo(() => buildRoute(windows), [windows]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
 
@@ -167,18 +167,6 @@ export function DroneCleaningHeroAnimation() {
     const cloudMid = svg.querySelector<SVGGElement>(`#cloud-mid-${uid}`);
 
     if (!drone || !beams || !operator || !van || !look) return;
-
-    cloudTlRef.current?.kill();
-    const cloudTl = gsap.timeline({ repeat: -1 });
-    cloudTlRef.current = cloudTl;
-    if (cloudFar) {
-      gsap.set(cloudFar, { x: 0 });
-      cloudTl.to(cloudFar, { x: -1200, duration: 140, ease: "none" }, 0);
-    }
-    if (cloudMid) {
-      gsap.set(cloudMid, { x: 0 });
-      cloudTl.to(cloudMid, { x: -1280, duration: 95, ease: "none" }, 0);
-    }
 
     const dirtyMasks = route.map((w) =>
       svg.querySelector<SVGRectElement>(`#dirty-mask-${w.id}-${uid}`),
@@ -262,13 +250,23 @@ export function DroneCleaningHeroAnimation() {
       });
     };
 
-    // Reduced motion: static finished job (clean facade, crew gone) — no drive-away
+    // Reduced motion: static finished job. Do not start GSAP timelines or SMIL.
     if (reduce) {
+      svg.pauseAnimations();
       showEndFrame();
-      return () => {
-        cloudTl.kill();
-        cloudTlRef.current = null;
-      };
+      return;
+    }
+
+    cloudTlRef.current?.kill();
+    const cloudTl = gsap.timeline({ repeat: -1 });
+    cloudTlRef.current = cloudTl;
+    if (cloudFar) {
+      gsap.set(cloudFar, { x: 0 });
+      cloudTl.to(cloudFar, { x: -1200, duration: 140, ease: "none" }, 0);
+    }
+    if (cloudMid) {
+      gsap.set(cloudMid, { x: 0 });
+      cloudTl.to(cloudMid, { x: -1280, duration: 95, ease: "none" }, 0);
     }
 
     // Remount after one-shot finished (Strict Mode): hold end frame, soft blinks
@@ -942,7 +940,7 @@ function FlatWorkVan() {
   const MATTE_HI = "#161616";
   const GLASS = "#5A7A90";
   const SEAM = "#1C1C1C";
-  const logoHref = withBasePath("/brand/jdc-van-logo.png");
+  const logoHref = withBasePath("/brand/jdc-van-logo.webp");
 
   return (
     <g transform="scale(1.08) translate(0 -64)">
