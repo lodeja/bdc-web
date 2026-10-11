@@ -73,6 +73,39 @@ export type BusinessConfig = {
    * set. That page is a draft of what the site does, not a signed policy.
    */
   privacyPolicyPath: string | null;
+  /**
+   * Held aviation and product credentials. Every field stays empty until
+   * the owner has the document. The site must not claim a permit, policy,
+   * operator number, or route while these are empty. No euro amounts.
+   */
+  compliance: ComplianceConfig;
+};
+
+/** Route named on a DGLV authorisation. Do not set this until that document exists. */
+export type AuthorisationRoute = "PDRA-S01" | "SORA" | "STS-01";
+
+export type ComplianceConfig = {
+  /**
+   * DGLV operator registration number, without the last three characters.
+   * Those characters are a private check key.
+   */
+  uasOperatorNumber: string | null;
+  /** Reference of the DGLV operational authorisation. */
+  operationalAuthorisation: string | null;
+  authorisationRoute: AuthorisationRoute | null;
+  /** Insurer name. Shown only together with `aviationInsurance`. */
+  aviationInsurer: string | null;
+  /** True only when a Regulation (EC) 785/2004 policy is active. Never store an amount. */
+  aviationInsurance: boolean;
+  /** True only when a business liability policy is active. Never store an amount. */
+  liabilityInsurance: boolean;
+  /** True only when the closed-circuit biocide user registration exists. */
+  biocideUserRegistration: boolean;
+};
+
+export type ComplianceFact = {
+  label: string;
+  value: string;
 };
 
 export const business: BusinessConfig = {
@@ -95,6 +128,15 @@ export const business: BusinessConfig = {
   certifications: [],
   references: [],
   privacyPolicyPath: "/privacy/",
+  compliance: {
+    uasOperatorNumber: null,
+    operationalAuthorisation: null,
+    authorisationRoute: null,
+    aviationInsurer: null,
+    aviationInsurance: false,
+    liabilityInsurance: false,
+    biocideUserRegistration: false,
+  },
 };
 
 export function filled(value: string | null | undefined): string | null {
@@ -118,6 +160,34 @@ export function formatAddress(source: BusinessConfig = business): string | null 
  * Google’s local-business rich result needs a name, a full postal address,
  * and a way to reach the business. Until those exist, emit nothing.
  */
+/**
+ * Lines for the safety page and the footer. Empty while nothing is held,
+ * so the site does not show a number, insurer, or route by default.
+ */
+export function complianceFacts(source: BusinessConfig = business): ComplianceFact[] {
+  const compliance = source.compliance;
+  const facts: ComplianceFact[] = [];
+  const operator = filled(compliance.uasOperatorNumber);
+  if (operator) facts.push({ label: "Exploitantnummer", value: operator });
+  const authorisation = filled(compliance.operationalAuthorisation);
+  if (authorisation) facts.push({ label: "Vergunning", value: authorisation });
+  if (compliance.authorisationRoute) {
+    facts.push({ label: "Toelatingsroute", value: compliance.authorisationRoute });
+  }
+  if (compliance.aviationInsurance) {
+    facts.push({ label: "Luchtvaartverzekering", value: "in orde" });
+    const insurer = filled(compliance.aviationInsurer);
+    if (insurer) facts.push({ label: "Verzekeraar", value: insurer });
+  }
+  if (compliance.liabilityInsurance) {
+    facts.push({ label: "Aansprakelijkheidsverzekering", value: "in orde" });
+  }
+  if (compliance.biocideUserRegistration) {
+    facts.push({ label: "Registratie als gebruiker van biociden", value: "in orde" });
+  }
+  return facts;
+}
+
 export function canEmitLocalBusiness(source: BusinessConfig = business): boolean {
   return Boolean(
     filled(source.brandName) &&
