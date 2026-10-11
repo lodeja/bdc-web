@@ -1,0 +1,504 @@
+.jdc-b {
+  --jdc-ink: #f4f7fb;
+  --jdc-muted: #d5e2ee;
+  --jdc-line: rgba(255, 255, 255, 0.55);
+  --jdc-field: #071525;
+  --jdc-radius: 12px;
+  --jdc-focus: #00c2e8;
+  --jdc-accent: #00c2e8;
+  --jdc-accent-hover: #67def2;
+  --jdc-accent-ink: #071525;
+  --jdc-danger: #ffd0d6;
+  --jdc-note: #123044;
+  --jdc-note-ink: #f4f7fb;
+  background: #071525;
+  color: var(--jdc-ink);
+  font-family: var(--font-b-text), sans-serif;
+  color-scheme: dark;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.jdc-b h1,
+.jdc-b h2,
+.jdc-b h3 {
+  font-family: var(--font-b-display), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.96;
+}
+
+.jdc-b .jdc-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 4rem;
+  padding: 0 1.25rem;
+  background: #071525;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.jdc-b .jdc-nav-brand,
+.jdc-b .jdc-nav-desk a {
+  color: #f4f7fb;
+  text-decoration: none;
+}
+
+.jdc-b .jdc-nav-brand {
+  font-weight: 600;
+}
+
+.jdc-b .jdc-nav-desk {
+  display: none;
+  align-items: center;
+  gap: 1.35rem;
+}
+
+.jdc-b .jdc-nav-desk a {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.jdc-b .jdc-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: #00c2e8;
+  color: #071525;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.jdc-b .jdc-nav-cta:hover,
+.jdc-b-primary:hover {
+  background: #67def2;
+}
+
+.jdc-b .jdc-nav-desk .jdc-nav-cta,
+.jdc-b .jdc-nav-panel .jdc-nav-cta {
+  color: #071525;
+}
+
+.jdc-b .jdc-nav-cta:focus-visible,
+.jdc-b-primary:focus-visible {
+  outline: 2px solid #f4f7fb;
+  outline-offset: 3px;
+}
+
+.jdc-b .jdc-nav-fold {
+  position: relative;
+}
+
+.jdc-b .jdc-nav-toggle {
+  min-height: 2.5rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: #f4f7fb;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.jdc-b .jdc-nav-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.jdc-b .jdc-nav-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 16rem;
+  padding: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: #0b1f3a;
+}
+
+.jdc-b .jdc-nav-panel a {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  color: #f4f7fb;
+  text-decoration: none;
+}
+
+.jdc-b-hero {
+  position: relative;
+  display: grid;
+  gap: 0.5rem;
+  min-height: calc(100dvh - 4rem);
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 1.5rem;
+}
+
+.jdc-b-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 38rem;
+}
+
+.jdc-b-line {
+  display: block;
+}
+
+.jdc-b h1 {
+  margin: 0;
+  font-size: clamp(2.7rem, 6vw, 5.4rem);
+}
+
+.jdc-b-helder {
+  color: #00c2e8;
+}
+
+.jdc-b-sub {
+  max-width: 38ch;
+  margin: 1.1rem 0 0;
+  color: #d5e2ee;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.jdc-b-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.jdc-b-primary,
+.jdc-b-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1.05rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.jdc-b-primary {
+  background: #00c2e8;
+  color: #071525;
+}
+
+.jdc-b-primary:active,
+.jdc-b-secondary:active {
+  transform: scale(0.98);
+}
+
+.jdc-b-secondary {
+  color: #f4f7fb;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.jdc-b-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.jdc-b-flight {
+  position: relative;
+  height: 220px;
+  margin: 0;
+}
+
+.jdc-b-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.jdc-b-path {
+  fill: none;
+  stroke: #00c2e8;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.jdc-b-craft {
+  fill: #071525;
+  stroke: #00c2e8;
+  stroke-width: 2;
+  opacity: 0;
+}
+
+.jdc-b-caption,
+.jdc-b-lead,
+.jdc-b-note {
+  margin: 0.75rem 0 0;
+  color: #d5e2ee;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.jdc-b-caption {
+  font-size: 0.8rem;
+}
+
+.jdc-b #werkwijze,
+.jdc-b #diensten,
+.jdc-b #vergelijking,
+.jdc-b #faq,
+.jdc-b #pioniers,
+.jdc-b #offerte {
+  scroll-margin-top: 4.5rem;
+}
+
+.jdc-b-day {
+  --jdc-ink: #0e1624;
+  --jdc-muted: #314056;
+  --jdc-line: rgba(7, 21, 37, 0.22);
+  --jdc-field: #ffffff;
+  background: #f4f7fb;
+  color: #0e1624;
+  color-scheme: light;
+  padding-bottom: 4.5rem;
+}
+
+.jdc-b-day h2,
+.jdc-b-day h3 {
+  color: #0e1624;
+}
+
+.jdc-b-day h2 {
+  max-width: 18ch;
+}
+
+.jdc-b-day .jdc-timeline-index {
+  color: #0c6478;
+}
+
+.jdc-b-day .jdc-timeline li::before {
+  background: #071525;
+}
+
+.jdc-b-story,
+.jdc-b-services {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 4.5rem 1.25rem 0;
+}
+
+.jdc-b h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 500;
+  max-width: 14ch;
+}
+
+.jdc-b-steps {
+  position: relative;
+  display: grid;
+  gap: 1.75rem;
+  margin: 2rem 0 0;
+  padding: 0 0 0 1.5rem;
+  list-style: none;
+}
+
+.jdc-b-steps::before {
+  content: "";
+  position: absolute;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  left: 0;
+  width: 2px;
+  background: #00c2e8;
+  transform: scaleY(1);
+  transform-origin: top center;
+}
+
+.jdc-b-steps li {
+  position: relative;
+}
+
+.jdc-b-steps li::before {
+  content: "";
+  position: absolute;
+  top: 0.45rem;
+  left: -1.5rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid #00c2e8;
+  border-radius: 50%;
+  background: #071525;
+  transform: translateX(-0.28rem);
+}
+
+.jdc-b-steps h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.45rem;
+  font-weight: 500;
+}
+
+.jdc-b-steps p,
+.jdc-b-list p {
+  margin: 0;
+  max-width: 58ch;
+  color: #d5e2ee;
+  line-height: 1.5;
+}
+
+.jdc-b-services {
+  padding-bottom: 1rem;
+}
+
+.jdc-b-list {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jdc-b-list li {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.jdc-b-list h3 {
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  font-weight: 500;
+}
+
+.jdc-b-offer {
+  max-width: 44rem;
+  margin-top: 2rem;
+  padding: 1.25rem 0 0;
+}
+
+.jdc-b-offer h2 {
+  margin-bottom: 1rem;
+}
+
+.jdc-b .jdc-foot {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 3rem;
+  color: #d5e2ee;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.jdc-b .jdc-foot a {
+  color: #00c2e8;
+  font-weight: 600;
+}
+
+.jdc-b .jdc-foot-links {
+  display: flex;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .jdc-b .jdc-nav,
+  .jdc-b-hero,
+  .jdc-b-story,
+  .jdc-b-services,
+  .jdc-b .jdc-foot {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+
+  .jdc-b .jdc-nav-desk {
+    display: flex;
+  }
+
+  .jdc-b .jdc-nav-fold {
+    display: none;
+  }
+
+  .jdc-b-hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+    align-items: end;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .jdc-b-flight {
+    height: min(74dvh, 680px);
+  }
+
+  .jdc-b-list li {
+    grid-template-columns: minmax(14rem, 0.7fr) 1.3fr;
+    gap: 2rem;
+    align-items: baseline;
+    padding: 1.6rem 0;
+  }
+}
+
+@supports (offset-path: path("M 0 0 L 1 1")) {
+  .jdc-b-craft {
+    opacity: 1;
+    offset-path: path("M48 620 C 70 620, 90 430, 230 360 S 390 210, 500 160 S 590 70, 600 36");
+    offset-rotate: 0deg;
+    offset-distance: 78%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .jdc-b-path {
+    stroke-dashoffset: 1;
+    animation: jdc-b-draw 1.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .jdc-b-craft {
+    offset-distance: 0%;
+    animation: jdc-b-fly 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .jdc-b-steps::before {
+      transform: scaleY(0.15);
+      animation: jdc-b-rail linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 70%;
+    }
+  }
+}
+
+@keyframes jdc-b-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes jdc-b-fly {
+  to {
+    offset-distance: 78%;
+  }
+}
+
+@keyframes jdc-b-rail {
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jdc-b-primary:active,
+  .jdc-b-secondary:active {
+    transform: none;
+  }
+}

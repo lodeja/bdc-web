@@ -1,0 +1,571 @@
+@property --jdc-a-wipe {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 42%;
+}
+
+.jdc-a {
+  --jdc-ink: #0e1624;
+  --jdc-muted: #314056;
+  --jdc-line: rgba(7, 21, 37, 0.42);
+  --jdc-field: #ffffff;
+  --jdc-radius: 0px;
+  --jdc-focus: #071525;
+  --jdc-accent: #00c2e8;
+  --jdc-accent-hover: #33d6f0;
+  --jdc-accent-ink: #071525;
+  --jdc-danger: #9f1239;
+  --jdc-note: #e5f6fb;
+  --jdc-note-ink: #071525;
+  background: #f4f7fb;
+  color: var(--jdc-ink);
+  font-family: var(--font-a-text), sans-serif;
+  color-scheme: light;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.jdc-a h1,
+.jdc-a h2,
+.jdc-a-display {
+  font-family: var(--font-a-display), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+}
+
+.jdc-a .jdc-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 4rem;
+  padding: 0 1.25rem;
+  background: #f4f7fb;
+  box-shadow: inset 0 -1px 0 rgba(7, 21, 37, 0.14);
+}
+
+.jdc-a .jdc-nav-brand {
+  color: #071525;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.jdc-a .jdc-nav-desk {
+  display: none;
+  align-items: center;
+  gap: 1.35rem;
+}
+
+.jdc-a .jdc-nav-desk a {
+  color: #071525;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.jdc-a .jdc-nav-cta,
+.jdc-a-primary,
+.jdc-a .jdc-submit {
+  background: #00c2e8;
+  color: #071525;
+}
+
+.jdc-a .jdc-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.jdc-a .jdc-nav-cta:hover,
+.jdc-a-primary:hover {
+  background: #33d6f0;
+}
+
+.jdc-a .jdc-nav-cta:focus-visible,
+.jdc-a-primary:focus-visible {
+  outline: 2px solid #071525;
+  outline-offset: 3px;
+}
+
+.jdc-a .jdc-nav-fold {
+  position: relative;
+}
+
+.jdc-a .jdc-nav-toggle {
+  min-height: 2.5rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(7, 21, 37, 0.4);
+  background: transparent;
+  color: #071525;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.jdc-a .jdc-nav-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.jdc-a .jdc-nav-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 16rem;
+  padding: 0.4rem;
+  background: #ffffff;
+  border: 1px solid rgba(7, 21, 37, 0.16);
+}
+
+.jdc-a .jdc-nav-panel a {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  color: #071525;
+  text-decoration: none;
+}
+
+.jdc-a-hero {
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+  min-height: calc(100dvh - 4rem);
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 2rem;
+}
+
+.jdc-a h1 {
+  margin: 0;
+  font-size: clamp(2.6rem, 4.5vw, 4.5rem);
+}
+
+.jdc-a-line {
+  display: block;
+}
+
+.jdc-a-sub {
+  max-width: 36ch;
+  margin: 1rem 0 0;
+  color: var(--jdc-muted);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.jdc-a-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.jdc-a-primary,
+.jdc-a-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.jdc-a-primary:active,
+.jdc-a-secondary:active {
+  transform: scale(0.98);
+}
+
+.jdc-a-secondary {
+  color: #071525;
+  box-shadow: inset 0 0 0 1px rgba(7, 21, 37, 0.45);
+}
+
+.jdc-a-secondary:hover {
+  background: rgba(7, 21, 37, 0.04);
+}
+
+.jdc-a-hero-frame,
+.jdc-a-scroll-frame {
+  height: 240px;
+}
+
+.jdc-a-facade {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #d5deea;
+  border: 1px solid rgba(7, 21, 37, 0.22);
+}
+
+.jdc-a-parapet {
+  height: 0.7rem;
+  background: #071525;
+}
+
+.jdc-a-plinth {
+  height: 0.85rem;
+  background: #314056;
+}
+
+.jdc-a-face {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.jdc-a-windows {
+  position: absolute;
+  inset: 0.65rem;
+  display: grid;
+  gap: 0.4rem;
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+.jdc-a-win {
+  position: relative;
+  background: linear-gradient(160deg, #ffffff, #d7e6f2);
+  box-shadow: inset 0 0 0 1px rgba(7, 21, 37, 0.28);
+}
+
+.jdc-a-win::before,
+.jdc-a-win::after {
+  content: "";
+  position: absolute;
+  background: rgba(7, 21, 37, 0.22);
+}
+
+.jdc-a-win::before {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+.jdc-a-win::after {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+
+.jdc-a-win.is-shut {
+  background: #1a3348;
+}
+
+.jdc-a-stain {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(96, 104, 74, 0.72);
+  background-image:
+    radial-gradient(ellipse at 18% 30%, rgba(48, 58, 36, 0.65), transparent 46%),
+    radial-gradient(ellipse at 80% 70%, rgba(92, 78, 48, 0.4), transparent 42%),
+    repeating-linear-gradient(-16deg, transparent 0 9px, rgba(20, 28, 16, 0.2) 9px 10px);
+  clip-path: inset(0 0 0 var(--jdc-a-wipe));
+}
+
+.jdc-a-waterline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--jdc-a-wipe);
+  width: 2px;
+  background: #00c2e8;
+  transform: translateX(-1px);
+}
+
+.jdc-a-waterline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 2px;
+  width: 16px;
+  background: linear-gradient(90deg, transparent, rgba(0, 194, 232, 0.45));
+}
+
+.jdc-a-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+  color: #314056;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.jdc-a-slider-label,
+.jdc-a-caption,
+.jdc-a-note {
+  margin: 0.45rem 0 0;
+  color: var(--jdc-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.jdc-a-slider {
+  width: 100%;
+  margin-top: 0.35rem;
+  accent-color: #0c6478;
+  min-height: 2rem;
+}
+
+.jdc-a #werkwijze,
+.jdc-a #diensten,
+.jdc-a #vergelijking,
+.jdc-a #faq,
+.jdc-a #pioniers,
+.jdc-a #offerte {
+  scroll-margin-top: 4.5rem;
+}
+
+.jdc-a-scroll {
+  --jdc-a-wipe: 42%;
+}
+
+.jdc-a-dossier {
+  --jdc-ink: #f4f7fb;
+  --jdc-muted: #d5e2ee;
+  --jdc-line: rgba(244, 247, 251, 0.28);
+  display: grid;
+  gap: 2rem;
+  background: #071525;
+  color: #f4f7fb;
+  padding: 3.5rem 1.25rem 4rem;
+}
+
+.jdc-a-dossier h2,
+.jdc-a-dossier h3 {
+  color: #f4f7fb;
+}
+
+.jdc-a-dossier .jdc-timeline-index,
+.jdc-a-dossier .jdc-sheet dt,
+.jdc-a-dossier .jdc-spec dt {
+  color: #8ee7f6;
+}
+
+.jdc-a-dossier .jdc-timeline li::before {
+  background: #071525;
+}
+
+.jdc-a-dossier-copy,
+.jdc-a-dossier-side,
+.jdc-a-services {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 0;
+}
+
+.jdc-a-dossier-copy,
+.jdc-a-dossier-side {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jdc-a h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  max-width: 18ch;
+}
+
+.jdc-a-lead {
+  max-width: 46ch;
+  margin: 1rem 0 0;
+  color: var(--jdc-muted);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.jdc-a-bay p {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--jdc-muted);
+  line-height: 1.5;
+}
+
+.jdc-a-services {
+  padding-top: 4.5rem;
+  padding-bottom: 1rem;
+}
+
+.jdc-a-bays {
+  display: grid;
+  margin-top: 2rem;
+  border-top: 1px solid rgba(7, 21, 37, 0.18);
+}
+
+.jdc-a-bay {
+  padding: 1.15rem 0 1.3rem;
+  border-bottom: 1px solid rgba(7, 21, 37, 0.18);
+}
+
+.jdc-a-bay h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.jdc-a-mark {
+  height: 5.25rem;
+  margin-bottom: 0.9rem;
+  border: 1px solid rgba(7, 21, 37, 0.2);
+}
+
+.jdc-a-mark-dak {
+  background:
+    linear-gradient(90deg, rgba(70, 78, 54, 0.5), transparent 58%),
+    repeating-linear-gradient(#8d6a58 0 7px, #6a4a3d 7px 9px);
+}
+
+.jdc-a-mark-gevel {
+  background-color: #d5deea;
+  background-image: linear-gradient(#f7fbfe, #e4eef6);
+  background-size: 18% 36%;
+  background-repeat: repeat;
+  background-position: 8px 10px;
+}
+
+.jdc-a-mark-ramen {
+  background:
+    linear-gradient(#f7fbfe, #e7f1f8) 10% 50% / 36% 72% no-repeat,
+    linear-gradient(#f7fbfe, #e7f1f8) 62% 50% / 28% 72% no-repeat,
+    #b7c9da;
+}
+
+.jdc-a-mark-zonnepanelen {
+  background-color: #16324f;
+  background-image: linear-gradient(#d7f1f8, #9ec9dc);
+  background-size: 16% 26%;
+  background-repeat: repeat;
+  background-position: center;
+}
+
+.jdc-a-mark-industrie {
+  background: repeating-linear-gradient(#d5deea 0 11px, #7f93a8 11px 13px);
+}
+
+.jdc-a-offer {
+  max-width: 44rem;
+  margin-top: 2.25rem;
+  padding-top: 1.5rem;
+}
+
+.jdc-a-offer h2 {
+  margin-bottom: 1rem;
+}
+
+.jdc-a .jdc-foot {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+  color: var(--jdc-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.jdc-a .jdc-foot a {
+  color: #0c6478;
+  font-weight: 600;
+}
+
+.jdc-a .jdc-foot-links {
+  display: flex;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .jdc-a .jdc-nav {
+    padding: 0 2.5rem;
+  }
+
+  .jdc-a .jdc-nav-desk {
+    display: flex;
+  }
+
+  .jdc-a .jdc-nav-fold {
+    display: none;
+  }
+
+  .jdc-a-hero {
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    gap: 3rem;
+    padding: 1.5rem 2.5rem 2rem;
+  }
+
+  .jdc-a-hero-frame {
+    height: min(64dvh, 640px);
+  }
+
+  .jdc-a-scroll-frame {
+    height: 320px;
+  }
+
+  .jdc-a-dossier,
+  .jdc-a-services,
+  .jdc-a .jdc-foot {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+
+  .jdc-a-dossier {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .jdc-a-bays {
+    grid-template-columns: 0.9fr 1.15fr 1fr 1.15fr 1.4fr;
+  }
+
+  .jdc-a-bay {
+    padding: 1.25rem 1rem 1.5rem;
+    border-bottom: 0;
+    border-right: 1px solid rgba(7, 21, 37, 0.18);
+  }
+
+  .jdc-a-bay:last-child {
+    border-right: 0;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .jdc-a-scroll {
+      animation: jdc-a-wipe linear both;
+      animation-timeline: view();
+      animation-range: entry 15% cover 75%;
+    }
+  }
+}
+
+@keyframes jdc-a-wipe {
+  from {
+    --jdc-a-wipe: 10%;
+  }
+  to {
+    --jdc-a-wipe: 90%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jdc-a-primary:active,
+  .jdc-a-secondary:active {
+    transform: none;
+  }
+}
