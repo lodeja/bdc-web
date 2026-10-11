@@ -176,6 +176,11 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const returnEnd = droneLeave + 0.5;
   const turnStart = cleanEnd;
   const fadeEnd = turnStart + 0.32;
+  // Yaw through edge-on, then hand off. A full-size opacity blend of the
+  // back view and the profile is two semi-transparent people. The swap is
+  // a single step while both poses are a sliver, so no frame shows both.
+  const edge = turnStart + 0.08;
+  const swapEnd = edge + 0.02;
   const arrive = fadeEnd + 2.3;
   const hold = arrive + 0.1;
   const stepIn = hold + 0.36;
@@ -233,6 +238,8 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const easeOut = (t: number) => 1 - Math.pow(1 - t, 2.4);
   const walk: { t: number; x: number; y: number; s: number }[] = [
     { t: 0, x: g.operator.x, y: g.operator.y, s: 1 },
+    { t: turnStart, x: g.operator.x, y: g.operator.y, s: 1 },
+    { t: edge, x: g.operator.x - 0.9, y: g.operator.y, s: 0.98 },
     { t: fadeEnd, x: g.operator.x, y: g.operator.y, s: 1 },
   ];
   const walkSamples = 16;
@@ -345,8 +352,8 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     `${pOf(fadeEnd)}%,100%{transform:rotate(0deg)}`,
   ].join("");
   const turnKf = [
-    `0%,${pOf(turnStart)}%{transform:rotate(0deg);animation-timing-function:${EASE_OUT}}`,
-    `${pOf(turnStart + 0.16)}%{transform:rotate(-7deg);animation-timing-function:${EASE_OUT}}`,
+    `0%,${pOf(turnStart)}%{transform:rotate(0deg);animation-timing-function:linear}`,
+    `${pOf(edge)}%{transform:rotate(-5deg);animation-timing-function:linear}`,
     `${pOf(fadeEnd)}%,100%{transform:rotate(0deg)}`,
   ].join("");
   const bobAt: number[] = [];
@@ -365,8 +372,12 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   const mistFull = pOf(RISE_END);
   const mistOut = pOf(cleanEnd);
   const mistGone = pOf(Math.min(STORY_S, cleanEnd + 0.45));
-  const upperKf = `0%,${pOf(turnStart)}%{opacity:1;animation-timing-function:${EASE_OUT}}${pOf(fadeEnd)}%,100%{opacity:0}`;
-  const walkInKf = `0%,${pOf(turnStart)}%{opacity:0;animation-timing-function:${EASE_OUT}}${pOf(fadeEnd)}%,100%{opacity:1}`;
+  // Pivot through the shoulder line so the helmet stays on one axis.
+  const upperPivot = v === "mobile" ? 45 : 33;
+  const restTf = "translateX(-50%) scaleX(1)";
+  const thinTf = "translateX(-50%) scaleX(0.07)";
+  const upperKf = `0%,${pOf(turnStart)}%{opacity:1;transform:${restTf};transform-origin:50% ${upperPivot}%;animation-timing-function:linear}${pOf(edge)}%{opacity:1;transform:${thinTf};transform-origin:50% ${upperPivot}%;animation-timing-function:step-end}${pOf(swapEnd)}%,100%{opacity:0;transform:${thinTf};transform-origin:50% ${upperPivot}%}`;
+  const walkInKf = `0%,${pOf(edge)}%{opacity:0;transform:scaleX(0.07);transform-origin:50% 24%;animation-timing-function:step-end}${pOf(swapEnd)}%{opacity:1;transform:scaleX(0.07);transform-origin:50% 24%;animation-timing-function:linear}${pOf(fadeEnd)}%,100%{opacity:1;transform:scaleX(1);transform-origin:50% 24%}`;
   const bobKf = [
     `0%,${pOf(fadeEnd)}%{transform:translate(0%,0%) rotate(0deg);animation-timing-function:ease-in-out}`,
     ...bobAt.map((t, i) => {
@@ -525,10 +536,10 @@ export const heroMotionCss = `
 .door-panel{position:absolute}
 .op-scale{position:absolute;left:0;top:0;transform-origin:50% 100%}
 .op-fade,.op-turn{position:absolute;inset:0}
-.jdc-op-walk{position:absolute;inset:0;opacity:0}
+.jdc-op-walk{position:absolute;inset:0;opacity:0;transform-origin:50% 24%}
 .jdc-op-bob{position:absolute;inset:0}
 .jdc-op-bob picture,.jdc-op-bob img{width:100%;height:100%;object-fit:fill;display:block}
-.jdc-op-upper{position:absolute;left:50%;top:0;height:72%;transform:translateX(-50%)}
+.jdc-op-upper{position:absolute;left:50%;top:0;height:72%;transform:translateX(-50%);transform-origin:50% 0}
 .stage-mobile .jdc-op-upper{height:53%}
 .jdc-op-upper picture,.jdc-op-upper img{height:100%;width:auto;max-width:none;aspect-ratio:687 / 900;display:block}
 .op-look{height:100%;transform-origin:50% 100%}
