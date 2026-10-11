@@ -38,9 +38,10 @@ function Note({
       x={x}
       y={y}
       fill="#0b1f3a"
-      fontSize="15"
-      fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
-      letterSpacing="0.4"
+      fontSize="13"
+      fontWeight="600"
+      style={{ fontFamily: "var(--font-body), system-ui, sans-serif" }}
+      letterSpacing="1.2"
       textAnchor={anchor}
     >
       {children}
