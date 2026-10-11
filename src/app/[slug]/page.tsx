@@ -80,7 +80,7 @@ export default async function ServicePage({
               ))}
             </div>
           </div>
-          <ServiceFigure id={page.id} />
+          <ServiceFigure id={page.id} caption="Tekening, geen foto van een uitgevoerd werk." />
         </div>
 
         <section className="mt-16 border-t border-jdc-navy/10 pt-12" aria-labelledby="grenzen-heading">

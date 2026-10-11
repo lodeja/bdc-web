@@ -8,7 +8,7 @@ export function Services() {
     <SectionShell
       id="diensten"
       title="Diensten voor gebouw en omgeving"
-      lead="Vijf oppervlakken, één vluchtlijn: dak, gevel, glas, zonnepanelen en industrie. Elke lijn eindigt op een eigen pagina, niet op een algemene belofte."
+      lead="Dak, gevel, ramen en glas, zonnepanelen en industriële oppervlakken. Per dienst leest u hoe de reiniging werkt en wanneer ze niet past."
       tone="fog"
     >
       <div className="relative">
@@ -60,7 +60,8 @@ export function Services() {
       </div>
       <p className="mt-4 max-w-2xl text-sm leading-relaxed text-jdc-slate">
         Elke opdracht start met een korte beoordeling van bereikbaarheid,
-        ondergrond en weersomstandigheden.
+        ondergrond en weersomstandigheden. De lijnen bij de diensten zijn
+        tekeningen, geen foto{"'"}s van uitgevoerde werken.
       </p>
     </SectionShell>
   );

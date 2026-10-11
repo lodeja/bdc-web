@@ -41,7 +41,7 @@ test("service pages are linked from home and expose one heading", async ({ page 
       "href",
       "/#werkwijze",
     );
-    await expect(page.getByText("Illustratie — geen echte projectfoto.")).toBeVisible();
+    await expect(page.getByText("Tekening, geen foto van een uitgevoerd werk.")).toHaveCount(1);
   }
 });
 
