@@ -68,7 +68,7 @@ const desktopGeom: Geom = {
   van: { x: 1.2, y: 80.7, w: 11.19, h: 11.3 },
   door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
   operator: { x: 70.5, y: 11, w: 23.8, h: 150 },
-  drone: { w: 2.19, h: 1.82 },
+  drone: { w: 3.29, h: 2.73 },
   start: { x: 26, y: 76 },
   ground: 92,
   travel: -18,
@@ -82,7 +82,7 @@ const mobileGeom: Geom = {
   van: { x: 0.6, y: 76.97, w: 29.5, h: 11.03 },
   door: { ox: 0.2862, oy: 0.2295, w: 0.0966, h: 0.5164 },
   operator: { x: 34, y: 36, w: 56.6, h: 132 },
-  drone: { w: 5.77, h: 1.78 },
+  drone: { w: 8.66, h: 2.67 },
   start: { x: 18, y: 72 },
   ground: 88,
   travel: -36,
@@ -446,12 +446,13 @@ export const heroMotionCss = `
 .sky{position:absolute;inset:0;background:
   radial-gradient(46% 42% at 8% 0%, rgba(255,236,206,0.9), transparent 58%),
   linear-gradient(180deg, #6d94b0 0%, #9ec0d4 26%, #d7e7f0 58%, #e8eef2 100%)}
-.far-track,.cloud-track{position:absolute;top:0;left:0;display:flex;width:200%;height:42%;animation:jdc-drift 34s linear infinite}
-.cloud-track{height:38%;animation-duration:${CLOUD_S}s;animation-name:jdc-clouds}
+.far-track,.cloud-track{position:absolute;left:0;display:flex;width:200%;animation:jdc-drift 34s linear infinite}
+.far-track{top:72%;height:16%}
+.cloud-track{top:6%;height:26%;animation-duration:${CLOUD_S}s;animation-name:jdc-clouds}
 .far-set,.cloud-set{position:relative;width:50%;height:100%;flex:0 0 50%}
 @keyframes jdc-drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @keyframes jdc-clouds{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.jdc-h-block{position:absolute;bottom:18%;background:#143356;opacity:0.16}
+.jdc-h-block{position:absolute;bottom:0;background:#1a4068;opacity:0.2;border-radius:40% 40% 0 0;filter:blur(2px)}
 .cloud{position:absolute;background:#f7fbfd;border-radius:999px;opacity:0.92}
 .cloud i{position:absolute;background:inherit;border-radius:inherit}
 .ground{position:absolute;left:0;right:0;bottom:0;background:
@@ -466,7 +467,8 @@ export const heroMotionCss = `
 .lane{position:absolute;z-index:3;overflow:hidden}
 .dirt{position:absolute;inset:0;transform:scaleX(1);transform-origin:var(--wipe-origin) center;animation-name:jdc-wipe;animation-duration:var(--wipe-dur);animation-delay:var(--wipe-delay);animation-timing-function:cubic-bezier(0.33, 0, 0.2, 1);animation-fill-mode:both}
 .jdc-grime{position:absolute;left:0;width:100%;display:block;object-fit:fill;pointer-events:none}
-.dirt-edge{position:absolute;top:-4%;bottom:-4%;width:18%;background:linear-gradient(90deg, rgba(255,255,255,0.05), rgba(232,248,252,0.72) 42%, rgba(0,194,232,0.35) 70%, transparent);pointer-events:none}
+.dirt-edge{position:absolute;top:-6%;bottom:-6%;width:14%;opacity:0;pointer-events:none;background:linear-gradient(90deg, rgba(255,255,255,0), rgba(244,248,246,0.2) 35%, rgba(232,240,236,0.78) 58%, rgba(210,220,214,0.18) 80%, transparent);animation:jdc-edge var(--wipe-dur) linear var(--wipe-delay) both}
+@keyframes jdc-edge{0%{opacity:0}10%{opacity:1}86%{opacity:0.8}100%{opacity:0}}
 .dirt[data-origin="right"] .dirt-edge{left:0}
 .dirt[data-origin="left"] .dirt-edge{right:0;transform:scaleX(-1)}
 @keyframes jdc-wipe{from{transform:scaleX(1)}to{transform:scaleX(0)}}
@@ -480,6 +482,7 @@ export const heroMotionCss = `
 .door-move{z-index:7}
 .drone-tilt,.drone-bob,.drone-art{position:absolute;left:0;top:0;width:100%;height:100%}
 .jdc-drone-img,.jdc-drone-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
+.jdc-drone-img img{filter:drop-shadow(0 0 0.8px #071525) drop-shadow(0 0 1.6px rgba(7,21,37,0.95)) drop-shadow(0 0 3px rgba(255,255,255,0.85))}
 .drone-tilt{transform-origin:50% 45%}
 .drone-bob{animation:jdc-bob 1.05s ease-in-out ${bobCount} both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%)}}
@@ -488,14 +491,14 @@ export const heroMotionCss = `
 .rotor-b{right:2%}
 .blade{position:absolute;left:6%;top:46%;width:88%;height:8%;border-radius:999px;background:rgba(255,255,255,0.8);transform-origin:center;animation:jdc-spin 0.18s linear ${spinCount} both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-spin{to{transform:rotate(360deg)}}
-.mist{position:absolute;left:18%;width:64%;top:68%;height:640%}
-.jdc-spray{position:absolute;left:18%;width:64%;top:0;height:70%;background:linear-gradient(180deg, rgba(232,252,255,0.95), rgba(0,194,232,0.5) 30%, rgba(210,244,255,0) 100%);clip-path:polygon(38% 0, 62% 0, 100% 100%, 0 100%)}
-.puff{position:absolute;border-radius:50%;background:radial-gradient(circle, rgba(214,246,255,0.9), rgba(214,246,255,0) 70%)}
+.mist{position:absolute;left:6%;width:88%;top:58%;height:780%;filter:blur(0.3px)}
+.jdc-spray{position:absolute;left:24%;width:52%;top:0;height:82%;background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(214,236,238,0.82) 24%, rgba(176,214,208,0.42) 58%, rgba(214,236,232,0) 100%);clip-path:polygon(40% 0, 60% 0, 100% 100%, 0 100%)}
+.puff{position:absolute;border-radius:50%;background:radial-gradient(circle, rgba(230,248,248,0.95), rgba(214,236,232,0) 68%)}
 .van-art{position:absolute;left:0;top:0}
 .van-shadow{position:absolute;left:4%;right:6%;bottom:-3%;height:12%;border-radius:50%;background:rgba(7,21,37,0.34)}
 .van-body{position:absolute;inset:0}
 .jdc-van-body,.jdc-van-body img,.jdc-door-img,.jdc-door-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
-.van-logo{position:absolute;left:66.5%;top:30%;width:28%;height:34%;object-fit:contain;object-position:center;opacity:0.92;pointer-events:none;z-index:2;filter:saturate(0.82) contrast(0.96)}
+.van-logo{position:absolute;left:42%;top:30%;width:27%;height:34%;object-fit:contain;object-position:center;opacity:0.92;pointer-events:none;z-index:2;filter:saturate(0.82) contrast(0.96)}
 .wheel{position:absolute;z-index:3}
 .wheel-front{left:10.17%;top:69.67%;width:12.41%;height:29.51%}
 .wheel-rear{left:73.1%;top:69.67%;width:12.41%;height:29.51%}
@@ -509,8 +512,8 @@ export const heroMotionCss = `
 .jdc-op-bob{position:absolute;inset:0}
 .jdc-op-bob picture,.jdc-op-bob img{width:100%;height:100%;object-fit:fill;display:block}
 .jdc-op-upper{position:absolute;left:50%;top:0;height:72%;transform:translateX(-50%)}
-.stage-mobile .jdc-op-upper{height:65%}
-.jdc-op-upper picture,.jdc-op-upper img{height:100%;width:auto;max-width:none;aspect-ratio:682 / 900;display:block}
+.stage-mobile .jdc-op-upper{height:53%}
+.jdc-op-upper picture,.jdc-op-upper img{height:100%;width:auto;max-width:none;aspect-ratio:687 / 900;display:block}
 .op-look{height:100%;transform-origin:50% 100%}
 .leg{position:absolute;left:46%;top:72%;width:8%;height:22%;transform-origin:50% 0%;opacity:0}
 .op-shadow{position:absolute;left:18%;right:18%;bottom:-1%;height:3.2%;border-radius:50%;background:rgba(7,21,37,0.28)}
@@ -539,7 +542,7 @@ ${mobileBuilt.css}
     animation-iteration-count:1 !important;
     transform:none !important;
   }
-  .jdc-dirt .dirt-edge{opacity:0}
+  .jdc-dirt .dirt-edge{opacity:0;animation:none !important}
 }
 @keyframes jdc-soft-clean{from{opacity:1}to{opacity:0}}
 `;

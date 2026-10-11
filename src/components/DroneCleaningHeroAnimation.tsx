@@ -168,7 +168,7 @@ function LanePane({
         }}
       >
         <img className="jdc-grime" src={grime} alt="" draggable={false} loading={loading} style={{ height: `${height}%`, top: `${top}%` }} />
-        <span className="dirt-edge" />
+        <span className="dirt-edge jdc-anim" />
       </div>
     </div>
   );
@@ -189,9 +189,9 @@ function Skyline() {
 function CloudSet() {
   return (
     <div className="cloud-set" aria-hidden="true">
-      <Puff left="8%" top="28%" width="16%" height="28%" />
-      <Puff left="38%" top="14%" width="20%" height="34%" />
-      <Puff left="68%" top="32%" width="14%" height="24%" />
+      <Puff left="8%" top="22%" width="18%" height="46%" />
+      <Puff left="40%" top="12%" width="22%" height="52%" />
+      <Puff left="70%" top="28%" width="16%" height="40%" />
     </div>
   );
 }
@@ -199,8 +199,8 @@ function CloudSet() {
 function Puff({ left, top, width, height }: { left: string; top: string; width: string; height: string }) {
   return (
     <span className="cloud" style={{ left, top, width, height }}>
-      <i style={{ left: "8%", top: "-40%", width: "46%", height: "80%" }} />
-      <i style={{ left: "38%", top: "-62%", width: "40%", height: "90%" }} />
+      <i style={{ left: "8%", top: "18%", width: "48%", height: "72%" }} />
+      <i style={{ left: "36%", top: "2%", width: "42%", height: "64%" }} />
     </span>
   );
 }
