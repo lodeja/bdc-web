@@ -1,6 +1,6 @@
 import { DroneCleaningHeroAnimation } from "./DroneCleaningHeroAnimation";
 
-/** Server-rendered illustration. Motion is CSS, so it does not wait on hydration. */
+/** Server-rendered band. Motion is CSS, so the opening frame does not wait on hydration. */
 export function HeroScene() {
   return <DroneCleaningHeroAnimation />;
 }

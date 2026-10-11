@@ -60,7 +60,7 @@ test("honeypot submission is not treated as sent", async ({ page }) => {
 test("reduced motion keeps the hero crew still and visible", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  const cloud = page.locator('[data-hero="cloud"]:visible');
+  const cloud = page.locator('[data-hero="clouds"]:visible');
   await expect(cloud).toBeVisible();
   const before = await cloud.boundingBox();
   await page.waitForTimeout(700);

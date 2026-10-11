@@ -63,5 +63,10 @@ export default defineConfig({
         hasTouch: true,
       },
     },
+    {
+      name: "hero-iphone",
+      testMatch: /hero-animation/,
+      use: { ...devices["iPhone 14"] },
+    },
   ],
 });

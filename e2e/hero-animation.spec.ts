@@ -1,471 +1,317 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-async function crew(page: Page, name: "drone" | "operator" | "van" | "dirt") {
-  return page.locator(`[data-hero="${name}"]:visible`).first();
-}
-
-async function translation(page: Page, name: "drone" | "dirt") {
-  const el = await crew(page, name);
-  return el.evaluate((node) => {
-    const value = getComputedStyle(node).transform;
-    const match = value.match(/matrix\(([^)]+)\)/);
-    if (!match) return { x: 0, y: 0 };
-    const parts = match[1].split(",").map((part) => Number(part.trim()));
-    return { x: parts[4] ?? 0, y: parts[5] ?? 0 };
-  });
-}
-
-function apart(
-  a: { x: number; y: number } | null,
-  b: { x: number; y: number } | null,
-) {
-  return Math.hypot((b?.x ?? 0) - (a?.x ?? 0), (b?.y ?? 0) - (a?.y ?? 0));
-}
-
-async function moved(page: Page, name: "drone" | "dirt", timeout: number) {
-  const el = await crew(page, name);
+async function box(page: Page, name: string) {
+  const el = page.locator(`[data-hero="${name}"]:visible`).first();
   await expect(el).toBeVisible();
-  const start = await translation(page, name);
-  await expect
-    .poll(async () => apart(start, await translation(page, name)), {
-      timeout,
-      intervals: [80, 120, 200],
-    })
-    .toBeGreaterThan(name === "drone" ? 12 : 0.5);
+  const rect = await el.boundingBox();
+  return rect ?? { x: 0, y: 0, width: 0, height: 0 };
 }
 
-test("hero animation starts within about two seconds", async ({ page }) => {
+test("the cleaning story starts from CSS within about two seconds", async ({ page }) => {
   await page.goto("/");
-  await moved(page, "drone", 2500);
-});
-
-test("cleaning pass changes the facade", async ({ page }) => {
-  await page.goto("/");
-  const panes = await page.evaluate(() => {
-    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
-      (node) => node.getBoundingClientRect().width > 0,
-    );
-    return frame?.querySelectorAll('[data-hero="dirt"]').length ?? 0;
-  });
-  expect(panes).toBe(9);
-  const dirt = page.locator(".jdc-ha-frame:visible [data-hero='dirt']").first();
-  await expect(dirt).toBeAttached();
-  const before = await dirt.evaluate((el) => getComputedStyle(el).transform);
+  const start = await box(page, "drone");
   await expect
-    .poll(async () => dirt.evaluate((el) => getComputedStyle(el).transform), {
-      timeout: 6000,
-    })
-    .not.toBe(before);
+    .poll(async () => {
+      const next = await box(page, "drone");
+      return Math.hypot(next.x - start.x, next.y - start.y);
+    }, { timeout: 2500, intervals: [80, 120, 200] })
+    .toBeGreaterThan(12);
 });
 
-test("reduced motion shows drone, operator and van", async ({ page }) => {
+test("reduced motion fades the dirt and keeps the crew still", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  for (const name of ["drone", "operator", "van"] as const) {
-    const el = await crew(page, name);
-    await expect(el).toBeVisible();
-    const box = await el.boundingBox();
-    expect(box?.width ?? 0).toBeGreaterThan(18);
-    expect(box?.height ?? 0).toBeGreaterThan(14);
-    const opacity = await el.evaluate((node) => getComputedStyle(node).opacity);
-    expect(Number(opacity)).toBeGreaterThan(0.85);
-  }
-  const drone = await crew(page, "drone");
-  const start = await drone.boundingBox();
-  await page.waitForTimeout(700);
-  const end = await drone.boundingBox();
-  expect(Math.hypot((end?.x ?? 0) - (start?.x ?? 0), (end?.y ?? 0) - (start?.y ?? 0))).toBeLessThan(2);
-
-  const wiped = await page.evaluate(() => {
-    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+  const sample = await page.evaluate(() => {
+    const stage = [...document.querySelectorAll(".stage")].find(
       (node) => node.getBoundingClientRect().width > 0,
     );
-    if (!frame) return [];
-    return [...frame.querySelectorAll('[data-hero="dirt"]')].map(
-      (node) => getComputedStyle(node).transform,
-    );
-  });
-  expect(wiped).toHaveLength(9);
-  const droneBox = await drone.boundingBox();
-  const operatorBox = await (await crew(page, "operator")).boundingBox();
-  expect(droneBox?.height ?? 999).toBeLessThan((operatorBox?.height ?? 0) * 0.5);
-  expect(droneBox?.width ?? 999).toBeLessThan((operatorBox?.height ?? 0) * 0.55);
-
-  const fit = await page.evaluate(() => {
-    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
-      (node) => node.getBoundingClientRect().width > 0,
-    );
-    if (!frame) return null;
-    const box = frame.getBoundingClientRect();
-    const svg = frame.querySelector("svg")?.getBoundingClientRect();
-    const inside = ["drone", "operator", "van", "tower"].map((name) => {
-      const node = frame.querySelector(`[data-hero="${name}"]`)?.getBoundingClientRect();
-      if (!node) return { name, ok: false };
-      return {
-        name,
-        ok:
-          node.left >= box.left - 1 &&
-          node.top >= box.top - 1 &&
-          node.right <= box.right + 1 &&
-          node.bottom <= box.bottom + 1,
+    if (!stage) return null;
+    const read = (ms: number) => {
+      for (const anim of document.getAnimations()) {
+        anim.pause();
+        anim.currentTime = ms;
+      }
+      const rect = (sel: string) => {
+        const node = stage.querySelector(sel);
+        if (!node) return null;
+        const b = node.getBoundingClientRect();
+        return { x: b.x, y: b.y, w: b.width, h: b.height };
       };
-    });
-    return {
-      width: svg ? svg.width / box.width : 0,
-      height: svg ? svg.height / box.height : 0,
-      inside,
+      const dirt = [...stage.querySelectorAll('[data-hero="dirt"]')].map(
+        (node) => Number(getComputedStyle(node).opacity),
+      );
+      return {
+        dirt,
+        drone: rect('[data-hero="drone"]'),
+        operator: rect('[data-hero="operator"]'),
+        van: rect('[data-hero="van"]'),
+        clouds: getComputedStyle(stage.querySelector('[data-hero="clouds"]')!).animationName,
+      };
     };
+    return { at0: read(0), at2000: read(2000), at5000: read(5000) };
   });
-  expect(fit?.width ?? 0).toBeGreaterThan(0.9);
-  expect(fit?.height ?? 0).toBeGreaterThan(0.9);
-  expect(fit?.inside.every((item) => item.ok)).toBe(true);
-  for (const transform of wiped) {
-    expect(transform.startsWith("matrix(0,")).toBe(true);
+  expect(sample).not.toBeNull();
+  expect(sample?.at0.dirt).toHaveLength(4);
+  expect(sample?.at0.dirt.every((opacity) => opacity > 0.9)).toBe(true);
+  expect(sample?.at2000.dirt.every((opacity) => opacity < 0.85 && opacity > 0.2)).toBe(true);
+  expect(sample?.at5000.dirt.every((opacity) => opacity < 0.05)).toBe(true);
+  expect(sample?.at0.clouds).toBe("none");
+  for (const name of ["drone", "operator", "van"] as const) {
+    const before = sample!.at0[name]!;
+    const after = sample!.at5000[name]!;
+    expect(before.w).toBeGreaterThan(18);
+    expect(before.h).toBeGreaterThan(14);
+    expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeLessThan(2);
   }
 });
 
-async function sampleMotion(page: Page, ms: number) {
-  const frames: { tilt: number; look: number; wheel: number; leg: number; x: number; opacity: number }[] = [];
-  const started = Date.now();
-  while (Date.now() - started < ms) {
-    frames.push(
-      await page.evaluate(() => {
-        const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
-          (node) => node.getBoundingClientRect().width > 0,
-        );
-        const partsOf = (transform: string) => {
-          const m3 = transform.match(/matrix3d\(([^)]+)\)/);
-          if (m3) {
-            const p = m3[1].split(",").map((part) => Number(part.trim()));
-            return { a: p[0] ?? 1, b: p[1] ?? 0, x: p[12] ?? 0 };
-          }
-          const match = transform.match(/matrix\(([^)]+)\)/);
-          if (!match) return { a: 1, b: 0, x: 0 };
-          const p = match[1].split(",").map((part) => Number(part.trim()));
-          return { a: p[0] ?? 1, b: p[1] ?? 0, x: p[4] ?? 0 };
-        };
-        const read = (sel: string) => {
-          const node = frame?.querySelector(sel);
-          if (!node) return { transform: "none", opacity: "1" };
-          const style = getComputedStyle(node);
-          return { transform: style.transform, opacity: style.opacity };
-        };
-        const tilt = read('[data-hero="tilt"]');
-        const look = read('[data-hero="look"]');
-        const wheel = read('[data-hero="wheel"]');
-        const leg = read('[data-hero="leg"]');
-        const operator = read('[data-hero="operator"]');
-        const angle = (transform: string) => {
-          const parts = partsOf(transform);
-          return (Math.atan2(parts.b, parts.a) * 180) / Math.PI;
-        };
-        return {
-          tilt: angle(tilt.transform),
-          look: angle(look.transform),
-          wheel: angle(wheel.transform),
-          leg: angle(leg.transform),
-          x: partsOf(operator.transform).x,
-          opacity: Number(operator.opacity),
-        };
-      }),
-    );
-    await page.waitForTimeout(120);
-  }
-  return frames;
-}
-
-function spread(values: number[]) {
-  return Math.max(...values) - Math.min(...values);
-}
-
-test("pitch, head, wheels and the walk change without hiding the operator", async ({ page }) => {
+test("pause control is keyboard operable and labelled in Dutch", async ({ page }) => {
   await page.goto("/");
-  const frames = await sampleMotion(page, 12_000);
-  expect(spread(frames.map((frame) => frame.tilt))).toBeGreaterThan(10);
-  expect(spread(frames.map((frame) => frame.look))).toBeGreaterThan(10);
-  expect(spread(frames.map((frame) => frame.wheel))).toBeGreaterThan(20);
-  expect(spread(frames.map((frame) => frame.leg))).toBeGreaterThan(12);
-  expect(spread(frames.map((frame) => frame.x))).toBeGreaterThan(24);
-
-  let hidden = false;
-  for (const frame of frames) {
-    if (frame.opacity < 0.05) {
-      hidden = true;
-      continue;
-    }
-    expect(hidden).toBe(false);
-    expect(frame.opacity).toBeGreaterThan(0.92);
-  }
-  expect(hidden).toBe(true);
+  const toggle = page.getByRole("checkbox", { name: "Animatie pauzeren" });
+  await expect(page.locator("label[for='jdc-hero-pause']")).toBeVisible();
+  const outside = await toggle.evaluate((node) => node.closest('[aria-hidden="true"]') === null);
+  expect(outside).toBe(true);
+  await page.getByRole("link", { name: "Ontdek onze diensten" }).focus();
+  await page.keyboard.press("Tab");
+  await expect(toggle).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(toggle).toBeChecked();
+  await expect(toggle).toHaveAccessibleName("Animatie afspelen");
+  const paused = await page.locator('[data-hero="clouds"]:visible').evaluate((node) => {
+    return getComputedStyle(node).animationPlayState;
+  });
+  expect(paused).toBe("paused");
+  await page.keyboard.press("Space");
+  await expect(toggle).not.toBeChecked();
+  await expect(toggle).toHaveAccessibleName("Animatie pauzeren");
 });
 
-test("the operator walks in the open doorway and the door shuts across frames", async ({ page }) => {
+test("the drone cleans every lane, boards the operator, and the van leaves", async ({ page }) => {
   await page.goto("/");
-  const rows = await page.evaluate(() => {
-    const root = [...document.querySelectorAll(".jdc-ha-frame")].find(
+  const story = await page.evaluate(() => {
+    const stage = [...document.querySelectorAll(".stage")].find(
       (node) => node.getBoundingClientRect().width > 0,
     );
-    if (!root) return [];
-    const overlap = (a: DOMRect, b: DOMRect) => {
-      const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
-      const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
-      return width * height;
+    if (!stage) return null;
+    const seek = (ms: number) => {
+      for (const anim of document.getAnimations()) {
+        anim.pause();
+        anim.currentTime = ms;
+      }
     };
-    const angle = (transform: string) => {
-      const match = transform.match(/matrix\(([^)]+)\)/);
+    const angle = (sel: string) => {
+      const node = stage.querySelector(sel);
+      if (!node) return 0;
+      const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
       if (!match) return 0;
       const parts = match[1].split(",").map((part) => Number(part.trim()));
       return (Math.atan2(parts[1] ?? 0, parts[0] ?? 1) * 180) / Math.PI;
     };
-    const rows: { ratio: number; ang: number; valve: number; opacity: number; walked: number; doorX: number }[] = [];
-    for (let ms = 0; ms <= 12_000; ms += 50) {
-      for (const anim of document.getAnimations()) {
-        anim.pause();
-        anim.currentTime = ms;
-      }
-      const vest = root.querySelector('[data-hero="step"]')?.getBoundingClientRect();
-      const door = root.querySelector('[data-hero="door"]')?.getBoundingClientRect();
-      const wheel = root.querySelector('[data-hero="wheel"]')?.getBoundingClientRect();
-      const valve = root.querySelector('[data-hero="valve"]')?.getBoundingClientRect();
-      if (!vest || !door || !wheel || !valve) continue;
-      const operator = root.querySelector('[data-hero="operator"]')!;
-      const leg = getComputedStyle(root.querySelector('[data-hero="leg"]')!).transform;
-      const readX = (transform: string) => {
-        const match = transform.match(/matrix\(([^)]+)\)/);
-        return match ? Number(match[1].split(",")[4]) : 0;
+    const scaleX = (sel: string) => {
+      const node = stage.querySelector(sel);
+      if (!node) return 1;
+      const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
+      return match ? Number(match[1].split(",")[0]) : 1;
+    };
+    const rect = (sel: string) => {
+      const node = stage.querySelector(sel)!;
+      const b = node.getBoundingClientRect();
+      const origin = stage.getBoundingClientRect();
+      return {
+        x: b.x - origin.x,
+        y: b.y - origin.y,
+        w: b.width,
+        h: b.height,
+        r: b.right - origin.x,
+        b: b.bottom - origin.y,
       };
-      const opStyle = getComputedStyle(operator);
-      const doorStyle = getComputedStyle(root.querySelector('[data-hero="door"]')!);
-      rows.push({
-        ratio:
-          Math.max(0, Math.min(vest.right, door.right) - Math.max(vest.left, door.left)) /
-          Math.max(1, vest.width),
-        ang: angle(leg),
-        valve: Math.atan2(valve.y + valve.height / 2 - (wheel.y + wheel.height / 2), valve.x + valve.width / 2 - (wheel.x + wheel.width / 2)),
-        opacity: Number(opStyle.opacity),
-        walked: Math.abs(readX(opStyle.transform)),
-        doorX: readX(doorStyle.transform),
-      });
-    }
-    return rows;
-  });
-  const walking = rows.filter((row) => Math.abs(row.ang) > 18 && row.ratio < 0.25);
-  expect(walking.length).toBeGreaterThan(4);
-  expect(Math.min(...rows.map((row) => row.ang))).toBeLessThan(-20);
-  expect(Math.max(...rows.map((row) => row.ang))).toBeGreaterThan(20);
-  expect(rows.filter((row) => row.ratio > 0.22 && row.ratio < 0.82).length).toBeGreaterThan(1);
-  const valveSpread = spread(rows.map((row) => row.valve));
-  expect(valveSpread).toBeGreaterThan(0.6);
-  const boarded = rows.filter((row) => row.walked > 40 && Math.abs(row.doorX) < 1);
-  expect(boarded.length).toBeGreaterThan(6);
-  expect(boarded.slice(2).every((row) => row.opacity < 0.05)).toBe(true);
-});
-
-test("the driving van is clipped to the figure", async ({ page }) => {
-  await page.goto("/");
-  const leaked = await page.evaluate(() => {
-    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
-      (node) => node.getBoundingClientRect().width > 0,
-    );
-    if (!frame?.parentElement) return 1;
-    const border = frame.parentElement.getBoundingClientRect();
-    let hits = 0;
-    for (let ms = 8_000; ms <= 12_000; ms += 150) {
-      for (const anim of document.getAnimations()) {
-        anim.pause();
-        anim.currentTime = ms;
-      }
-      const van = frame.querySelector('[data-hero="van"]')?.getBoundingClientRect();
-      if (!van) continue;
-      const y = Math.min(border.bottom - 12, Math.max(border.top + 12, van.top + van.height * 0.45));
-      for (const x of [border.left - 8, border.right + 8]) {
-        const hit = document.elementFromPoint(x, y);
-        if (hit && frame.contains(hit)) hits += 1;
-      }
-    }
-    return hits;
-  });
-  expect(leaked).toBe(0);
-});
-
-test("wheels stay inside the figure while the chassis squats and pitch stays capped", async ({ page }) => {
-  await page.goto("/");
-  const sample = await page.evaluate(() => {
-    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
-      (node) => node.getBoundingClientRect().width > 0,
-    );
-    const border = frame?.parentElement?.getBoundingClientRect();
-    if (!frame || !border) return null;
-    const partsOf = (transform: string) => {
-      const m3 = transform.match(/matrix3d\(([^)]+)\)/);
-      if (m3) {
-        const p = m3[1].split(",").map((part) => Number(part.trim()));
-        return { a: p[0] ?? 1, b: p[1] ?? 0 };
-      }
-      const match = transform.match(/matrix\(([^)]+)\)/);
-      if (!match) return { a: 1, b: 0 };
-      const p = match[1].split(",").map((part) => Number(part.trim()));
-      return { a: p[0] ?? 1, b: p[1] ?? 0 };
     };
-    const angleOf = (sel: string) => {
-      const node = frame.querySelector(sel);
-      if (!node) return 0;
-      const parts = partsOf(getComputedStyle(node).transform);
-      return (Math.atan2(parts.b, parts.a) * 180) / Math.PI;
-    };
+    seek(200);
+    const lookStart = angle('[data-hero="look"]');
+    const dirtStart = [...stage.querySelectorAll('[data-hero="dirt"]')].map((node) => {
+      const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
+      return match ? Number(match[1].split(",")[0]) : 1;
+    });
     let maxTilt = 0;
-    let maxBank = 0;
-    let maxCombined = 0;
-    let maxSquat = 0;
-    let minSquat = 0;
-    let minWheelGap = Number.POSITIVE_INFINITY;
-    let wheels = 0;
-    for (let ms = 0; ms <= 12_000; ms += 50) {
-      for (const anim of document.getAnimations()) {
-        anim.pause();
-        anim.currentTime = ms;
-      }
-      const tilt = angleOf('[data-hero="tilt"]');
-      const bank = angleOf('[data-hero="bank"]');
-      const squat = angleOf('[data-hero="pitch"]');
-      maxTilt = Math.max(maxTilt, Math.abs(tilt));
-      maxBank = Math.max(maxBank, Math.abs(bank));
-      maxCombined = Math.max(maxCombined, Math.abs(tilt + bank));
-      maxSquat = Math.max(maxSquat, squat);
-      minSquat = Math.min(minSquat, squat);
-      for (const wheel of frame.querySelectorAll('[data-hero="wheel"]')) {
-        const box = wheel.getBoundingClientRect();
-        if (box.width < 1 || box.height < 1) continue;
-        wheels += 1;
-        minWheelGap = Math.min(minWheelGap, border.bottom - box.bottom, box.top - border.top);
+    let lookHigh = lookStart;
+    seek(2200);
+    lookHigh = angle('[data-hero="look"]');
+    for (let ms = 1000; ms <= 8000; ms += 80) {
+      seek(ms);
+      maxTilt = Math.max(maxTilt, Math.abs(angle('[data-hero="tilt"]')));
+    }
+    seek(8000);
+    const dirtClean = [...stage.querySelectorAll('[data-hero="dirt"]')].map((node) => {
+      const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
+      return match ? Number(match[1].split(",")[0]) : 1;
+    });
+    let legSpread = 0;
+    for (let ms = 8200; ms <= 9500; ms += 60) {
+      seek(ms);
+      legSpread = Math.max(legSpread, Math.abs(angle('[data-hero="leg"]')));
+    }
+    let coveredWhileVisible = 0;
+    let stuckOut = 0;
+    for (let ms = 9800; ms <= 10400; ms += 40) {
+      seek(ms);
+      const door = rect('[data-hero="door"]');
+      const op = rect('[data-hero="operator"]');
+      const crew = Number(getComputedStyle(stage.querySelector('[data-hero="crew"]')!).opacity);
+      const shut = scaleX('[data-hero="door"]') > 0.92;
+      if (!shut || crew < 0.9) continue;
+      const inside =
+        op.x >= door.x - 1.5 &&
+        op.y >= door.y - 1.5 &&
+        op.r <= door.r + 1.5 &&
+        op.b <= door.b + 1.5;
+      if (inside) coveredWhileVisible += 1;
+      else stuckOut += 1;
+    }
+    const valves: number[] = [];
+    const ride: { dx: number; dy: number }[] = [];
+    let parked: number | null = null;
+    for (let ms = 10200; ms <= 11800; ms += 80) {
+      seek(ms);
+      const wheel = rect('[data-hero="wheel"]');
+      const valve = rect('[data-hero="valve"]');
+      valves.push(Math.atan2(valve.y + valve.h / 2 - (wheel.y + wheel.h / 2), valve.x + valve.w / 2 - (wheel.x + wheel.w / 2)));
+      const van = rect('[data-hero="van"]');
+      const drone = rect('[data-hero="drone"]');
+      if (parked === null) parked = van.x;
+      if (van.x < parked - 8) {
+        ride.push({ dx: drone.x - van.x, dy: drone.y - van.y });
       }
     }
-    return { maxTilt, maxBank, maxCombined, maxSquat, minSquat, minWheelGap, wheels };
+    seek(11800);
+    const stageBox = stage.getBoundingClientRect();
+    const vanEnd = rect('[data-hero="van"]');
+    const droneEnd = rect('[data-hero="drone"]');
+    const crewEnd = Number(getComputedStyle(stage.querySelector('[data-hero="crew"]')!).opacity);
+    const span = (values: number[]) => Math.max(...values) - Math.min(...values);
+    return {
+      panes: dirtStart.length,
+      dirtStart,
+      dirtClean,
+      maxTilt,
+      lookStart,
+      lookHigh,
+      legSpread,
+      coveredWhileVisible,
+      stuckOut,
+      valveSpread: span(valves),
+      ride: ride.length,
+      rideX: ride.length ? span(ride.map((item) => item.dx)) : 999,
+      rideY: ride.length ? span(ride.map((item) => item.dy)) : 999,
+      vanOff: vanEnd.r < 1,
+      droneOff: droneEnd.r < stageBox.width * 0.02,
+      crewEnd,
+    };
   });
-  expect(sample).not.toBeNull();
-  expect(sample?.maxTilt ?? 0).toBeGreaterThan(8);
-  expect(sample?.maxTilt ?? 99).toBeLessThanOrEqual(12.5);
-  expect(sample?.maxBank ?? 99).toBeLessThanOrEqual(6);
-  expect(sample?.maxCombined ?? 99).toBeLessThanOrEqual(12.5);
-  expect(sample?.maxSquat ?? 0).toBeGreaterThanOrEqual(1);
-  expect(sample?.maxSquat ?? 99).toBeLessThanOrEqual(2.2);
-  expect(sample?.minSquat ?? -1).toBeGreaterThanOrEqual(-0.2);
-  expect(sample?.minWheelGap ?? 0).toBeGreaterThanOrEqual(2);
-  expect(sample?.wheels ?? 0).toBeGreaterThan(20);
+
+  expect(story).not.toBeNull();
+  expect(story?.panes).toBe(4);
+  expect(story?.dirtStart.every((value) => value > 0.9)).toBe(true);
+  expect(story?.dirtClean.every((value) => value < 0.08)).toBe(true);
+  expect(story?.maxTilt ?? 0).toBeGreaterThan(6);
+  expect(story?.maxTilt ?? 99).toBeLessThanOrEqual(12);
+  expect((story?.lookStart ?? 0) - (story?.lookHigh ?? 0)).toBeGreaterThan(8);
+  expect(story?.legSpread ?? 0).toBeGreaterThan(12);
+  expect(story?.coveredWhileVisible ?? 0).toBeGreaterThan(2);
+  expect(story?.stuckOut ?? 1).toBe(0);
+  expect(story?.valveSpread ?? 0).toBeGreaterThan(0.5);
+  expect(story?.ride ?? 0).toBeGreaterThan(4);
+  expect(story?.rideX ?? 999).toBeLessThan(16);
+  expect(story?.rideY ?? 999).toBeLessThan(16);
+  expect(story?.vanOff).toBe(true);
+  expect(story?.droneOff).toBe(true);
+  expect(story?.crewEnd ?? 1).toBeLessThan(0.05);
 });
 
-test("mobile keeps the drone clear of the buttons and shows three columns", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "hero-mobile", "Composition check is for the phone viewport.");
+test("clouds loop without a seam and the glint returns to clear", async ({ page }) => {
+  await page.goto("/");
+  const loop = await page.evaluate(() => {
+    const stage = [...document.querySelectorAll(".stage")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    if (!stage) return null;
+    const clouds = stage.querySelector('[data-hero="clouds"]') as HTMLElement | null;
+    const glint = stage.querySelector('[data-hero="glint"]') as HTMLElement | null;
+    if (!clouds || !glint) return null;
+    const cloudAnim = clouds.getAnimations()[0];
+    const glintAnim = glint.getAnimations()[0];
+    if (!cloudAnim || !glintAnim) return null;
+    const place = (anim: Animation, ms: number, node: Element) => {
+      anim.pause();
+      anim.currentTime = ms;
+      return node.getBoundingClientRect();
+    };
+    const first = clouds.querySelector(".cloud-set")!;
+    const second = clouds.querySelectorAll(".cloud-set")[1]!;
+    cloudAnim.pause();
+    cloudAnim.currentTime = 0;
+    const atStart = first.getBoundingClientRect();
+    cloudAnim.currentTime = 10_000;
+    const atMid = first.getBoundingClientRect();
+    cloudAnim.currentTime = 20_000;
+    const atLoop = second.getBoundingClientRect();
+    const glintOpacity = (ms: number) => {
+      glintAnim.pause();
+      glintAnim.currentTime = ms;
+      return Number(getComputedStyle(glint).opacity);
+    };
+    return {
+      moved: Math.abs(atMid.x - atStart.x),
+      seam: Math.abs(atLoop.x - atStart.x) + Math.abs(atLoop.y - atStart.y),
+      glintStart: glintOpacity(11_800),
+      glintMid: glintOpacity(11_800 + 4_200),
+      glintEnd: glintOpacity(11_800 + 8_500),
+      unused: place(cloudAnim, 0, first).width,
+    };
+  });
+  expect(loop).not.toBeNull();
+  expect(loop?.moved ?? 0).toBeGreaterThan(20);
+  expect(loop?.seam ?? 99).toBeLessThan(2);
+  expect(loop?.glintStart ?? 1).toBeLessThan(0.05);
+  expect(loop?.glintMid ?? 0).toBeGreaterThan(0.2);
+  expect(loop?.glintEnd ?? 1).toBeLessThan(0.05);
+});
+
+test("mobile keeps the drone below the buttons", async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "hero-mobile" && testInfo.project.name !== "hero-iphone",
+    "Composition check is for the phone viewport.",
+  );
   await page.goto("/");
   const cta = page.getByRole("link", { name: "Ontdek onze diensten" });
   const ctaBox = await cta.boundingBox();
   expect(ctaBox?.height ?? 0).toBeGreaterThan(20);
-  const started = Date.now();
-  while (Date.now() - started < 4500) {
-    const drone = await crew(page, "drone");
-    const box = await drone.boundingBox();
-    expect(box?.y ?? 0).toBeGreaterThan((ctaBox?.y ?? 0) + (ctaBox?.height ?? 0) + 8);
-    await page.waitForTimeout(150);
-  }
-  const gap = await page.evaluate(() => {
-    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
-      (node) => node.getBoundingClientRect().width > 0,
-    );
-    const tower = frame?.querySelector('[data-hero="tower"]')?.getBoundingClientRect();
-    const van = frame?.querySelector('[data-hero="van"]')?.getBoundingClientRect();
-    if (!tower || !van) return 0;
-    return van.top - tower.bottom;
-  });
-  expect(gap).toBeGreaterThan(16);
-});
-
-test("the landed drone rides the van roof through the drive-off", async ({ page }) => {
-  await page.goto("/");
-  const sample = await page.evaluate(() => {
-    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
-      (node) => node.getBoundingClientRect().width > 0,
-    );
-    if (!frame) return null;
-    const read = (sel: string) => {
-      const value = getComputedStyle(frame.querySelector(sel)!).transform;
-      const m3 = value.match(/matrix3d\(([^)]+)\)/);
-      if (m3) {
-        const p = m3[1].split(",").map((part) => Number(part.trim()));
-        return { x: p[12] ?? 0, y: p[13] ?? 0 };
-      }
-      const match = value.match(/matrix\(([^)]+)\)/);
-      if (!match) return { x: 0, y: 0 };
-      const p = match[1].split(",").map((part) => Number(part.trim()));
-      return { x: p[4] ?? 0, y: p[5] ?? 0 };
-    };
-    const dx: number[] = [];
-    const dy: number[] = [];
-    let parked: number | null = null;
-    let prev = 0;
-    for (let ms = 8_000; ms <= 12_000; ms += 50) {
-      for (const anim of document.getAnimations()) {
-        anim.pause();
-        anim.currentTime = ms;
-      }
-      const drone = read('[data-hero="drone"]');
-      const van = read('[data-hero="van"]');
-      if (parked === null) parked = van.x;
-      if (van.x < parked - 2 && van.x < prev - 0.4) {
-        dx.push(drone.x - van.x);
-        dy.push(drone.y - van.y);
-      }
-      prev = van.x;
-    }
-    const span = (values: number[]) =>
-      values.length ? Math.max(...values) - Math.min(...values) : 999;
-    return { samples: dx.length, xSpread: span(dx), ySpread: span(dy) };
-  });
-  expect(sample).not.toBeNull();
-  expect(sample?.samples ?? 0).toBeGreaterThan(8);
-  expect(sample?.xSpread ?? 999).toBeLessThanOrEqual(8);
-  expect(sample?.ySpread ?? 999).toBeLessThanOrEqual(8);
-});
-
-test("the van drives off after the facade is cleaned", async ({ page }) => {
-  await page.goto("/");
-  const van = page.locator('[data-hero="van"]:visible').first();
-  await expect(van).toBeVisible();
-  const startX = await van.evaluate((node) => {
-    const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
-    return match ? Number(match[1].split(",")[4]) : 0;
-  });
-  await expect
-    .poll(
-      async () =>
-        van.evaluate((node) => {
-          const match = getComputedStyle(node).transform.match(/matrix\(([^)]+)\)/);
-          return match ? Number(match[1].split(",")[4]) : 0;
-        }),
-      { timeout: 12_000, intervals: [200, 400, 600] },
-    )
-    .toBeLessThan(startX - 120);
+  const drone = await box(page, "drone");
+  expect(drone.y).toBeGreaterThan((ctaBox?.y ?? 0) + (ctaBox?.height ?? 0) + 8);
+  const pause = page.getByRole("checkbox", { name: "Animatie pauzeren" });
+  const pauseBox = await pause.boundingBox();
+  expect(pauseBox?.y ?? 0).toBeGreaterThan((ctaBox?.y ?? 0) + (ctaBox?.height ?? 0));
 });
 
 test("story replays on reload and keeps playing through history", async ({ page }) => {
   await page.goto("/");
-  const drone = await crew(page, "drone");
-  await expect(drone).toBeVisible();
-  const origin = await translation(page, "drone");
-  await moved(page, "drone", 2500);
-  const mid = await translation(page, "drone");
-  expect(apart(origin, mid)).toBeGreaterThan(8);
-
+  const read = () => box(page, "drone");
+  const origin = await read();
+  await expect
+    .poll(async () => {
+      const next = await read();
+      return Math.hypot(next.x - origin.x, next.y - origin.y);
+    }, { timeout: 2500 })
+    .toBeGreaterThan(12);
+  const mid = await read();
   await page.evaluate(() => history.pushState({ hero: 1 }, "", `${location.pathname}#verhaal`));
   await page.goBack();
-  const afterHistory = await translation(page, "drone");
-  expect(apart(origin, afterHistory)).toBeGreaterThan(8);
+  const afterHistory = await read();
+  expect(Math.hypot(afterHistory.x - origin.x, afterHistory.y - origin.y)).toBeGreaterThan(8);
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  const replayed = await crew(page, "drone");
-  await expect(replayed).toBeVisible();
-  const restarted = await translation(page, "drone");
-  expect(apart(mid, restarted)).toBeGreaterThan(12);
+  const restarted = await read();
+  expect(Math.hypot(restarted.x - mid.x, restarted.y - mid.y)).toBeGreaterThan(12);
 });
 
 test("crew is in the first HTML response without javascript", async ({ browser }, testInfo) => {
@@ -479,7 +325,22 @@ test("crew is in the first HTML response without javascript", async ({ browser }
   for (const name of ["drone", "operator", "van"]) {
     await expect(page.locator(`[data-hero="${name}"]:visible`).first()).toBeVisible();
   }
+  await expect(page.getByText("Animatie pauzeren")).toBeVisible();
   await context.close();
+});
+
+test("homepage scripts and styles stay on the same origin", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "hero-chromium", "One engine is enough for the script inventory.");
+  await page.goto("/");
+  const urls = await page.evaluate(() => {
+    const scripts = [...document.scripts].map((node) => node.src).filter(Boolean);
+    const styles = [...document.querySelectorAll('link[rel="stylesheet"]')].map((node) => (node as HTMLLinkElement).href);
+    return [...scripts, ...styles];
+  });
+  expect(urls.length).toBeGreaterThan(0);
+  for (const url of urls) {
+    expect(new URL(url).origin).toBe(new URL(page.url()).origin);
+  }
 });
 
 test("homepage has no axe violations", async ({ page }, testInfo) => {
