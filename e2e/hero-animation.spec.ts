@@ -272,6 +272,72 @@ test("the driving van is clipped to the figure", async ({ page }) => {
   expect(leaked).toBe(0);
 });
 
+test("wheels stay inside the figure while the chassis squats and pitch stays capped", async ({ page }) => {
+  await page.goto("/");
+  const sample = await page.evaluate(() => {
+    const frame = [...document.querySelectorAll(".jdc-ha-frame")].find(
+      (node) => node.getBoundingClientRect().width > 0,
+    );
+    const border = frame?.parentElement?.getBoundingClientRect();
+    if (!frame || !border) return null;
+    const partsOf = (transform: string) => {
+      const m3 = transform.match(/matrix3d\(([^)]+)\)/);
+      if (m3) {
+        const p = m3[1].split(",").map((part) => Number(part.trim()));
+        return { a: p[0] ?? 1, b: p[1] ?? 0 };
+      }
+      const match = transform.match(/matrix\(([^)]+)\)/);
+      if (!match) return { a: 1, b: 0 };
+      const p = match[1].split(",").map((part) => Number(part.trim()));
+      return { a: p[0] ?? 1, b: p[1] ?? 0 };
+    };
+    const angleOf = (sel: string) => {
+      const node = frame.querySelector(sel);
+      if (!node) return 0;
+      const parts = partsOf(getComputedStyle(node).transform);
+      return (Math.atan2(parts.b, parts.a) * 180) / Math.PI;
+    };
+    let maxTilt = 0;
+    let maxBank = 0;
+    let maxCombined = 0;
+    let maxSquat = 0;
+    let minSquat = 0;
+    let minWheelGap = Number.POSITIVE_INFINITY;
+    let wheels = 0;
+    for (let ms = 0; ms <= 12_000; ms += 50) {
+      for (const anim of document.getAnimations()) {
+        anim.pause();
+        anim.currentTime = ms;
+      }
+      const tilt = angleOf('[data-hero="tilt"]');
+      const bank = angleOf('[data-hero="bank"]');
+      const squat = angleOf('[data-hero="pitch"]');
+      maxTilt = Math.max(maxTilt, Math.abs(tilt));
+      maxBank = Math.max(maxBank, Math.abs(bank));
+      maxCombined = Math.max(maxCombined, Math.abs(tilt + bank));
+      maxSquat = Math.max(maxSquat, squat);
+      minSquat = Math.min(minSquat, squat);
+      for (const wheel of frame.querySelectorAll('[data-hero="wheel"]')) {
+        const box = wheel.getBoundingClientRect();
+        if (box.width < 1 || box.height < 1) continue;
+        wheels += 1;
+        minWheelGap = Math.min(minWheelGap, border.bottom - box.bottom, box.top - border.top);
+      }
+    }
+    return { maxTilt, maxBank, maxCombined, maxSquat, minSquat, minWheelGap, wheels };
+  });
+  expect(sample).not.toBeNull();
+  expect(sample?.maxTilt ?? 0).toBeGreaterThan(8);
+  expect(sample?.maxTilt ?? 99).toBeLessThanOrEqual(12.5);
+  expect(sample?.maxBank ?? 99).toBeLessThanOrEqual(6);
+  expect(sample?.maxCombined ?? 99).toBeLessThanOrEqual(12.5);
+  expect(sample?.maxSquat ?? 0).toBeGreaterThanOrEqual(1);
+  expect(sample?.maxSquat ?? 99).toBeLessThanOrEqual(2.2);
+  expect(sample?.minSquat ?? -1).toBeGreaterThanOrEqual(-0.2);
+  expect(sample?.minWheelGap ?? 0).toBeGreaterThanOrEqual(2);
+  expect(sample?.wheels ?? 0).toBeGreaterThan(20);
+});
+
 test("mobile keeps the drone clear of the buttons and shows three columns", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "hero-mobile", "Composition check is for the phone viewport.");
   await page.goto("/");

@@ -113,11 +113,11 @@ const desktopGeom: Geom = {
     gapY: 8,
   },
   droneLand: { x: 250, y: 478 },
-  operator: { x: 448, y: 628 },
+  operator: { x: 448, y: 620 },
   figure: 0.82,
   van: {
     x: 36,
-    y: 542,
+    y: 528,
     travel: -460,
     length: 300,
     rearAxle: 236.8,
@@ -130,9 +130,9 @@ const desktopGeom: Geom = {
   drop: 0.36,
   settle: 0.3,
   land: 0.75,
-  board: 2.5,
-  drive: 2.05,
-  bob: 24,
+  board: 2.65,
+  drive: 1.9,
+  bob: 5,
 };
 
 const mobileGeom: Geom = {
@@ -170,9 +170,9 @@ const mobileGeom: Geom = {
   drop: 0.28,
   settle: 0.2,
   land: 0.65,
-  board: 2.35,
-  drive: 1.75,
-  bob: 20,
+  board: 2.55,
+  drive: 1.55,
+  bob: 4,
 };
 
 function buildWindows(g: Geom): Win[] {
@@ -212,18 +212,33 @@ function clamp(n: number, min: number, max: number) {
 }
 
 /**
- * Pitch into the travel direction. The craft points right, so this stays a
- * nose-up / nose-down angle instead of a full atan2 (that would flip it).
- * Positive is nose-down. Cruise is about ±18°. A vertical leg is about ±22°.
+ * Pitch into the travel direction, then level off while spraying.
+ * The craft points right. Positive is nose-down. Capped near 11° so the
+ * nozzle stays on the glass. Bank is only the short roll at a lane change.
  */
-function tilt(a: Point, b: Point) {
+function attitude(
+  a: Point,
+  b: Point,
+  prev: { dx: number; dy: number } | null,
+): { rot: number; bank: number } {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
-  if (Math.hypot(dx, dy) < 8) return 0;
-  if (Math.abs(dx) >= Math.abs(dy) * 0.65) {
-    return clamp(Math.sign(dx) * 18 + Math.sign(dy || 1) * 6, -26, 26);
+  if (Math.hypot(dx, dy) < 8) return { rot: 0, bank: 0 };
+  const vertical = Math.abs(dy) > Math.abs(dx) * 0.75;
+  if (vertical) {
+    const turn = prev && Math.abs(prev.dx) > Math.abs(prev.dy) ? prev.dx : dx;
+    // Bank and pitch are both in-plane rotates, so they add. Keep the sum ≤ 12°.
+    return {
+      rot: clamp(Math.sign(dy || 1) * 7, -12, 12),
+      bank: clamp(Math.sign(turn || 1) * 5, -5, 5),
+    };
   }
-  return clamp(Math.sign(dy) * 22, -26, 26);
+  const continuing =
+    prev &&
+    Math.abs(prev.dy) <= Math.abs(prev.dx) * 0.75 &&
+    Math.sign(prev.dx) === Math.sign(dx);
+  if (continuing) return { rot: 0, bank: 0 };
+  return { rot: clamp(Math.sign(dx || 1) * 11, -12, 12), bank: 0 };
 }
 
 function lookDeg(neck: Point, drone: Point) {
@@ -287,18 +302,22 @@ function buildStory(g: Geom): HeroStory {
     keys.push({ t, x, y, rot: 0, bank: 0, ease });
   };
 
+  const trackPad = 6;
+  const trackStart = g.van.frontAxle + g.van.wheelR + trackPad;
+  const trackEnd = g.van.rearAxle - g.van.wheelR - trackPad;
+  const trackW = Math.max(48, trackEnd - trackStart);
   const door = {
-    x: g.van.frontAxle + g.van.wheelR + 8,
+    x: trackStart,
     y: 3,
-    w: Math.min(86, Math.max(64, g.van.rearAxle - g.van.frontAxle - g.van.wheelR * 2 - 18)),
+    w: Math.min(72, Math.max(52, trackW * 0.56)),
     h: g.van.axleY - 4,
   };
   const cargo = {
     x: g.van.x + door.x + door.w * 0.5,
     y: g.van.y + g.van.axleY * 0.42,
   };
-  // Last step ducks the helmet under the roof. The door then slides shut over him.
-  const sink = 16;
+  // Boots rise onto the sill. Negative Y is up. The door then slides shut over him.
+  const sink = -14;
 
   push(0, g.droneLand.x, g.droneLand.y, EASE_OUT);
   for (const visit of visits) push(visit.t, visit.at.x, visit.at.y, EASE_LANE);
@@ -308,16 +327,25 @@ function buildStory(g: Geom): HeroStory {
   push(duration, cargo.x + g.van.travel, cargo.y, EASE_VAN);
 
   keys[0].rot = 0;
+  keys[0].bank = 0;
   for (let i = 0; i < keys.length - 1; i++) {
-    keys[i + 1].rot = tilt(keys[i], keys[i + 1]);
+    const prev =
+      i > 0
+        ? { dx: keys[i].x - keys[i - 1].x, dy: keys[i].y - keys[i - 1].y }
+        : null;
+    const pose = attitude(keys[i], keys[i + 1], prev);
+    keys[i + 1].rot = pose.rot;
+    keys[i + 1].bank = pose.bank;
     if (keys[i + 1].t > cleanEnd && keys[i + 1].t <= landEnd + 0.02) keys[i].ease = EASE_OUT;
     else if (Math.abs(keys[i + 1].y - keys[i].y) > 18 && Math.abs(keys[i + 1].x - keys[i].x) < 80) {
       keys[i].ease = EASE_DROP;
     }
   }
   for (const key of keys) {
-    if (key.t >= landEnd - 0.01) key.rot = 0;
-    key.bank = clamp(key.rot * 0.45, -12, 12);
+    if (key.t >= landEnd - 0.01) {
+      key.rot = 0;
+      key.bank = 0;
+    }
   }
 
   const pct = (t: number) => `${((t / duration) * 100).toFixed(3)}%`;
@@ -352,9 +380,11 @@ function buildStory(g: Geom): HeroStory {
   const boardPct = pct(boardEnd);
   const openAt = landEnd + 0.24;
   const walkStart = landEnd + 0.28;
-  const arrive = boardEnd - 1.25;
+  const arrive = boardEnd - 1.35;
+  const shut = boardEnd - 0.48;
   const openPct = pct(openAt);
   const arrivePct = pct(arrive);
+  const shutPct = pct(shut);
   const mistIn = g.approach * 0.2;
   const mistFull = g.approach + 0.55;
   const mistOut = cleanEnd - 0.15;
@@ -363,7 +393,8 @@ function buildStory(g: Geom): HeroStory {
   const wheelDeg = (Math.abs(g.van.travel) / (2 * Math.PI * g.van.wheelR)) * 360;
   const wheelSign = g.van.travel < 0 ? -1 : 1;
   const walk = g.van.x + door.x + door.w * 0.5 - g.operator.x;
-  const slide = -(door.w + 10);
+  // Sprinter slider parks toward the rear (positive X; the cab is at low X).
+  const slide = Math.min(door.w * 0.92, Math.max(12, trackEnd - door.x - door.w));
   const landLook = lookDeg(neck, g.droneLand);
   const bobCycles = Math.max(4, Math.round((landEnd / 1.15) * 2) / 2);
   const span = Math.max(0.4, arrive - walkStart);
@@ -419,7 +450,7 @@ function buildStory(g: Geom): HeroStory {
     `0%,${pct(walkStart)}{transform:translate(0px,0px);animation-timing-function:linear}`,
     ...stepX.map(
       (portion, i) =>
-        `${pct(stepAt(i))}{transform:translate(${num(walk * portion)}px,${num([0, 0, sink * 0.35, sink * 0.7][i] ?? 0)}px);animation-timing-function:linear}`,
+        `${pct(stepAt(i))}{transform:translate(${num(walk * portion)}px,${num([0, 0, 0, sink * 0.55][i] ?? 0)}px);animation-timing-function:linear}`,
     ),
     `${arrivePct}{transform:translate(${num(walk)}px,${num(sink)}px);animation-timing-function:linear}`,
     `${boardPct}{transform:translate(${num(walk)}px,${num(sink)}px);animation-timing-function:linear}`,
@@ -432,6 +463,7 @@ function buildStory(g: Geom): HeroStory {
     `0%,${landPct}{transform:translateX(0px);animation-timing-function:cubic-bezier(0.22,0.8,0.2,1)}`,
     `${openPct}{transform:translateX(${num(slide)}px);animation-timing-function:linear}`,
     `${arrivePct}{transform:translateX(${num(slide)}px);animation-timing-function:linear}`,
+    `${shutPct}{transform:translateX(0px);animation-timing-function:linear}`,
     `${boardPct},100%{transform:translateX(0px)}`,
   ].join("");
   const pitchIn = pct(boardEnd + g.drive * 0.16);
@@ -459,12 +491,12 @@ function buildStory(g: Geom): HeroStory {
 @keyframes jdc-ha-leg-b-${v}{${legKf(legA.map((deg) => -deg))}}
 .jdc-ha-van-${v}{transform-box:view-box;transform-origin:0 0;transform:translate(${num(g.van.x)}px,${num(g.van.y)}px);animation:jdc-ha-van-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-van-${v}{${vanKf}}
-.jdc-ha-pitch-${v}{transform-box:fill-box;transform-origin:${num(g.van.rearAxle)}px ${num(g.van.axleY)}px;transform:rotate(0deg);animation:jdc-ha-pitch-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
+.jdc-ha-pitch-${v}{transform-box:fill-box;transform-origin:22% 100%;transform:rotate(0deg);animation:jdc-ha-pitch-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-pitch-${v}{
   0%,${boardPct}{transform:rotate(0deg);animation-timing-function:ease-out}
-  ${pitchIn}{transform:rotate(-7deg);animation-timing-function:ease-out}
-  ${pitchMid}{transform:rotate(-2.4deg)}
-  100%{transform:rotate(-0.4deg)}
+  ${pitchIn}{transform:rotate(1.6deg);animation-timing-function:ease-out}
+  ${pitchMid}{transform:rotate(0.35deg)}
+  100%{transform:rotate(0deg)}
 }
 .jdc-ha-wheel-${v}{transform-box:fill-box;transform-origin:center;transform:rotate(0deg);animation:jdc-ha-wheel-${v} ${duration}s linear both;animation-delay:${HERO_DELAY_S}s}
 @keyframes jdc-ha-wheel-${v}{${wheelKf}}

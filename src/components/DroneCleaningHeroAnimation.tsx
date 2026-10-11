@@ -53,9 +53,18 @@ function Scene({ story, className }: { story: HeroStory; className: string }) {
           <clipPath id={`${v}-scene-clip`}>
             <rect width={story.viewW} height={story.viewH} />
           </clipPath>
+          <clipPath id={`${v}-door-track`} clipPathUnits="userSpaceOnUse">
+            <rect
+              x={story.door.x - 2}
+              y={story.door.y - 4}
+              width={story.van.rearAxle - story.van.wheelR - story.door.x}
+              height={story.door.h + 10}
+            />
+          </clipPath>
         </defs>
         <g clipPath={`url(#${v}-scene-clip)`}>
           <Sky id={v} w={story.viewW} h={story.viewH} />
+          <Ground story={story} />
           <Tower story={story} />
           <g data-hero="van" className={`jdc-ha-play jdc-ha-van-${v}`}>
             <WorkVan variant={v} />
@@ -73,9 +82,10 @@ function Scene({ story, className }: { story: HeroStory; className: string }) {
             </g>
           </g>
           <g className={`jdc-ha-play jdc-ha-van-${v}`}>
-            <DoorSkirt story={story} />
-            <g data-hero="door" className={`jdc-ha-play jdc-ha-door-${v}`}>
-              <VanDoor story={story} />
+            <g clipPath={`url(#${v}-door-track)`}>
+              <g data-hero="door" className={`jdc-ha-play jdc-ha-door-${v}`}>
+                <VanDoor story={story} />
+              </g>
             </g>
           </g>
         </g>
@@ -107,8 +117,18 @@ function Sky({ id, w, h }: { id: string; w: number; h: number }) {
         <Cloud x={w * 0.7} y={h * 0.1} s={0.72} />
         <Cloud x={w * 0.22} y={h * 0.22} s={0.84} />
       </g>
-      <rect x="0" y={h - 28} width={w} height="28" fill="#9BB4C4" opacity="0.28" />
     </>
+  );
+}
+
+function Ground({ story }: { story: HeroStory }) {
+  const y = story.van.y + story.van.axleY + story.van.wheelR;
+  const band = Math.max(0, story.viewH - y);
+  return (
+    <g data-hero="ground">
+      <rect x="0" y={y} width={story.viewW} height={band} fill="#C5D4DE" />
+      <rect x="0" y={y} width={story.viewW} height="3" fill="#6E8796" />
+    </g>
   );
 }
 
@@ -302,19 +322,6 @@ function Rotor() {
   );
 }
 
-function DoorSkirt({ story }: { story: HeroStory }) {
-  const { x, y, w, h } = story.door;
-  return (
-    <rect
-      x={x}
-      y={y + h - 2}
-      width={w}
-      height={story.van.wheelR * 1.9}
-      fill="#121418"
-    />
-  );
-}
-
 function WorkVan({ variant }: { variant: string }) {
   const story = variant === "desktop" ? desktopStory : mobileStory;
   const scale = story.van.length / 408;
@@ -328,7 +335,7 @@ function WorkVan({ variant }: { variant: string }) {
   return (
     <g>
       <ellipse cx={story.van.length * 0.48} cy={118 * scale} rx={story.van.length * 0.42} ry={6 * scale} fill="#071525" opacity="0.18" />
-      <g className={`jdc-ha-pitch jdc-ha-play jdc-ha-pitch-${variant}`}>
+      <g data-hero="pitch" className={`jdc-ha-pitch jdc-ha-play jdc-ha-pitch-${variant}`}>
         <g transform={`scale(${scale})`}>
           <g>
             <rect width="408" height="121" fill="transparent" />
@@ -349,13 +356,7 @@ function WorkVan({ variant }: { variant: string }) {
           </g>
         </g>
       </g>
-      <rect
-        x={story.door.x}
-        y={story.door.y}
-        width={story.door.w}
-        height={story.door.h}
-        fill="#07090C"
-      />
+      <VanInterior story={story} />
       <Wheel variant={variant} cx={story.van.frontAxle} cy={story.van.axleY} r={story.van.wheelR} valve />
       <Wheel variant={variant} cx={story.van.rearAxle} cy={story.van.axleY} r={story.van.wheelR} />
     </g>
@@ -391,13 +392,28 @@ function Wheel({
   );
 }
 
-function VanDoor({ story }: { story: HeroStory }) {
+function VanInterior({ story }: { story: HeroStory }) {
   const { x, y, w, h } = story.door;
   return (
+    <g data-hero="interior">
+      <rect x={x} y={y} width={w} height={h} fill="#07090C" />
+      <rect x={x + w * 0.1} y={y + h * 0.4} width={w * 0.46} height={h * 0.26} rx="2" fill="#14181E" />
+      <rect x={x} y={y + h * 0.76} width={w} height={h * 0.24} fill="#1A1612" />
+    </g>
+  );
+}
+
+function VanDoor({ story }: { story: HeroStory }) {
+  const { x, y, w, h } = story.door;
+  const edge = Math.max(3.5, Math.min(4.5, w * 0.07));
+  return (
     <g>
-      <rect x={x} y={y} width={w} height={h} fill="#121418" />
-      <rect x={x} y={y} width={Math.max(1.5, w * 0.06)} height={h} fill="#3A414A" />
-      <rect x={x + w * 0.72} y={y + h * 0.18} width={Math.max(2, w * 0.08)} height={h * 0.28} rx="1" fill="#6A8FA6" />
+      <rect x={x} y={y} width={w} height={h} fill="#2A3038" />
+      <rect x={x} y={y} width={edge} height={h} fill="#D5DDE4" />
+      <rect x={x + w - 2.4} y={y} width="2.4" height={h} fill="#0C0E12" />
+      <rect x={x + w * 0.16} y={y + h * 0.08} width={w * 0.66} height={h * 0.36} rx="1.4" fill="#1C242C" />
+      <rect x={x + w * 0.2} y={y + h * 0.12} width={w * 0.58} height={h * 0.28} fill="#8FCBE2" opacity="0.72" />
+      <rect x={x + edge + 2.5} y={y + h * 0.52} width="3.2" height={h * 0.2} rx="1.2" fill="#D5DDE4" />
     </g>
   );
 }
