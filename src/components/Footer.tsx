@@ -1,15 +1,17 @@
+import Link from "next/link";
 import { business, filled, formatAddress } from "@/config/business";
+import { services } from "@/config/services";
 import { Logo } from "./Logo";
 
 const FOOTER_LINKS = [
-  { href: "#diensten", label: "Diensten" },
-  { href: "#industriele-reiniging", label: "Industriële reiniging" },
-  { href: "#voordelen", label: "Voordelen" },
-  { href: "#werkwijze", label: "Werkwijze" },
-  { href: "#resultaten", label: "Resultaten" },
-  { href: "#faq", label: "FAQ" },
-  { href: "#contact", label: "Contact" },
-] as const;
+  { href: "/#diensten", label: "Diensten" },
+  ...services.map((service) => ({ href: service.href, label: service.title })),
+  { href: "/#voordelen", label: "Voordelen" },
+  { href: "/#werkwijze", label: "Werkwijze" },
+  { href: "/#resultaten", label: "Resultaten" },
+  { href: "/#faq", label: "FAQ" },
+  { href: "/#contact", label: "Contact" },
+];
 
 export function Footer() {
   const legalName = filled(business.legalName);
@@ -29,12 +31,12 @@ export function Footer() {
     <footer className="border-t border-white/10 bg-jdc-navy-deep text-white/80">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-12 lg:px-8 lg:py-16">
         <div className="lg:col-span-5">
-          <a
-            href="#top"
+          <Link
+            href="/"
             className="inline-flex rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
           >
             <Logo className="h-11 w-auto" variant="mono" idSuffix="ftr" />
-          </a>
+          </Link>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/80">
             Professionele drone-reiniging voor daken, gevels, ramen en glas,
             zonnepanelen en geschikte industriële oppervlakken.
@@ -48,12 +50,12 @@ export function Footer() {
           <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
             {FOOTER_LINKS.map((link) => (
               <li key={link.href}>
-                <a
+                <Link
                   href={link.href}
                   className="text-sm text-white/80 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
                 >
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -128,12 +130,12 @@ export function Footer() {
             © {new Date().getFullYear()} {business.shortName} — {business.brandName}
           </p>
           {privacy ? (
-            <a
+            <Link
               href={privacy}
               className="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
             >
               Privacy
-            </a>
+            </Link>
           ) : (
             <p>Alle rechten voorbehouden</p>
           )}

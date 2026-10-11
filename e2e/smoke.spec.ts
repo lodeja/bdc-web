@@ -64,7 +64,7 @@ test("mobile menu moves focus and escape returns it", async ({ page }, testInfo)
   await page.getByRole("button", { name: "Menu openen" }).click();
   const dialog = page.getByRole("dialog", { name: "Mobiel menu" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("link", { name: "Diensten", exact: true })).toBeFocused();
+  await expect(dialog.getByRole("button", { name: "Diensten" })).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(dialog.getByRole("link", { name: "Offerte aanvragen" })).toBeFocused();
   await expectAccessible(page);

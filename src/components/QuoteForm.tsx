@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useId, useState, useSyncExternalStore, type FormEvent } from "react";
 import { business, filled } from "@/config/business";
-import { services } from "@/config/services";
+import { services, type ServiceId } from "@/config/services";
 
 type FieldErrors = Partial<
   Record<"name" | "email" | "phone" | "service" | "message" | "consent", string>
@@ -27,6 +28,15 @@ type Payload = {
   service: string;
   message: string;
 };
+
+function readDienstParam() {
+  const id = new URLSearchParams(window.location.search).get("dienst");
+  return id && services.some((service) => service.id === (id as ServiceId)) ? id : "";
+}
+
+function subscribeDienst() {
+  return () => {};
+}
 
 function validateEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -54,6 +64,10 @@ export function QuoteForm() {
   const [pending, setPending] = useState(false);
   const inbox = filled(business.email);
   const endpoint = filled(business.formEndpoint);
+  const privacy = filled(business.privacyPolicyPath);
+  const preset = useSyncExternalStore(subscribeDienst, readDienstParam, () => "");
+  const [serviceValue, setServiceValue] = useState<string | null>(null);
+  const selectedService = serviceValue ?? preset;
 
   function validate(form: HTMLFormElement): FieldErrors {
     const data = new FormData(form);
@@ -266,7 +280,8 @@ export function QuoteForm() {
             id={`${formId}-service`}
             name="service"
             className={fieldClass}
-            defaultValue=""
+            value={selectedService}
+            onChange={(event) => setServiceValue(event.target.value)}
             aria-invalid={Boolean(errors.service)}
             aria-describedby={errors.service ? `${formId}-service-err` : undefined}
           >
@@ -315,6 +330,16 @@ export function QuoteForm() {
               Ik ga akkoord dat {business.shortName} mij contacteert over deze offerteaanvraag. *
             </span>
           </label>
+          {privacy ? (
+            <p className="mt-2 text-sm">
+              <Link
+                href={privacy}
+                className="font-medium text-jdc-navy underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+              >
+                Privacy
+              </Link>
+            </p>
+          ) : null}
           {errors.consent ? (
             <p className="mt-1 text-xs text-red-700">{errors.consent}</p>
           ) : null}
