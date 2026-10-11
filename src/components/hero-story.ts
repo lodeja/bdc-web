@@ -6,10 +6,29 @@
  * short fade from dirty to clean and leaves the crew in place.
  */
 
+import { VAN_WHEEL_R_FRAC, vanDoorFrac } from "./van-flat";
+
 export const HERO_DELAY_S = 1;
-export const STORY_S = 13.2;
+export const STORY_S = 20;
 export const SOFT_S = 3.4;
 export const CLOUD_S = 36;
+
+/** Cleaning beats. The drone eases onto a pane, settles, then sprays. */
+const RISE_END = 0.5;
+const SETTLE = 0.12;
+const HOVER = 0.22;
+const MOVE = 0.26;
+const STEP = SETTLE + HOVER + MOVE;
+const FADE = HOVER;
+const WALK_S = 2.05;
+const PANES = 24;
+export const LAST_ARRIVE_S = RISE_END + (PANES - 1) * STEP;
+export const CLEAN_END_S = LAST_ARRIVE_S + SETTLE + FADE;
+export const FADE_END_S = CLEAN_END_S + 0.32;
+export const ARRIVE_S = FADE_END_S + WALK_S;
+export const STEP_IN_S = ARRIVE_S + 0.1 + 0.36;
+export const SHUT_END_S = STEP_IN_S + 0.28;
+export const DRIVE_START_S = SHUT_END_S + 0.2;
 
 export type Box = { x: number; y: number; w: number; h: number };
 
@@ -65,13 +84,13 @@ const desktopGeom: Geom = {
   aspectW: 12,
   aspectH: 5,
   building: { x: 40, y: 17, w: 56.82, h: 75 },
-  van: { x: 33, y: 80.7, w: 11.19, h: 11.3 },
-  door: { ox: 0.3, oy: 0.22, w: 0.11, h: 0.5 },
+  van: { x: 30.9, y: 78.67, w: 13.22, h: 13.33 },
+  door: vanDoorFrac,
   operator: { x: 62, y: 54, w: 12.5, h: 70 },
   drone: { w: 5.85, h: 6.62 },
   start: { x: 26, y: 76 },
   ground: 92,
-  travel: -50,
+  travel: -54,
 };
 
 const mobileGeom: Geom = {
@@ -79,21 +98,16 @@ const mobileGeom: Geom = {
   aspectW: 8,
   aspectH: 10,
   building: { x: -17.5, y: 30, w: 135, h: 58 },
-  van: { x: 14, y: 79.33, w: 24.24, h: 8.67 },
-  door: { ox: 0.3, oy: 0.22, w: 0.11, h: 0.5 },
+  van: { x: 7.79, y: 77.77, w: 30.45, h: 10.23 },
+  door: vanDoorFrac,
   operator: { x: 64, y: 75, w: 22.4, h: 42 },
   drone: { w: 13.05, h: 4.92 },
   start: { x: 12, y: 60 },
   ground: 88,
-  travel: -46,
+  travel: -50,
 };
 
 const COLS = 6;
-const HOVER = 0.2;
-const MOVE = 0.1;
-const STEP = HOVER + MOVE;
-const FADE = 0.64;
-const RISE_END = 0.42;
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -110,8 +124,7 @@ function pct(n: number) {
 type Beat = { t: number; x: number; y: number; rot: number; ease: string; ax: number; ay: number };
 
 const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
-const EASE_LANE = "cubic-bezier(0.33, 0, 0.2, 1)";
-const EASE_DROP = "cubic-bezier(0.45, 0, 0.55, 1)";
+const EASE_INOUT = "cubic-bezier(0.42, 0, 0.58, 1)";
 
 /** Four storeys of facade-clean. Each stop covers two neighbouring bays, six stops across. The last row includes the plinth. */
 const BANDS = [
@@ -158,9 +171,9 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
   };
 
   const firstPane = droneAt(order[0].row, order[0].col);
-  push(0, g.start.x, g.start.y, 0, EASE_OUT, firstPane.ax, firstPane.ay);
-  push(0.14, g.start.x, g.start.y - 1.2, -8, EASE_OUT, firstPane.ax, firstPane.ay);
-  push(RISE_END, firstPane.x, firstPane.y, 8, EASE_OUT, firstPane.ax, firstPane.ay);
+  push(0, g.start.x, g.start.y, 0, EASE_INOUT, firstPane.ax, firstPane.ay);
+  push(0.2, g.start.x, g.start.y - 0.6, -4, EASE_INOUT, firstPane.ax, firstPane.ay);
+  push(RISE_END, firstPane.x, firstPane.y, 6, EASE_INOUT, firstPane.ax, firstPane.ay);
 
   for (let i = 0; i < order.length; i++) {
     const { row, col } = order[i];
@@ -168,14 +181,12 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     const here = droneAt(row, col);
     const tilt = row % 2 === 0 ? 8 : -8;
     const band = BANDS[row];
-    push(at, here.x, here.y, tilt * 0.4, "linear", here.ax, here.ay);
+    if (i > 0) push(at, here.x, here.y, tilt * 0.35, EASE_INOUT, here.ax, here.ay);
+    push(at + SETTLE, here.x, here.y, tilt, EASE_INOUT, here.ax, here.ay);
+    push(at + SETTLE + 0.05, here.x, here.y, tilt, "linear", here.ax, here.ay);
+    push(at + SETTLE + HOVER, here.x, here.y, tilt, EASE_INOUT, here.ax, here.ay);
     if (i < order.length - 1) {
-      push(at + HOVER * 0.4, here.x, here.y, tilt, EASE_LANE, here.ax, here.ay);
-      push(at + HOVER, here.x, here.y, tilt, EASE_LANE, here.ax, here.ay);
-      const next = droneAt(order[i + 1].row, order[i + 1].col);
-      push(at + STEP, next.x, next.y, tilt * 0.45, EASE_DROP, next.ax, next.ay);
-    } else {
-      push(at + FADE * 0.72, here.x, here.y, 0, EASE_OUT, here.ax, here.ay);
+      push(at + SETTLE + HOVER + 0.05, here.x, here.y, tilt, "linear", here.ax, here.ay);
     }
     lanes.push({
       id: `${g.variant}-pane-${row}-${col}`,
@@ -183,27 +194,28 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
       y: g.building.y + g.building.h * band.y0,
       w: g.building.w / COLS,
       h: g.building.h * (band.y1 - band.y0),
-      delay: HERO_DELAY_S + at,
+      delay: HERO_DELAY_S + at + SETTLE,
       dur: FADE,
     });
   }
 
-  const lastArrive = RISE_END + (order.length - 1) * STEP;
-  const cleanEnd = lastArrive + FADE;
-  const droneLeave = lastArrive + FADE * 0.72;
-  const returnEnd = droneLeave + 0.5;
+  const lastArrive = LAST_ARRIVE_S;
+  const cleanEnd = CLEAN_END_S;
+  const returnEnd = cleanEnd + 0.45;
   const turnStart = cleanEnd;
-  const fadeEnd = turnStart + 0.32;
+  const fadeEnd = FADE_END_S;
   // One step away, then a cut onto the walking pose. A scaleX stripe reads
   // as a glitch, and a long blend of the two poses reads as two people.
   // The back view settles onto the walker's helmet, then the picture swaps.
   const stepEnd = turnStart + 0.1;
   const cut = stepEnd + 0.016;
-  const arrive = fadeEnd + 2.3;
+  const arrive = ARRIVE_S;
   const hold = arrive + 0.1;
-  const stepIn = hold + 0.36;
-  const shutEnd = stepIn + 0.28;
-  const driveStart = shutEnd + 0.2;
+  const stepIn = STEP_IN_S;
+  const shutEnd = SHUT_END_S;
+  const driveStart = DRIVE_START_S;
+  const lastHere = droneAt(order[order.length - 1].row, order[order.length - 1].col);
+  push(cleanEnd, lastHere.x, lastHere.y, 0, EASE_OUT, lastHere.ax, lastHere.ay);
   const roof = {
     x: g.van.x + g.van.w * 0.48 - dw / 2,
     y: g.van.y - dh * 0.62,
@@ -347,7 +359,7 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     ...vanSamples.slice(1).map((s) => `${pOf(s.t)}%{transform:translate(${pct(s.x - g.van.x)},0%);animation-timing-function:linear}`),
   ].join("");
 
-  const wheelR = g.van.w * (72 / 1160);
+  const wheelR = g.van.w * VAN_WHEEL_R_FRAC;
   const wheelDeg = (Math.abs(g.travel) / (2 * Math.PI * wheelR)) * 360;
   const wheelSign = g.travel < 0 ? -1 : 1;
   const wheelKf = [
@@ -425,10 +437,16 @@ function buildSpec(g: Geom): { spec: HeroSpec; css: string } {
     const scale = Math.max(0.35, dist / (dw * g.aspectW));
     const world = (Math.atan2(dy, dx) * 180) / Math.PI;
     let opacity = 0;
-    if (b.t >= cleanEnd + 0.45) opacity = 0;
-    else if (b.t >= cleanEnd) opacity = 1 - (b.t - cleanEnd) / 0.45;
-    else if (b.t >= RISE_END) opacity = 1;
-    else if (b.t >= RISE_END * 0.55) opacity = (b.t - RISE_END * 0.55) / (RISE_END * 0.45);
+    if (b.t >= cleanEnd + 0.35) opacity = 0;
+    else if (b.t >= cleanEnd) opacity = 1 - (b.t - cleanEnd) / 0.35;
+    else if (b.t >= RISE_END) {
+      const index = Math.min(PANES - 1, Math.floor((b.t - RISE_END + 1e-4) / STEP));
+      const phase = b.t - (RISE_END + index * STEP);
+      if (phase < SETTLE) opacity = 0;
+      else if (phase < SETTLE + 0.05) opacity = (phase - SETTLE) / 0.05;
+      else if (phase <= SETTLE + HOVER + 0.001) opacity = 1;
+      else opacity = 0;
+    } else if (b.t >= RISE_END * 0.7) opacity = (b.t - RISE_END * 0.7) / (RISE_END * 0.3);
     return { rot: world - b.rot, scale, opacity };
   };
   const sprayKf = droneBeats
@@ -510,7 +528,7 @@ const mobileBuilt = buildSpec(mobileGeom);
 export const desktopSpec = desktopBuilt.spec;
 export const mobileSpec = mobileBuilt.spec;
 
-const bobCount = Math.max(4, Math.round((HERO_DELAY_S + STORY_S) / 1.05));
+const bobCount = Math.max(4, Math.round((HERO_DELAY_S + STORY_S) / 1.8));
 const spinCount = Math.max(8, Math.ceil((HERO_DELAY_S + STORY_S) / 0.2));
 
 export const heroMotionCss = `
@@ -600,8 +618,8 @@ export const heroMotionCss = `
 .jdc-drone-img,.jdc-drone-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
 .jdc-drone-img img{filter:drop-shadow(0 0 0.7px #071525) drop-shadow(0 0 1.4px rgba(7,21,37,0.88))}
 .drone-tilt{transform-origin:50% 45%}
-.drone-bob{animation:jdc-bob 1.05s ease-in-out ${bobCount} both;animation-delay:${HERO_DELAY_S}s}
-@keyframes jdc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%)}}
+.drone-bob{animation:jdc-bob 1.8s ease-in-out ${bobCount} both;animation-delay:${HERO_DELAY_S}s}
+@keyframes jdc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
 .rotor{position:absolute;z-index:2;width:30%;height:42%;top:22%;border-radius:50%;background:radial-gradient(ellipse at center, rgba(255,255,255,0.08), rgba(244,251,255,0.45) 55%, rgba(255,255,255,0) 72%);filter:blur(0.4px)}
 .rotor-a{left:2%}
 .rotor-b{right:2%}
@@ -613,10 +631,8 @@ export const heroMotionCss = `
 .van-shadow{position:absolute;left:4%;right:6%;bottom:-3%;height:12%;border-radius:50%;background:rgba(7,21,37,0.34)}
 .van-body{position:absolute;inset:0}
 .jdc-van-body,.jdc-van-body img,.jdc-door-img,.jdc-door-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block}
-.van-logo{position:absolute;left:42%;top:28%;width:27%;height:36%;pointer-events:none;z-index:2}
+.van-logo{position:absolute;pointer-events:none;z-index:2}
 .wheel{position:absolute;z-index:3}
-.wheel-front{left:13.1%;top:76%;width:10.2%;height:23%}
-.wheel-rear{left:73.8%;top:76%;width:10.2%;height:23%}
 .wheel-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;display:block}
 .wheel-spin{transform-box:fill-box;transform-origin:50% 50%}
 .valve{position:absolute;left:44%;top:6%;width:12%;height:12%;border-radius:50%;background:#d7dde2}
