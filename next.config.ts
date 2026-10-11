@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
+import { REPO_SLUG } from "./src/config/repo";
 
 /**
- * GitHub Pages project site: https://lodeja.github.io/bdc-web/
+ * GitHub Pages project site: https://lodeja.github.io/<REPO_SLUG>/
  * Set GITHUB_PAGES=true in CI (and optionally locally) so basePath is applied.
  * Local `npm run dev` keeps basePath empty for http://localhost:3000/.
  */
 const isGitHubPages = process.env.GITHUB_PAGES === "true";
-const repoName = "bdc-web";
-const basePath = isGitHubPages ? `/${repoName}` : "";
+const basePath = isGitHubPages ? `/${REPO_SLUG}` : "";
 
 const nextConfig: NextConfig = {
   output: "export",

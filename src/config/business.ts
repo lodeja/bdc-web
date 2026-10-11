@@ -53,7 +53,7 @@ export type BusinessConfig = {
    * Public origin once a domain exists, no trailing slash.
    * Example: "https://example.be"
    * Include a path only if the site is still served from one
-   * (the current Pages URL already includes /bdc-web when this stays null).
+   * (while this stays null, the Pages URL already includes / plus REPO_SLUG).
    */
   domain: string | null;
   /**

@@ -2,7 +2,7 @@
 
 Premium NL-BE marketing site for professional drone cleaning.
 
-Live (GitHub Pages): https://lodeja.github.io/bdc-web/
+Live (GitHub Pages): `https://lodeja.github.io/<REPO_SLUG>/`. The slug is `REPO_SLUG` in `src/config/repo.ts`. Change that constant to `jdc-web` when the GitHub repository is renamed.
 
 ## Stack
 
@@ -21,7 +21,7 @@ npm run build
 npm run test:e2e          # Playwright + axe against the static export
 npm run preview           # gzip static server on 127.0.0.1:4173
 npm run lhci              # Lighthouse mobile + desktop
-GITHUB_PAGES=true npm run build   # static export with /bdc-web basePath
+GITHUB_PAGES=true npm run build   # static export; basePath is / plus REPO_SLUG
 ```
 
 Do not run `scripts/deploy-gh-pages.sh` from CI. It force-pushes `out/` to `gh-pages`.
@@ -30,7 +30,7 @@ Do not run `scripts/deploy-gh-pages.sh` from CI. It force-pushes `out/` to `gh-p
 
 Logo WebPs in `/public/brand/` (transparent): `jdc-mono.webp`, `jdc-wordmark.webp`, `jdc-van-logo.webp`, plus `favicon.png`. Source PNGs and style references live in `/design/brand/` and are not deployed.
 
-The public brand is Janssens Drone Cleaning. Do not rename the repository or the `bdc-web` base path unless the GitHub Pages path changes too.
+The public brand is Janssens Drone Cleaning (JDC). The Pages base path is `REPO_SLUG` in `src/config/repo.ts`. Change that constant to `jdc-web` when the GitHub repository is renamed.
 
 Confirmed services live in `src/config/services.ts`: dakreiniging, gevelreiniging, ramen- en glasreiniging, zonnepanelen reinigen, industriële reiniging. The home page reads that list. `slug` is reserved for later per-service pages; those routes are not built yet.
 
@@ -50,7 +50,7 @@ Bestand: `src/config/business.ts`
 | `workArea` | Bijvoorbeeld een bevestigd werkgebied, of `null` | Contactregel |
 | `vat` | BTW-nummer, of `null` | Contact, footer, JSON-LD |
 | `enterpriseNumber` | KBO-nummer, of `null` | Contact, footer, JSON-LD |
-| `domain` | Publieke origin zonder slash op het einde, zoals `https://example.be`, of `null` | Canonical, sitemap, robots en Open Graph. `null` houdt `https://lodeja.github.io/bdc-web` |
+| `domain` | Publieke origin zonder slash op het einde, zoals `https://example.be`, of `null` | Canonical, sitemap, robots en Open Graph. `null` houdt de GitHub Pages-origin uit `REPO_SLUG` |
 | `formEndpoint` | HTTPS-URL die POST JSON aanvaardt, of `null` | Zie hieronder |
 | `social` | `{ label, href }`, of `[]` | Footerlinks |
 | `certifications` | `{ name, issuer, url }`, of `[]` | Footer. `issuer` en `url` mogen `null` |
