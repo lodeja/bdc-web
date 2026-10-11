@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { FORM_ENDPOINT } from "@/lib/contact";
+import { business, filled } from "@/config/business";
+import { services } from "@/config/services";
 
 type FieldErrors = Partial<
   Record<"name" | "email" | "phone" | "service" | "message" | "consent", string>
@@ -15,15 +16,35 @@ type Status =
 
 const SERVICES = [
   { value: "", label: "Kies een dienst" },
-  { value: "dak", label: "Dakreiniging" },
-  { value: "gevel", label: "Gevelreiniging" },
-  { value: "zonnepanelen", label: "Zonnepanelen" },
-  { value: "industrie", label: "Industriële reiniging" },
+  ...services.map((service) => ({ value: service.id, label: service.title })),
   { value: "andere", label: "Andere / nog niet zeker" },
-] as const;
+];
+
+type Payload = {
+  name: string;
+  email: string;
+  phone: string;
+  service: string;
+  message: string;
+};
 
 function validateEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+function mailtoHref(payload: Payload, inbox: string) {
+  const subject = "Offerteaanvraag";
+  const body = [
+    `Naam: ${payload.name}`,
+    `E-mail: ${payload.email}`,
+    payload.phone ? `Telefoon: ${payload.phone}` : null,
+    `Dienst: ${payload.service}`,
+    "",
+    payload.message,
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+  return `mailto:${inbox}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export function QuoteForm() {
@@ -31,6 +52,8 @@ export function QuoteForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [pending, setPending] = useState(false);
+  const inbox = filled(business.email);
+  const endpoint = filled(business.formEndpoint);
 
   function validate(form: HTMLFormElement): FieldErrors {
     const data = new FormData(form);
@@ -57,6 +80,10 @@ export function QuoteForm() {
     return next;
   }
 
+  function honeypotFilled(form: HTMLFormElement) {
+    return String(new FormData(form).get("website") ?? "").trim().length > 0;
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus({ type: "idle" });
@@ -72,7 +99,7 @@ export function QuoteForm() {
     }
 
     const data = new FormData(form);
-    const payload = {
+    const payload: Payload = {
       name: String(data.get("name")).trim(),
       email: String(data.get("email")).trim(),
       phone: String(data.get("phone") ?? "").trim(),
@@ -80,19 +107,35 @@ export function QuoteForm() {
       message: String(data.get("message")).trim(),
     };
 
-    // No fake success: only claim delivery when an endpoint exists and responds OK.
-    if (!FORM_ENDPOINT) {
+    if (honeypotFilled(form)) {
+      setStatus({
+        type: "error",
+        message: "Uw aanvraag is niet verzonden.",
+      });
+      return;
+    }
+
+    if (!endpoint) {
+      if (inbox) {
+        window.location.href = mailtoHref(payload, inbox);
+        setStatus({
+          type: "unwired",
+          message:
+            "Uw aanvraag is niet verzonden via deze site. Als uw e-mailprogramma opende, verstuurt u het bericht daar zelf.",
+        });
+        return;
+      }
       setStatus({
         type: "unwired",
         message:
-          "Het formulier is gevalideerd, maar e-mailintegratie is nog niet geconfigureerd. Uw gegevens zijn niet verzonden. Neem contact op via de vermelde kanalen zodra die beschikbaar zijn, of vraag ons de koppeling (Resend / Formspree / API) te activeren.",
+          "Uw aanvraag is niet verzonden. Online aanvragen openen binnenkort.",
       });
       return;
     }
 
     setPending(true);
     try {
-      const res = await fetch(FORM_ENDPOINT, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify(payload),
@@ -115,26 +158,49 @@ export function QuoteForm() {
   }
 
   const fieldClass =
-    "mt-1.5 w-full rounded-sm border border-bdc-navy/15 bg-white px-3.5 py-2.5 text-sm text-bdc-ink outline-none transition-[border-color,box-shadow] placeholder:text-bdc-slate/50 focus:border-bdc-cyan focus:shadow-[0_0_0_3px_rgba(0,194,232,0.2)]";
+    "mt-1.5 w-full rounded-sm border border-jdc-navy/15 bg-white px-3.5 py-2.5 text-sm text-jdc-ink outline-none transition-[border-color,box-shadow] placeholder:text-jdc-slate focus:border-jdc-cyan focus:shadow-[0_0_0_3px_rgba(0,194,232,0.2)]";
+
+  const notice = endpoint
+    ? null
+    : inbox
+      ? `Online verzenden is nog niet gekoppeld. Een geldige aanvraag opent een e-mail naar ${inbox}; u verstuurt die zelf.`
+      : "Online aanvragen openen binnenkort. Dit formulier controleert uw gegevens, maar verstuurt ze nog niet.";
 
   return (
     <form
       onSubmit={onSubmit}
       noValidate
-      className="rounded-sm border border-bdc-navy/10 bg-white p-6 sm:p-8"
+      className="relative rounded-sm border border-jdc-navy/10 bg-white p-6 sm:p-8"
       aria-labelledby={`${formId}-title`}
     >
-      <h3 id={`${formId}-title`} className="text-xl font-semibold text-bdc-navy">
+      <h3 id={`${formId}-title`} className="text-xl font-semibold text-jdc-navy">
         Offerte aanvragen
       </h3>
-      <p className="mt-2 text-sm text-bdc-slate">
+      <p className="mt-2 text-sm text-jdc-slate">
         Velden met * zijn verplicht. We gebruiken uw gegevens enkel om deze
         aanvraag te beantwoorden.
       </p>
+      {notice ? (
+        <p id={`${formId}-notice`} className="mt-3 text-sm text-jdc-navy">
+          {notice}
+        </p>
+      ) : null}
+
+      <div className="absolute -left-[10000px] h-px w-px overflow-hidden" aria-hidden="true">
+        <label htmlFor={`${formId}-website`}>Website</label>
+        <input
+          id={`${formId}-website`}
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          defaultValue=""
+        />
+      </div>
 
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-1">
-          <label htmlFor={`${formId}-name`} className="text-sm font-medium text-bdc-navy">
+          <label htmlFor={`${formId}-name`} className="text-sm font-medium text-jdc-navy">
             Naam *
           </label>
           <input
@@ -153,7 +219,7 @@ export function QuoteForm() {
         </div>
 
         <div>
-          <label htmlFor={`${formId}-email`} className="text-sm font-medium text-bdc-navy">
+          <label htmlFor={`${formId}-email`} className="text-sm font-medium text-jdc-navy">
             E-mail *
           </label>
           <input
@@ -173,7 +239,7 @@ export function QuoteForm() {
         </div>
 
         <div>
-          <label htmlFor={`${formId}-phone`} className="text-sm font-medium text-bdc-navy">
+          <label htmlFor={`${formId}-phone`} className="text-sm font-medium text-jdc-navy">
             Telefoon
           </label>
           <input
@@ -193,7 +259,7 @@ export function QuoteForm() {
         </div>
 
         <div>
-          <label htmlFor={`${formId}-service`} className="text-sm font-medium text-bdc-navy">
+          <label htmlFor={`${formId}-service`} className="text-sm font-medium text-jdc-navy">
             Dienst *
           </label>
           <select
@@ -218,7 +284,7 @@ export function QuoteForm() {
         </div>
 
         <div className="sm:col-span-2">
-          <label htmlFor={`${formId}-message`} className="text-sm font-medium text-bdc-navy">
+          <label htmlFor={`${formId}-message`} className="text-sm font-medium text-jdc-navy">
             Bericht *
           </label>
           <textarea
@@ -238,15 +304,15 @@ export function QuoteForm() {
         </div>
 
         <div className="sm:col-span-2">
-          <label className="flex items-start gap-3 text-sm text-bdc-slate">
+          <label className="flex items-start gap-3 text-sm text-jdc-slate">
             <input
               type="checkbox"
               name="consent"
-              className="mt-1 h-4 w-4 rounded border-bdc-navy/30 text-bdc-cyan focus:ring-bdc-cyan"
+              className="mt-1 h-4 w-4 rounded border-jdc-navy/30 text-jdc-cyan focus:ring-jdc-cyan"
               aria-invalid={Boolean(errors.consent)}
             />
             <span>
-              Ik ga akkoord dat JDC mij contacteert over deze offerteaanvraag. *
+              Ik ga akkoord dat {business.shortName} mij contacteert over deze offerteaanvraag. *
             </span>
           </label>
           {errors.consent ? (
@@ -255,18 +321,14 @@ export function QuoteForm() {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-6">
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex items-center justify-center rounded-sm bg-bdc-cyan px-6 py-3 text-sm font-semibold text-bdc-navy-deep transition-[background-color,transform] hover:bg-bdc-cyan-bright disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
+          className="inline-flex items-center justify-center rounded-sm bg-jdc-cyan px-6 py-3 text-sm font-semibold text-jdc-navy-deep transition-[background-color,transform] hover:bg-jdc-cyan-bright disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
         >
           {pending ? "Bezig…" : "Verstuur aanvraag"}
         </button>
-        <p className="text-xs text-bdc-slate">
-          {/* TODO: koppel FORM_ENDPOINT in src/lib/contact.ts (Resend, Formspree, of /api/quote) */}
-          Integratie: nog niet gekoppeld aan een mail-/API-endpoint.
-        </p>
       </div>
 
       <div className="mt-4" aria-live="polite">

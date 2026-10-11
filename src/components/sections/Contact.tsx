@@ -1,5 +1,5 @@
 import { Mail, MapPin, Phone } from "lucide-react";
-import { CONTACT } from "@/lib/contact";
+import { business, filled, formatAddress } from "@/config/business";
 import { QuoteForm } from "../QuoteForm";
 import { SectionShell } from "../SectionShell";
 
@@ -8,36 +8,30 @@ function ContactLine({
   label,
   value,
   href,
-  emptyHint,
 }: {
   icon: typeof Mail;
   label: string;
   value: string;
   href?: string;
-  emptyHint: string;
 }) {
   return (
     <div className="flex gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-bdc-navy-deep text-bdc-cyan">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-jdc-navy-deep text-jdc-cyan">
         <Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden />
       </div>
       <div>
-        <p className="text-xs font-semibold tracking-wide text-bdc-slate uppercase">
+        <p className="text-xs font-semibold tracking-wide text-jdc-slate uppercase">
           {label}
         </p>
-        {value ? (
-          href ? (
-            <a
-              href={href}
-              className="mt-0.5 text-sm font-medium text-bdc-navy hover:text-bdc-cyan-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bdc-cyan"
-            >
-              {value}
-            </a>
-          ) : (
-            <p className="mt-0.5 text-sm font-medium text-bdc-navy">{value}</p>
-          )
+        {href ? (
+          <a
+            href={href}
+            className="mt-0.5 block text-sm font-medium text-jdc-navy hover:text-jdc-cyan-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-jdc-cyan"
+          >
+            {value}
+          </a>
         ) : (
-          <p className="mt-0.5 text-sm text-bdc-slate/80 italic">{emptyHint}</p>
+          <p className="mt-0.5 text-sm font-medium text-jdc-navy">{value}</p>
         )}
       </div>
     </div>
@@ -45,46 +39,47 @@ function ContactLine({
 }
 
 export function Contact() {
-  const address = [CONTACT.street, CONTACT.city].filter(Boolean).join(", ");
+  const email = filled(business.email);
+  const phone = filled(business.phone);
+  const address = formatAddress();
+  const workArea = filled(business.workArea);
+  const vat = filled(business.vat);
+  const kbo = filled(business.enterpriseNumber);
+  const canReach = Boolean(business.formEndpoint || email || phone);
 
   return (
     <SectionShell
       id="contact"
       title="Contact & offerte"
-      lead="Vertel ons kort wat u nodig heeft. We reageren met een haalbaarheidsinschatting of een gerichte offerte."
+      lead={
+        canReach
+          ? "Vertel ons kort wat u nodig heeft. We reageren met een haalbaarheidsinschatting of een gerichte offerte."
+          : "Online contact openen we zodra er een inbox is. Het formulier controleert uw invoer, maar verstuurt nog niets."
+      }
       tone="white"
     >
       <div className="grid gap-10 lg:grid-cols-5 lg:gap-12">
         <div className="space-y-6 lg:col-span-2">
-          <ContactLine
-            icon={Mail}
-            label="E-mail"
-            value={CONTACT.email}
-            href={CONTACT.email ? `mailto:${CONTACT.email}` : undefined}
-            emptyHint="TODO: e-mailadres invullen in src/lib/contact.ts"
-          />
-          <ContactLine
-            icon={Phone}
-            label="Telefoon"
-            value={CONTACT.phone}
-            href={CONTACT.phone ? `tel:${CONTACT.phone.replace(/\s/g, "")}` : undefined}
-            emptyHint="TODO: telefoonnummer invullen in src/lib/contact.ts"
-          />
-          <ContactLine
-            icon={MapPin}
-            label="Adres"
-            value={address}
-            emptyHint="TODO: adres / werkgebied invullen in src/lib/contact.ts"
-          />
-
-          <div className="rounded-sm border border-dashed border-bdc-navy/20 bg-bdc-fog px-4 py-3 text-xs leading-relaxed text-bdc-slate">
-            {/* TODO: BTW, RPR, verzekeringsinfo wanneer beschikbaar */}
-            Ondernemingsgegevens (BTW, RPR) en verzekeringsinfo volgen hier
-            wanneer ze officieel beschikbaar zijn. Geen placeholder-nummers.
-            {CONTACT.vat ? (
-              <p className="mt-2 font-medium text-bdc-navy">BTW: {CONTACT.vat}</p>
-            ) : null}
-          </div>
+          {email ? (
+            <ContactLine
+              icon={Mail}
+              label="E-mail"
+              value={email}
+              href={`mailto:${email}`}
+            />
+          ) : null}
+          {phone ? (
+            <ContactLine
+              icon={Phone}
+              label="Telefoon"
+              value={phone}
+              href={`tel:${phone.replace(/\s/g, "")}`}
+            />
+          ) : null}
+          {address ? <ContactLine icon={MapPin} label="Adres" value={address} /> : null}
+          {workArea ? <ContactLine icon={MapPin} label="Werkgebied" value={workArea} /> : null}
+          {vat ? <p className="text-sm font-medium text-jdc-navy">BTW {vat}</p> : null}
+          {kbo ? <p className="text-sm font-medium text-jdc-navy">KBO {kbo}</p> : null}
         </div>
 
         <div className="lg:col-span-3">

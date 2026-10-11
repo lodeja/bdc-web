@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Playwright and axe
+        run: npm run test:e2e
+      - name: Chrome path for Lighthouse
+        id: chrome
+        run: echo "path=$(node -p "require('@playwright/test').chromium.executablePath()")" >> "$GITHUB_OUTPUT"
+      - name: Lighthouse mobile and desktop
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.path }}
+        run: npm run lhci

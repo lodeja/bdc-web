@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { business } from "@/config/business";
 import { withBasePath } from "@/lib/paths";
+import { absoluteUrl, siteOrigin } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -11,34 +13,51 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
+const origin = siteOrigin();
+const canonical = absoluteUrl("/");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(origin),
+  alternates: {
+    canonical,
+  },
   title: {
     default: "Janssens Drone Cleaning (JDC) | Professionele drone-reiniging",
     template: "%s | JDC",
   },
   description:
-    "JDC reinigt daken, gevels, zonnepanelen en geschikte industriële oppervlakken met professionele drone-technologie in België.",
+    "JDC reinigt daken, gevels, ramen en glas, zonnepanelen en geschikte industriële oppervlakken met professionele drone-technologie in België.",
   applicationName: "Janssens Drone Cleaning",
   keywords: [
     "drone reiniging",
     "gevelreiniging",
     "dakreiniging",
     "zonnepanelen reinigen",
+    "ramenreiniging",
+    "glasreiniging",
     "industriële reiniging",
     "Belgium",
     "JDC",
     "Janssens Drone Cleaning",
   ],
-  authors: [{ name: "Janssens Drone Cleaning" }],
+  authors: [{ name: business.brandName }],
   openGraph: {
     type: "website",
     locale: "nl_BE",
+    url: canonical,
     siteName: "Janssens Drone Cleaning",
     title: "Janssens Drone Cleaning (JDC)",
     description:
-      "Professionele drone-reiniging voor daken, gevels, zonnepanelen en industriële oppervlakken.",
+      "Professionele drone-reiniging voor daken, gevels, ramen en glas, zonnepanelen en industriële oppervlakken.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Janssens Drone Cleaning (JDC)",
+    description:
+      "Professionele drone-reiniging voor daken, gevels, ramen en glas, zonnepanelen en industriële oppervlakken.",
   },
   robots: {
     index: true,
@@ -59,7 +78,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <a href="#main" className="bdc-skip-link">
+        <a href="#main" className="jdc-skip-link">
           Ga naar inhoud
         </a>
         {children}

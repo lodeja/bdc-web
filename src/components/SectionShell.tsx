@@ -19,15 +19,15 @@ export function SectionShell({
 }: SectionShellProps) {
   const toneClass =
     tone === "navy"
-      ? "bg-bdc-navy-deep text-white"
+      ? "bg-jdc-navy-deep text-white"
       : tone === "white"
-        ? "bg-white text-bdc-ink"
-        : "bg-bdc-fog text-bdc-ink";
+        ? "bg-white text-jdc-ink"
+        : "bg-jdc-fog text-jdc-ink";
 
   return (
     <section
       id={id}
-      className={`scroll-mt-[var(--header-height)] border-t border-bdc-navy/10 ${toneClass} ${className}`}
+      className={`scroll-mt-[var(--header-height)] border-t border-jdc-navy/10 ${toneClass} ${className}`}
       aria-labelledby={`${id}-heading`}
     >
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
@@ -35,7 +35,7 @@ export function SectionShell({
           <h2
             id={`${id}-heading`}
             className={`text-balance text-3xl font-semibold tracking-tight sm:text-4xl ${
-              tone === "navy" ? "text-white" : "text-bdc-navy"
+              tone === "navy" ? "text-white" : "text-jdc-navy"
             }`}
           >
             {title}
@@ -43,7 +43,7 @@ export function SectionShell({
           {lead ? (
             <p
               className={`mt-4 text-pretty text-base leading-relaxed sm:text-lg ${
-                tone === "navy" ? "text-white/70" : "text-bdc-slate"
+                tone === "navy" ? "text-white/70" : "text-jdc-slate"
               }`}
             >
               {lead}

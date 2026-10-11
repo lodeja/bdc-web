@@ -1,6 +1,6 @@
 import { Factory, ShieldAlert, Waves } from "lucide-react";
 import { SectionShell } from "../SectionShell";
-import { IndustrialDroneCleaningAnimation } from "../IndustrialDroneCleaningAnimation";
+import { IndustrialScene } from "../IndustrialScene";
 
 const POINTS = [
   {
@@ -29,14 +29,14 @@ export function Industrial() {
       tone="navy"
     >
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-        <IndustrialDroneCleaningAnimation />
+        <IndustrialScene />
 
         <ul className="space-y-6">
           {POINTS.map((point) => {
             const Icon = point.icon;
             return (
               <li key={point.title} className="flex gap-4">
-                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-white/5 text-bdc-cyan">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-white/5 text-jdc-cyan">
                   <Icon className="h-5 w-5" strokeWidth={1.5} aria-hidden />
                 </div>
                 <div>
@@ -53,11 +53,8 @@ export function Industrial() {
         </ul>
       </div>
 
-      <p className="mt-10 max-w-3xl text-sm text-white/50">
-        {/* TODO: sector-referenties / cases toevoegen wanneer beschikbaar */}
-        Concrete cases en sectorreferenties volgen wanneer we die mogen
-        publiceren. Vraag gerust naar toepasbaarheid voor uw site via het
-        offerteformulier.
+      <p className="mt-10 max-w-3xl text-sm text-white/80">
+        Vraag naar toepasbaarheid voor uw site via het offerteformulier.
       </p>
     </SectionShell>
   );

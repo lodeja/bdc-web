@@ -9,38 +9,37 @@ type LogoProps = {
    */
   variant?: "mark" | "mono" | "wordmark";
   title?: string;
-  priority?: boolean;
   /** Kept for call-site compatibility */
   idSuffix?: string;
 };
 
 /**
  * Official JDC logo (user-supplied): drone fused into JDC letterforms + spray.
- * Transparent PNGs in /public/brand/ — served via withBasePath for GitHub Pages.
+ * Sized WebP in /public/brand/ — served via withBasePath for GitHub Pages.
+ * Original PNGs live in design/brand/archive and are not deployed.
  */
 export function Logo({
   className = "h-10 w-auto",
   variant = "mono",
   title = "Janssens Drone Cleaning",
-  priority = false,
 }: LogoProps) {
   const file =
     variant === "wordmark"
-      ? "/brand/jdc-wordmark.png"
+      ? "/brand/jdc-wordmark.webp"
       : variant === "mark"
-        ? "/brand/jdc-mark-dark.png"
-        : "/brand/jdc-mono.png";
+        ? "/brand/jdc-mono.webp"
+        : "/brand/jdc-mono.webp";
 
   const src = withBasePath(file);
 
-  // Intrinsic sizes match cropped assets (approx) for layout stability
+  // Same aspect ratio as the archived PNGs, exported near the CSS display size.
   const size =
     variant === "wordmark"
-      ? { width: 750, height: 756 }
-      : { width: 750, height: 429 };
+      ? { width: 430, height: 433 }
+      : { width: 240, height: 137 };
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- PNG brand mark; basePath via withBasePath
+    // eslint-disable-next-line @next/next/no-img-element -- sized WebP; basePath via withBasePath
     <img
       src={src}
       alt={title}
@@ -48,7 +47,7 @@ export function Logo({
       height={size.height}
       className={className}
       decoding="async"
-      {...(priority ? { fetchPriority: "high" as const } : {})}
+      loading="lazy"
     />
   );
 }
